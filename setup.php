@@ -19,7 +19,7 @@ use GlpiPlugin\Dgoplus\Port;
 use GlpiPlugin\Dgoplus\ProfileTab;
 use GlpiPlugin\Dgoplus\Setting;
 
-define('PLUGIN_DGOPLUS_VERSION', '1.0.0');
+define('PLUGIN_DGOPLUS_VERSION', '1.1.0');
 define('PLUGIN_DGOPLUS_MIN_GLPI', '11.0.0');
 define('PLUGIN_DGOPLUS_MAX_GLPI', '11.9.99');
 

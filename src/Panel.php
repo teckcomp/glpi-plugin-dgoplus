@@ -68,6 +68,82 @@ class Panel extends CommonDBChild
     }
 
     /**
+     * Largura da grade (fibras por tubo) a partir de itemtype/items_id, sem
+     * precisar do objeto pai carregado.
+     *
+     * Existe por causa do bloco 3r: o rotulo continuo depende da largura, e
+     * Port::computeFriendlyName() so tem itemtype/items_id em maos. Instanciar
+     * o pai so para ler a largura seria uma consulta a mais por porta.
+     *
+     * @param string $itemtype
+     * @param int    $items_id
+     * @return int
+     */
+    public static function getWidthForItemId(string $itemtype, int $items_id): int
+    {
+        if ($items_id <= 0) {
+            return self::DEFAULT_FIBERS;
+        }
+
+        $panel = new self();
+
+        $found = $panel->getFromDBByCrit([
+            'itemtype' => $itemtype,
+            'items_id' => $items_id,
+        ]);
+
+        if (!$found) {
+            return self::DEFAULT_FIBERS;
+        }
+
+        return self::sanitizeFibers((int) $panel->fields['fibers_per_tube']);
+    }
+
+    /**
+     * Larguras de varios ativos numa consulta so.
+     *
+     * Para as telas que percorrem portas de MUITAS DGOs (busca global,
+     * relatorio, dashboard): sem isto, o rotulo continuo custaria uma consulta
+     * por linha exibida.
+     *
+     * Todo id pedido volta preenchido - quem nao tem linha propria recebe o
+     * padrao. Devolver o id ausente obrigaria cada chamador a lembrar do
+     * fallback, e esquecer significaria numero errado em silencio.
+     *
+     * @param string     $itemtype
+     * @param array<int> $items_ids
+     * @return array<int,int> items_id => fibras por tubo
+     */
+    public static function getWidthsForItems(string $itemtype, array $items_ids): array
+    {
+        $ids = [];
+        foreach ($items_ids as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+
+        $widths = array_fill_keys($ids, self::DEFAULT_FIBERS);
+
+        if ($ids === []) {
+            return $widths;
+        }
+
+        $panel = new self();
+        $rows  = $panel->find([
+            'itemtype' => $itemtype,
+            'items_id' => array_values($ids),
+        ]);
+
+        foreach ($rows as $row) {
+            $widths[(int) $row['items_id']] = self::sanitizeFibers((int) $row['fibers_per_tube']);
+        }
+
+        return $widths;
+    }
+
+    /**
      * Piso a que o ativo esta vinculado, 0 se nenhum.
      *
      * @param CommonDBTM $item

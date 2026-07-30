@@ -383,9 +383,16 @@ class Port extends CommonDBChild
      */
     protected function computeFriendlyName()
     {
+        // Bloco 3r: o rotulo continuo depende da largura da grade, entao o
+        // Historico precisa dela tambem - senao o log registraria "F2.01" para
+        // uma porta que a tela chama de "F2.17".
         $position = self::formatPosition(
             (int) ($this->fields['tube_num'] ?? 0),
-            (int) ($this->fields['fiber_num'] ?? 0)
+            (int) ($this->fields['fiber_num'] ?? 0),
+            Panel::getWidthForItemId(
+                (string) ($this->fields['itemtype'] ?? ''),
+                (int) ($this->fields['items_id'] ?? 0)
+            )
         );
 
         $code = trim((string) ($this->fields['code'] ?? ''));
@@ -401,15 +408,40 @@ class Port extends CommonDBChild
     }
 
     /**
-     * Rotulo curto da posicao, ex.: F2.07
+     * Rotulo curto da posicao, ex.: F2.17
+     *
+     * Bloco 3r: o numero depois do ponto e' CONTINUO na DGO inteira, como a
+     * serigrafia de fabrica de um DIO/DGO real - a fileira 2 de uma grade de
+     * 16 colunas comeca em 17, nao em 1. Antes do 3r cada fileira reiniciava
+     * em 01, e o rotulo nao correspondia a etiqueta colada no equipamento.
+     *
+     * O numero e' DERIVADO, nunca gravado: `tube_num` e `fiber_num` continuam
+     * sendo a verdade no banco. Em compensacao ele depende da largura, e por
+     * isso mudar `fibers_per_tube` com porta documentada renumera tudo - o que
+     * as guardas de MapController::actionAddColumn/actionRemoveColumn impedem.
+     *
+     * $fibers_per_tube e' obrigatorio de proposito. Um default silencioso
+     * (0 = "usa o padrao") daria rotulo errado em qualquer ponto de chamada
+     * esquecido, sem erro nenhum; sem default, o PHP levanta ArgumentCountError
+     * e o problema aparece (licao 14: falha silenciosa custa mais que falha
+     * barulhenta).
      *
      * @param int $tube_num
      * @param int $fiber_num
+     * @param int $fibers_per_tube Largura da grade (colunas por fileira)
      * @return string
      */
-    public static function formatPosition(int $tube_num, int $fiber_num): string
+    public static function formatPosition(int $tube_num, int $fiber_num, int $fibers_per_tube): string
     {
-        return sprintf('F%d.%02d', $tube_num, $fiber_num);
+        // Posicao invalida sai crua: transformar lixo em numero plausivel
+        // esconderia o defeito em vez de mostra-lo.
+        if ($tube_num < 1 || $fiber_num < 1) {
+            return sprintf('F%d.%02d', $tube_num, $fiber_num);
+        }
+
+        $width = $fibers_per_tube > 0 ? $fibers_per_tube : Panel::DEFAULT_FIBERS;
+
+        return sprintf('F%d.%02d', $tube_num, ($tube_num - 1) * $width + $fiber_num);
     }
 
     /**

@@ -72,7 +72,11 @@ class Dashboard
         }
 
         // --- Layouts (capacidade por DGO) ---
+        // $widths sai do MESMO laco (bloco 3r): o rotulo continuo precisa da
+        // largura por DGO, e uma segunda consulta aqui seria desperdicio -
+        // as linhas ja estao em maos.
         $layouts = [];
+        $widths  = array_fill_keys($dgo_ids, Panel::DEFAULT_FIBERS);
         if ($dgo_ids !== []) {
             $panel_model = new Panel();
             $panels      = $panel_model->find([
@@ -80,9 +84,10 @@ class Dashboard
                 'items_id' => $dgo_ids,
             ]);
             foreach ($panels as $row) {
+                $fibers = Panel::sanitizeFibers((int) $row['fibers_per_tube']);
                 $layouts[(int) $row['items_id']] =
-                    Panel::sanitizeTubes((int) $row['tubes'])
-                    * Panel::sanitizeFibers((int) $row['fibers_per_tube']);
+                    Panel::sanitizeTubes((int) $row['tubes']) * $fibers;
+                $widths[(int) $row['items_id']] = $fibers;
             }
         }
         $default_capacity = Panel::DEFAULT_TUBES * Panel::DEFAULT_FIBERS;
@@ -162,7 +167,11 @@ class Dashboard
         foreach (array_slice($ports, 0, 5) as $row) {
             $dgo_id = (int) $row['items_id'];
             $recent[] = [
-                'position'     => Port::formatPosition((int) $row['tube_num'], (int) $row['fiber_num']),
+                'position'     => Port::formatPosition(
+                    (int) $row['tube_num'],
+                    (int) $row['fiber_num'],
+                    $widths[$dgo_id] ?? Panel::DEFAULT_FIBERS
+                ),
                 'edit_key'     => ((int) $row['tube_num']) . '-' . ((int) $row['fiber_num']),
                 'dgo_id'       => $dgo_id,
                 'locations_id' => $dgo_locations[$dgo_id] ?? 0,

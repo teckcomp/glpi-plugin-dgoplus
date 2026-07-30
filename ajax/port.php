@@ -100,7 +100,8 @@ echo json_encode([
         $tube_num,
         $fiber_num,
         $row,
-        $edit_key
+        $edit_key,
+        $layout['fibers_per_tube']
     ),
     'badges_html' => MapController::renderBadges(
         $stats['documented'],

@@ -476,7 +476,11 @@ class MapController
         if ($busy !== []) {
             $positions = [];
             foreach ($busy as $row) {
-                $positions[] = Port::formatPosition((int) $row['tube_num'], (int) $row['fiber_num']);
+                $positions[] = Port::formatPosition(
+                    (int) $row['tube_num'],
+                    (int) $row['fiber_num'],
+                    $layout['fibers_per_tube']
+                );
             }
             sort($positions);
             Session::addMessageAfterRedirect(
@@ -514,6 +518,100 @@ class MapController
      *
      * @return void
      */
+    /**
+     * Recusa mudar a LARGURA da grade quando isso renumeraria portas ja
+     * documentadas. Bloco 3r.
+     *
+     * O numero da porta e' continuo e derivado: `(fileira - 1) * largura +
+     * coluna`. Mexer na largura mexe no multiplicador de toda fileira a partir
+     * da 2, entao acrescentar ou remover uma coluna renumeraria portas que ja
+     * tem etiqueta colada no equipamento - sem erro, sem historico, sem
+     * lixeira. A recusa e' dura de proposito: um "tem certeza?" seria clicado
+     * no automatico.
+     *
+     * A FILEIRA 1 NAO ENTRA na conta, e isso nao e' descuido: ali o numero
+     * continuo e' igual ao numero da coluna qualquer que seja a largura
+     * (`(1-1) * largura + coluna == coluna`). DGO com documentacao so na
+     * primeira fileira continua podendo mudar de geometria.
+     *
+     * Quantidade de fileiras nao renumera nada e por isso os botoes de fileira
+     * seguem livres - a fileira nova nasce depois de todas as outras.
+     *
+     * @param string $itemtype
+     * @param int    $items_id
+     * @param int    $width        Largura vigente, para montar o rotulo atual
+     * @param int    $locations_id
+     * @param int    $floors_id
+     * @return bool true se recusou (o chamador deve retornar imediatamente)
+     */
+    private static function refuseWidthChange(
+        string $itemtype,
+        int $items_id,
+        int $width,
+        int $locations_id,
+        int $floors_id
+    ): bool {
+        $port = new Port();
+
+        // is_deleted = 0: porta na lixeira nao tem etiqueta no mundo fisico.
+        // "Sem acoplador" entra, sim - e' posicao descrita, nao posicao livre.
+        $rows = $port->find([
+            'itemtype'   => $itemtype,
+            'items_id'   => $items_id,
+            'is_deleted' => 0,
+        ]);
+
+        // A fileira 1 sai FORA aqui, em PHP, e nao no criterio do find():
+        // uma DGO tem no maximo 48x48 posicoes, entao trazer tudo e filtrar
+        // custa nada, e evita depender de sintaxe de operador do iterator que
+        // nenhuma outra consulta deste plugin exercita.
+        //
+        // Ordena pelos numeros, nao pelo rotulo: em grade larga o rotulo tem
+        // tres digitos e "F2.100" viria antes de "F2.99" na ordem de string.
+        $pairs = [];
+        foreach ($rows as $row) {
+            if ((int) $row['tube_num'] <= 1) {
+                continue;
+            }
+            $pairs[] = [(int) $row['tube_num'], (int) $row['fiber_num']];
+        }
+
+        if ($pairs === []) {
+            return false;
+        }
+        usort($pairs, fn($a, $b) => $a[0] <=> $b[0] ?: $a[1] <=> $b[1]);
+
+        $total   = count($pairs);
+        $shown   = array_slice($pairs, 0, 8);
+        $labels  = [];
+        foreach ($shown as $pair) {
+            $labels[] = Port::formatPosition($pair[0], $pair[1], $width);
+        }
+        $list = implode(', ', $labels);
+        if ($total > count($shown)) {
+            $list .= sprintf(__(' e mais %d', 'dgoplus'), $total - count($shown));
+        }
+
+        Session::addMessageAfterRedirect(
+            sprintf(
+                __(
+                    'Não é possível mudar o número de colunas: a numeração das portas é contínua e '
+                    . 'mudaria para %d porta(s) já documentada(s) fora da primeira fileira (%s). '
+                    . 'Defina a largura da grade antes de documentar, ou libere essas portas.',
+                    'dgoplus'
+                ),
+                $total,
+                $list
+            ),
+            false,
+            ERROR
+        );
+
+        self::redirectTo(self::scope($locations_id, $floors_id, ['dgo' => $items_id]));
+
+        return true;
+    }
+
     private static function actionAddColumn(): void
     {
         Session::checkRight(Port::$rightname, CREATE);
@@ -526,6 +624,10 @@ class MapController
         $panel  = new Panel();
         $layout = Panel::getLayoutForItem(self::getDgoItem($itemtype, $items_id));
         $fibers = Panel::sanitizeFibers($layout['fibers_per_tube'] + 1);
+
+        if (self::refuseWidthChange($itemtype, $items_id, $layout['fibers_per_tube'], $locations_id, $floors_id)) {
+            return;
+        }
 
         if ($panel->getFromDBByCrit(['itemtype' => $itemtype, 'items_id' => $items_id])) {
             $panel->update(['id' => $panel->getID(), 'fibers_per_tube' => $fibers]);
@@ -572,6 +674,10 @@ class MapController
             return;
         }
 
+        if (self::refuseWidthChange($itemtype, $items_id, $last_column, $locations_id, $floors_id)) {
+            return;
+        }
+
         $port = new Port();
         $busy = $port->find([
             'itemtype'   => $itemtype,
@@ -583,7 +689,11 @@ class MapController
         if ($busy !== []) {
             $positions = [];
             foreach ($busy as $row) {
-                $positions[] = Port::formatPosition((int) $row['tube_num'], (int) $row['fiber_num']);
+                $positions[] = Port::formatPosition(
+                    (int) $row['tube_num'],
+                    (int) $row['fiber_num'],
+                    $last_column
+                );
             }
             sort($positions);
             Session::addMessageAfterRedirect(
@@ -874,6 +984,13 @@ class MapController
             return;
         }
 
+        // Bloco 3r: a posicao exibida e' continua, e o continuo depende da
+        // largura de CADA DGO. Uma consulta em lote, nao uma por linha.
+        $widths = Panel::getWidthsForItems(
+            PassiveDCEquipment::class,
+            array_keys($dgo_info)
+        );
+
         $shown = 0;
         echo "<div class='table-responsive'><table class='table table-vcenter card-table mb-0'>";
         echo "<thead><tr>"
@@ -888,7 +1005,11 @@ class MapController
             }
             $items_id = (int) $row['items_id'];
             $info     = $dgo_info[$items_id];
-            $pos      = Port::formatPosition((int) $row['tube_num'], (int) $row['fiber_num']);
+            $pos      = Port::formatPosition(
+                (int) $row['tube_num'],
+                (int) $row['fiber_num'],
+                $widths[$items_id] ?? Panel::DEFAULT_FIBERS
+            );
             $url      = self::getPageUrl([
                 'location' => $info['locations_id'],
                 'dgo'      => $items_id,
@@ -1168,6 +1289,7 @@ class MapController
         int $f,
         ?array $row,
         string $edit_key,
+        int $fibers_per_tube,
         string $search = ''
     ): string {
         $key    = $t . '-' . $f;
@@ -1214,7 +1336,7 @@ class MapController
             'edit' => $key,
         ])) . '#dgoplus-panel';
 
-        $title = Port::formatPosition($t, $f);
+        $title = Port::formatPosition($t, $f, $fibers_per_tube);
         if ($no_cpl) {
             $title .= ' — ' . __('sem acoplador', 'dgoplus');
             if (($row['comment'] ?? '') !== '') {
@@ -1236,7 +1358,7 @@ class MapController
         $html .= "<span class='d-flex align-items-center gap-1'>";
         $html .= "<span style='display:inline-block;width:6px;height:6px;border-radius:50%;flex:0 0 auto;"
             . "background:" . self::fiberColor($f) . "'></span>";
-        $html .= "<span class='text-muted' style='font-size:9.5px'>" . Port::formatPosition($t, $f) . "</span>";
+        $html .= "<span class='text-muted' style='font-size:9.5px'>" . Port::formatPosition($t, $f, $fibers_per_tube) . "</span>";
         $html .= "</span>";
 
         // Sempre tres linhas, para a altura da celula nao mudar de
@@ -1367,6 +1489,7 @@ class MapController
                     $f,
                     $byKey[$key] ?? null,
                     $edit_key,
+                    $layout['fibers_per_tube'],
                     $search
                 );
             }
@@ -1759,7 +1882,11 @@ class MapController
         echo "<span class='text-muted'>"
             . sprintf(__('Fileira %d, coluna %d', 'dgoplus'), $tube_num, $fiber_num)
             . "</span></h3>";
-        echo "<span class='badge bg-blue-lt'>" . htmlescape(Port::formatPosition($tube_num, $fiber_num)) . "</span>";
+        echo "<span class='badge bg-blue-lt'>" . htmlescape(Port::formatPosition(
+            $tube_num,
+            $fiber_num,
+            Panel::getLayoutForItem($dgo)['fibers_per_tube']
+        )) . "</span>";
         echo "</div>";
 
         echo "<div class='card-body'>";
