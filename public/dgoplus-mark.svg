@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="DGO+">
+<title>DGO+</title>
+<rect x="0" y="0" width="64" height="64" rx="14" fill="#0F1B2A"/>
+<rect x="11.4" y="18" width="11.6" height="12" rx="2.6" fill="#FFFFFF" fill-opacity="0.07" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="0.5"/>
+<circle cx="14.6" cy="21.4" r="1.5" fill="#2563EB"/>
+<rect x="26.2" y="18" width="11.6" height="12" rx="2.6" fill="#FFFFFF" fill-opacity="0.07" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="0.5"/>
+<circle cx="29.4" cy="21.4" r="1.5" fill="#EA7C1F"/>
+<rect x="41" y="18" width="11.6" height="12" rx="2.6" fill="#FFFFFF" fill-opacity="0.07" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="0.5"/>
+<circle cx="44.2" cy="21.4" r="1.5" fill="#22A559"/>
+<rect x="11.4" y="34" width="11.6" height="12" rx="2.6" fill="#FFFFFF" fill-opacity="0.07" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="0.5"/>
+<circle cx="14.6" cy="37.4" r="1.5" fill="#8B5E34"/>
+<rect x="26.2" y="34" width="11.6" height="12" rx="2.6" fill="#FFFFFF" fill-opacity="0.07" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="0.5"/>
+<circle cx="29.4" cy="37.4" r="1.5" fill="#94A3B8"/>
+<rect x="41" y="34" width="11.6" height="12" rx="2.6" fill="#2FBFB0"/>
+<circle cx="44.2" cy="37.4" r="1.5" fill="#0F1B2A" fill-opacity="0.55"/>
+</svg>
