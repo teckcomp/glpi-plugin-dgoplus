@@ -151,6 +151,20 @@ class MapController
     }
 
     /**
+     * URL desta pagina, sem parametros, para quem monta formulario de fora.
+     *
+     * Bloco 3t: DgoIdentity precisa do action= do formulario de comentario.
+     * Expor ESTE metodo, sem parametros, em vez de tornar getPageUrl() publico
+     * mantem a montagem de query string do DGO+ num lugar so (licao 13).
+     *
+     * @return string
+     */
+    public static function getPublicPageUrl(): string
+    {
+        return self::getPageUrl();
+    }
+
+    /**
      * URL da tela de configuracao do plugin.
      *
      * Mesmo lugar que o core aponta pelo hook CONFIG_PAGE
@@ -310,6 +324,9 @@ class MapController
                 break;
             case 'delete_port':
                 self::actionDeletePort();
+                break;
+            case 'save_dgo_comment':
+                self::actionSaveDgoComment();
                 break;
         }
     }
@@ -762,6 +779,41 @@ class MapController
         }
 
         self::redirectTo(self::scope($locations_id, $floors_id, ['dgo' => $items_id]));
+    }
+
+    /**
+     * Grava o comentario NATIVO do ativo pelo caminho de POST. Bloco 3t.
+     *
+     * A regra mora em DgoIdentity::applyComment, que e' a mesma que o endpoint
+     * ajax/dgocomment.php usa - o POST e o AJAX nao podem divergir (licao 47).
+     * Aqui fica so o que e' de POST: mensagem na sessao + redirect preservando
+     * localizacao, piso, DGO e a porta aberta no painel.
+     *
+     * @return void
+     */
+    private static function actionSaveDgoComment(): void
+    {
+        $items_id     = (int) ($_POST['items_id'] ?? 0);
+        $locations_id = (int) ($_POST['locations_id'] ?? 0);
+        $floors_id    = (int) ($_POST['floor'] ?? 0);
+        $edit_key     = (string) ($_POST['edit'] ?? '');
+
+        $result = DgoIdentity::applyComment([
+            'itemtype' => $_POST['itemtype'] ?? PassiveDCEquipment::class,
+            'items_id' => $items_id,
+            'comment'  => $_POST['comment'] ?? '',
+        ]);
+
+        if (!$result['ok']) {
+            Session::addMessageAfterRedirect($result['error'], false, ERROR);
+        }
+
+        $params = self::scope($locations_id, $floors_id, ['dgo' => $items_id]);
+        if ($edit_key !== '') {
+            $params['edit'] = $edit_key;
+        }
+
+        self::redirectTo($params);
     }
 
     /**
@@ -1561,7 +1613,15 @@ class MapController
 
         echo "</div>"; // coluna da grade
 
+        // Bloco 3t: a coluna da direita passou a ter tres cards - QR de
+        // identidade, anexos e comentario do ativo. A <div> da coluna e'
+        // aberta AQUI, e nao mais dentro do displayAttachmentsSidebar, para os
+        // tres empilharem juntos.
+        echo "<div style='flex:1 1 280px;min-width:0;max-width:420px'>";
+        DgoIdentity::displayQrCard($dgo);
         self::displayAttachmentsSidebar($dgo, $locations_id, $edit_key, $floors_id);
+        DgoIdentity::displayCommentCard($dgo, $locations_id, $edit_key, $floors_id);
+        echo "</div>"; // coluna da direita
 
         echo "</div>"; // linha de duas colunas
         echo "</div>"; // card-body
@@ -1681,12 +1741,16 @@ class MapController
     }
 
     /**
-     * Coluna compacta de anexos, ao lado da grade.
+     * Card compacto de anexos, na coluna da direita.
      *
      * So miniatura + nome + contador. O componente nativo de anexo
      * (Document_Item::showForItem) NAO cabe aqui: sao dois cards lado a lado
      * mais uma tabela de 8 colunas - em coluna estreita a ultima coluna some
      * sem avisar (licao 20). Ele vai em largura total, em displayDocumentsManager().
+     *
+     * Bloco 3t: este metodo NAO abre mais a <div> da coluna. Quem abre e' o
+     * displayGrid, porque a coluna agora tem tres cards (QR, anexos,
+     * comentario) e nao so este.
      *
      * @param PassiveDCEquipment $dgo
      * @param int                $locations_id
@@ -1697,8 +1761,7 @@ class MapController
     {
         $items_id = (int) $dgo->getID();
 
-        echo "<div style='flex:1 1 280px;min-width:0;max-width:420px'>";
-        echo "<div class='card'>";
+        echo "<div class='card mb-3'>";
 
         echo "<div class='card-header d-flex align-items-center justify-content-between gap-2'>";
         echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>"
@@ -1709,7 +1772,7 @@ class MapController
             echo "<div class='text-muted small'>"
                 . htmlescape(__('Seu perfil não tem direito de ver Documentos.', 'dgoplus'))
                 . "</div>";
-            echo "</div></div></div>";
+            echo "</div></div>";
             return;
         }
 
@@ -1770,7 +1833,6 @@ class MapController
 
         echo "</div>"; // card-body
         echo "</div>"; // card
-        echo "</div>"; // coluna
     }
 
     /**
