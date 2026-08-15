@@ -9,6 +9,7 @@
  * Bloco 3j: DGO habilitavel na Analise de impacto.
  * Bloco 3k: atalho da ficha do ativo para o mapa.
  * Bloco 3l: configuracao de quais Tipos sao DGO.
+ * Bloco 3q: limpeza de portas, paineis e historico na PURGA do ativo.
  */
 
 use Glpi\Plugin\Hooks;
@@ -17,6 +18,7 @@ use GlpiPlugin\Dgoplus\MapController;
 use GlpiPlugin\Dgoplus\MapPage;
 use GlpiPlugin\Dgoplus\Port;
 use GlpiPlugin\Dgoplus\ProfileTab;
+use GlpiPlugin\Dgoplus\PurgeCleaner;
 use GlpiPlugin\Dgoplus\Setting;
 
 define('PLUGIN_DGOPLUS_VERSION', '1.2.0');
@@ -99,6 +101,25 @@ function plugin_init_dgoplus()
     // monta a URL como {root_doc}/plugins/dgoplus/<este valor>
     // (Plugin.php:2850), entao o caminho e' relativo a' raiz do plugin.
     $PLUGIN_HOOKS[Hooks::CONFIG_PAGE]['dgoplus'] = 'front/config.form.php';
+
+    // Bloco 3q: purgar o ativo tem que levar junto as portas, os paineis e o
+    // historico deles.
+    //
+    // Sem esta linha, Plugin::doHook(Hooks::ITEM_PURGE) (CommonDBTM.php:2185)
+    // nao encontra nada do DGO+ e as tabelas do plugin ficam com linhas
+    // apontando para um items_id que nao existe mais - sem erro e sem lixeira.
+    //
+    // O formato de ARRAY POR ITEMTYPE nao e' decoracao: em Plugin.php:1806 o
+    // core faz isset($tab[$itemtype]) com $itemtype = get_class($param)
+    // (linha 1795). Declarar um callable solto aqui faria o callback rodar na
+    // purga de QUALQUER item do GLPI - chamado, computador, usuario - e a
+    // classe teria que se defender sozinha a cada purga do sistema inteiro.
+    //
+    // A comparacao e' de classe EXATA, nao instanceof: se um dia o DGO+
+    // aceitar outro itemtype como DGO, ele precisa de sua propria entrada.
+    $PLUGIN_HOOKS[Hooks::ITEM_PURGE]['dgoplus'] = [
+        PassiveDCEquipment::class => [PurgeCleaner::class, 'onItemPurge'],
+    ];
 }
 
 /**
