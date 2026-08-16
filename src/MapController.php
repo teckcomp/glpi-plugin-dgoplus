@@ -102,15 +102,15 @@ class MapController
         if ($dgos === []) {
             self::displayEmptyState(
                 $floors_id > 0
-                    ? __('Nenhuma DGO neste piso. Troque o piso, ou abra uma DGO e atribua o piso na grade.', 'dgoplus')
-                    : __('Nenhuma DGO cadastrada nesta localização ainda.', 'dgoplus')
+                    ? __('Nenhum elemento neste piso. Troque o piso, ou abra um elemento e atribua o piso na grade.', 'dgoplus')
+                    : __('Nenhum elemento cadastrado nesta localização ainda.', 'dgoplus')
             );
             return;
         }
 
         if ($dgo_id <= 0 || !isset($dgos[$dgo_id])) {
             self::displayEmptyState(
-                __('Selecione uma DGO acima para abrir a grade de portas.', 'dgoplus')
+                __('Selecione um elemento acima para abrir a grade de portas.', 'dgoplus')
             );
             return;
         }
@@ -151,17 +151,40 @@ class MapController
     }
 
     /**
+     * URL de action= dos formularios POST desta pagina. Bloco 4a-3.
+     *
+     * Em POST o navegador PRESERVA a query string do action=, entao carregar
+     * o papel aqui e' o que faz Dashboard::currentRole() continuar enxergando
+     * o filtro DURANTE o tratamento do POST - sem isso, salvar uma porta
+     * derrubaria o filtro de papel no redirect (mesma classe de defeito que o
+     * scope() ja resolve para localizacao e piso, que viajam como hidden).
+     * O papel nao vira hidden porque quem o le e' currentRole(), que le
+     * $_GET de proposito: array forjado em $_POST nunca chega nele.
+     *
+     * @return string
+     */
+    private static function getPostUrl(): string
+    {
+        $role = Dashboard::currentRole();
+
+        return self::getPageUrl($role !== null ? ['role' => $role] : []);
+    }
+
+    /**
      * URL desta pagina, sem parametros, para quem monta formulario de fora.
      *
      * Bloco 3t: DgoIdentity precisa do action= do formulario de comentario.
      * Expor ESTE metodo, sem parametros, em vez de tornar getPageUrl() publico
      * mantem a montagem de query string do DGO+ num lugar so (licao 13).
      *
+     * Bloco 4a-3: passa pelo getPostUrl() para o formulario de comentario
+     * tambem nao derrubar o filtro de papel ao salvar.
+     *
      * @return string
      */
     public static function getPublicPageUrl(): string
     {
-        return self::getPageUrl();
+        return self::getPostUrl();
     }
 
     /**
@@ -264,6 +287,16 @@ class MapController
             $params['floor'] = $floors_id;
         }
 
+        // Bloco 4a-3: o filtro de papel sobrevive a navegacao pelo mesmo
+        // motivo que localizacao e piso. Le do ponto unico ja testado
+        // (Dashboard::currentRole) em vez de ganhar parametro: mexer na
+        // assinatura tocaria os ~20 pontos de chamada para propagar um valor
+        // que ja e' global por natureza - ele vem da URL da requisicao.
+        $role = Dashboard::currentRole();
+        if ($role !== null) {
+            $params['role'] = $role;
+        }
+
         return $params + $extra;
     }
 
@@ -343,8 +376,20 @@ class MapController
         $floors_id    = (int) ($_POST['floor'] ?? 0);
         $name         = trim($_POST['name'] ?? '');
 
+        // Bloco 4a-3: papel obrigatorio, validado contra o registro. Valor
+        // forjado como array ou papel inexistente recebe o mesmo tratamento
+        // do vazio - a recusa e' dura, como a do nome, sem "tem certeza?".
+        $raw_role = $_POST['role'] ?? '';
+        $role     = is_string($raw_role) ? trim($raw_role) : '';
+
         if ($locations_id <= 0 || $name === '') {
-            Session::addMessageAfterRedirect(__('Preencha o nome da DGO.', 'dgoplus'), false, ERROR);
+            Session::addMessageAfterRedirect(__('Preencha o nome do novo elemento.', 'dgoplus'), false, ERROR);
+            self::redirectTo(self::scope($locations_id, $floors_id));
+            return;
+        }
+
+        if (!Setting::isRole($role)) {
+            Session::addMessageAfterRedirect(__('Escolha o papel do novo elemento (DIO, DGO ou CTO).', 'dgoplus'), false, ERROR);
             self::redirectTo(self::scope($locations_id, $floors_id));
             return;
         }
@@ -356,14 +401,27 @@ class MapController
         ];
 
         // Bloco 3l, e este e' o ponto que nao pode faltar: com o filtro de Tipo
-        // ligado, uma DGO criada sem tipo seria descartada pelo proprio filtro e
-        // desapareceria no instante em que fosse criada - o usuario clicaria em
-        // "+ Nova DGO", a tela recarregaria e nada apareceria, sem uma linha de
-        // erro em log nenhum (licao 14). Com o filtro desligado o metodo devolve
-        // 0 e a chave nem entra no input, preservando o comportamento anterior.
-        $type_id = Setting::getTypeForNewDgo();
+        // ligado, um elemento criado sem tipo seria descartado pelo proprio
+        // filtro e desapareceria no instante em que fosse criado, sem uma linha
+        // de erro em log nenhum (licao 14). Bloco 4a-3: o Tipo agora vem do
+        // papel escolhido; papel sem Tipo mapeado, com o filtro ligado, RECUSA
+        // em vez de criar um elemento que sumiria. Com o filtro desligado
+        // (nenhum Tipo mapeado em papel nenhum) nao ha o que gravar e nada
+        // some - comportamento identico ao anterior ao 3l.
+        $type_id = Setting::getTypeForNewItem($role);
         if ($type_id > 0) {
             $input[Setting::getTypeField()] = $type_id;
+        } elseif (Setting::isTypeFilterEnabled()) {
+            Session::addMessageAfterRedirect(
+                sprintf(
+                    __('O papel %s não tem nenhum Tipo configurado — revise a configuração do DGO+ antes de criar.', 'dgoplus'),
+                    Setting::getRoleLabel($role)
+                ),
+                false,
+                ERROR
+            );
+            self::redirectTo(self::scope($locations_id, $floors_id));
+            return;
         }
 
         $item = new PassiveDCEquipment();
@@ -909,8 +967,46 @@ class MapController
         self::displayBrand();
 
         echo "<div class='d-flex align-items-center gap-2 flex-wrap' id='dgoplus-scope'>";
+
+        // Bloco 4a-3: filtro de papel, primeiro do grupo por ser o corte mais
+        // largo (papel corta a base inteira; localizacao e piso cortam dentro
+        // dele). Formulario GET proprio, como os outros dois seletores, e
+        // carregando localizacao e piso escondidos - trocar o papel nao pode
+        // limpar o resto do escopo. Sem localizacao escolhida o filtro vale
+        // para o painel geral, que ja le o mesmo ?role= desde o 4a-2.
+        $current_role = Dashboard::currentRole();
+        $role_options = [];
+        foreach (Setting::getRoles() as $role_key) {
+            $role_options[$role_key] = Setting::getRoleLabel($role_key);
+        }
+
+        echo "<form method='get' action='" . htmlescape(self::getPageUrl()) . "' id='dgoplus-role-form'>";
+        echo "<div class='d-flex align-items-center gap-2 flex-wrap'>";
+        if ($locations_id > 0) {
+            echo Html::hidden('location', ['value' => $locations_id]);
+        }
+        if ($floors_id > 0) {
+            echo Html::hidden('floor', ['value' => $floors_id]);
+        }
+        echo "<span class='text-muted d-flex align-items-center gap-1'>"
+            . "<i class='ti ti-tags'></i> " . htmlescape(__('Papel', 'dgoplus')) . "</span>";
+        Dropdown::showFromArray('role', $role_options, [
+            'value'               => $current_role ?? 0,
+            'width'               => '160px',
+            'display_emptychoice' => true,
+            'emptylabel'          => __('Todos os papéis', 'dgoplus'),
+            'on_change'           => 'document.getElementById("dgoplus-role-form").submit();',
+        ]);
+        echo "</div>";
+        echo "</form>";
+
         echo "<form method='get' action='" . htmlescape(self::getPageUrl()) . "' id='dgoplus-location-form'>";
         echo "<div class='d-flex align-items-center gap-2 flex-wrap'>";
+        // Papel e' ortogonal a localizacao: trocar de localizacao NAO limpa o
+        // filtro de papel (ao contrario do piso, que pertence a localizacao).
+        if ($current_role !== null) {
+            echo Html::hidden('role', ['value' => $current_role]);
+        }
         echo "<span class='text-muted d-flex align-items-center gap-1'>"
             . "<i class='ti ti-map-pin'></i> " . htmlescape(Location::getTypeName(1)) . "</span>";
         Dropdown::show('Location', [
@@ -929,6 +1025,9 @@ class MapController
             echo "<form method='get' action='" . htmlescape(self::getPageUrl()) . "' id='dgoplus-floor-form'>";
             echo "<div class='d-flex align-items-center gap-2 flex-wrap'>";
             echo Html::hidden('location', ['value' => $locations_id]);
+            if ($current_role !== null) {
+                echo Html::hidden('role', ['value' => $current_role]);
+            }
             echo "<span class='text-muted d-flex align-items-center gap-1'>"
                 . "<i class='ti ti-building'></i> " . htmlescape(Floor::getTypeName(1)) . "</span>";
             Dropdown::showFromArray('floor', $floors, [
@@ -956,6 +1055,9 @@ class MapController
         }
         if ($dgo_id > 0) {
             echo Html::hidden('dgo', ['value' => $dgo_id]);
+        }
+        if ($current_role !== null) {
+            echo Html::hidden('role', ['value' => $current_role]);
         }
         echo "<div class='input-group input-group-sm'>";
         echo "<span class='input-group-text'><i class='ti ti-search'></i></span>";
@@ -1117,10 +1219,19 @@ class MapController
             $where['id'] = $ids !== [] ? $ids : [0];
         }
 
-        // Bloco 3l: so os Tipos configurados como DGO. Devolve array vazio
-        // quando nada foi configurado, e nesse caso o `+` nao altera o where -
-        // e' o que mantem o comportamento anterior ao 3l intacto.
-        $rows = $dgo->find($where + Setting::dgoCriteria() + $criteria);
+        // Bloco 3l: so os Tipos configurados. Devolve array vazio quando nada
+        // foi configurado, e nesse caso o `+` nao altera o where - e' o que
+        // mantem o comportamento anterior ao 3l intacto.
+        //
+        // Bloco 4a-3: com filtro de papel ativo, so os Tipos DAQUELE papel.
+        // Papel sem Tipo mapeado devolve criterio impossivel (zero linhas),
+        // nunca a base inteira - regra do roleCriteria(), fechada no 4a-1.
+        $role = Dashboard::currentRole();
+        $type_criteria = $role !== null
+            ? Setting::roleCriteria($role)
+            : Setting::typesCriteria();
+
+        $rows = $dgo->find($where + $type_criteria + $criteria);
 
         foreach ($rows as $row) {
             $item = new PassiveDCEquipment();
@@ -1133,11 +1244,15 @@ class MapController
 
     /**
      * Quantos dispositivos passivos da localizacao ficaram de fora por nao ter
-     * um Tipo de DGO configurado.
+     * papel configurado (o Tipo deles nao esta em papel nenhum).
      *
      * Existe para a tela poder DIZER que filtrou, em vez de simplesmente
      * mostrar menos coisa: ativo que desaparece sem explicacao parece dado
      * perdido (licao 16). Devolve 0 quando o filtro esta desligado.
+     *
+     * NAO conta o filtro de papel da barra: quem filtra por DGO escolheu
+     * esconder DIO e CTO, e avisar disso seria ruido. A conta e' sempre
+     * contra o CONJUNTO dos papeis (typesCriteria), com ou sem filtro ativo.
      *
      * @param int $locations_id
      * @return int
@@ -1157,17 +1272,18 @@ class MapController
         ];
 
         $total = count($dgo->find($where + $criteria));
-        $dgos  = count($dgo->find($where + Setting::dgoCriteria() + $criteria));
+        $dgos  = count($dgo->find($where + Setting::typesCriteria() + $criteria));
 
         return max(0, $total - $dgos);
     }
 
     /**
-     * Seletor de DGO da localizacao + criacao de DGO nova.
+     * Seletor de elemento da localizacao + criacao de elemento novo.
      *
-     * Ate MAX_TABS DGOs sao abas de verdade (um clique). Acima disso vira um
-     * seletor unico com busca - o select2 que o core aplica em todo dropdown
-     * -, senao um andar com 20 DGOs viraria uma parede de botoes.
+     * Ate MAX_TABS elementos sao abas de verdade (um clique), agrupadas por
+     * papel na ordem do registro (bloco 4a-3). Acima disso vira um seletor
+     * unico com busca - o select2 que o core aplica em todo dropdown -, senao
+     * um andar com 20 elementos viraria uma parede de botoes.
      *
      * @param int                           $locations_id
      * @param array<int,PassiveDCEquipment> $dgos
@@ -1180,9 +1296,12 @@ class MapController
         $can_create = Session::haveRight(Port::$rightname, CREATE)
             && Session::haveRight(PassiveDCEquipment::$rightname, CREATE);
 
+        $filter_on = Setting::isTypeFilterEnabled();
+
         // Bloco 3l: quando o filtro de Tipo esconde ativos, a tela DIZ isso.
-        // Sem este aviso, alguem que documentou uma DGO e depois configurou o
-        // Tipo errado concluiria que o plugin perdeu o trabalho dele.
+        // Sem este aviso, alguem que documentou um elemento e depois configurou
+        // o Tipo errado concluiria que o plugin perdeu o trabalho dele.
+        // Bloco 4a-3: o texto fala de papel, nao mais de "Tipo de DGO".
         $filtered = self::countFilteredOut($locations_id);
         if ($filtered > 0) {
             echo "<div class='alert alert-info d-flex align-items-center gap-2'>";
@@ -1190,8 +1309,8 @@ class MapController
             echo "<span>";
             echo htmlescape(sprintf(
                 _n(
-                    '%d dispositivo passivo desta localização não está listado porque seu Tipo não é de DGO.',
-                    '%d dispositivos passivos desta localização não estão listados porque seus Tipos não são de DGO.',
+                    '%d dispositivo passivo desta localização não está listado porque seu Tipo não tem papel configurado.',
+                    '%d dispositivos passivos desta localização não estão listados porque seus Tipos não têm papel configurado.',
                     $filtered,
                     'dgoplus'
                 ),
@@ -1208,29 +1327,77 @@ class MapController
         echo "<div class='d-flex align-items-center gap-2 flex-wrap justify-content-between mb-3'>";
 
         if ($dgos !== [] && count($dgos) <= self::MAX_TABS) {
-            echo "<ul class='nav nav-tabs flex-grow-1' role='tablist'>";
-            foreach ($dgos as $id => $item) {
-                $count  = self::countDocumentedPorts(PassiveDCEquipment::class, $id);
-                $url    = self::getPageUrl(self::scope($locations_id, $floors_id, ['dgo' => $id]));
-                $active = ($id === $active_id);
-                $class  = 'nav-link d-flex align-items-center gap-2' . ($active ? ' active' : '');
-                $badge  = $active ? 'bg-blue-lt' : 'bg-secondary-lt';
+            // Bloco 4a-3: abas agrupadas por papel, na ordem do registro (que
+            // e' a hierarquia fisica DIO -> DGO -> CTO, decisao do 4a-1). O
+            // rotulo do grupo e' um nav-link desabilitado - classe do core,
+            // nada inventado - com a contagem de elementos do grupo. Com o
+            // filtro de Tipo desligado ninguem tem papel, e ai as abas ficam
+            // exatamente como sempre foram, sem rotulos de grupo.
+            $groups = [];
+            if ($filter_on) {
+                foreach (Setting::getRoles() as $role_key) {
+                    $groups[$role_key] = [];
+                }
+                foreach ($dgos as $id => $item) {
+                    // Papel nulo nao acontece aqui (a consulta so deixa passar
+                    // Tipo mapeado), mas custa nada nao quebrar se acontecer.
+                    $groups[Setting::getRoleOfItem($item) ?? ''][$id] = $item;
+                }
+            } else {
+                $groups[''] = $dgos;
+            }
 
-                echo "<li class='nav-item'>";
-                echo "<a class='" . $class . "' href='" . htmlescape($url) . "'>";
-                echo "<i class='ti ti-server'></i>";
-                echo htmlescape($item->fields['name'] ?: ('#' . $id));
-                echo "<span class='badge " . $badge . "'>" . $count . "</span>";
-                echo "</a>";
-                echo "</li>";
+            echo "<ul class='nav nav-tabs flex-grow-1' role='tablist'>";
+            foreach ($groups as $group_role => $items) {
+                if ($items === []) {
+                    continue;
+                }
+
+                if ($group_role !== '') {
+                    echo "<li class='nav-item d-flex align-items-center'>";
+                    echo "<span class='nav-link disabled d-flex align-items-center gap-1 px-2 text-muted'"
+                        . " style='font-size:0.72rem;font-weight:600;letter-spacing:0.04em'>"
+                        . htmlescape(Setting::getRoleLabel((string) $group_role))
+                        . "<span class='badge bg-secondary-lt'>" . count($items) . "</span>"
+                        . "</span>";
+                    echo "</li>";
+                }
+
+                foreach ($items as $id => $item) {
+                    $count  = self::countDocumentedPorts(PassiveDCEquipment::class, $id);
+                    $url    = self::getPageUrl(self::scope($locations_id, $floors_id, ['dgo' => $id]));
+                    $active = ($id === $active_id);
+                    $class  = 'nav-link d-flex align-items-center gap-2' . ($active ? ' active' : '');
+                    $badge  = $active ? 'bg-blue-lt' : 'bg-secondary-lt';
+
+                    echo "<li class='nav-item'>";
+                    echo "<a class='" . $class . "' href='" . htmlescape($url) . "'>";
+                    echo "<i class='ti ti-server'></i>";
+                    echo htmlescape($item->fields['name'] ?: ('#' . $id));
+                    echo "<span class='badge " . $badge . "'>" . $count . "</span>";
+                    echo "</a>";
+                    echo "</li>";
+                }
             }
             echo "</ul>";
         } elseif ($dgos !== []) {
             $elements = [];
             foreach ($dgos as $id => $item) {
-                $count         = self::countDocumentedPorts(PassiveDCEquipment::class, $id);
+                $count = self::countDocumentedPorts(PassiveDCEquipment::class, $id);
+
+                // Bloco 4a-3: a sigla do papel entra na frente do nome, para o
+                // seletor unico nao perder o agrupamento que as abas ganharam.
+                $prefix = '';
+                if ($filter_on) {
+                    $item_role = Setting::getRoleOfItem($item);
+                    if ($item_role !== null) {
+                        $prefix = Setting::getRoleLabel($item_role) . ' · ';
+                    }
+                }
+
                 $elements[$id] = sprintf(
-                    '%s — %d %s',
+                    '%s%s — %d %s',
+                    $prefix,
                     $item->fields['name'] ?: ('#' . $id),
                     $count,
                     __('documentadas', 'dgoplus')
@@ -1243,8 +1410,12 @@ class MapController
             if ($floors_id > 0) {
                 echo Html::hidden('floor', ['value' => $floors_id]);
             }
+            $selector_role = Dashboard::currentRole();
+            if ($selector_role !== null) {
+                echo Html::hidden('role', ['value' => $selector_role]);
+            }
             echo "<span class='text-muted d-flex align-items-center gap-1'>"
-                . "<i class='ti ti-server'></i> " . sprintf(__('%d DGOs nesta localização', 'dgoplus'), count($dgos))
+                . "<i class='ti ti-server'></i> " . sprintf(__('%d elementos nesta localização', 'dgoplus'), count($dgos))
                 . "</span>";
             Dropdown::showFromArray('dgo', $elements, [
                 'value'               => $active_id,
@@ -1257,14 +1428,30 @@ class MapController
         }
 
         if ($can_create) {
-            echo "<form method='post' action='" . htmlescape(self::getPageUrl()) . "' style='min-width:260px;max-width:340px'>";
+            // Bloco 4a-3: elemento novo nasce com papel ESCOLHIDO, sem padrao.
+            // Sem escolher, o POST recusa - mesma dureza do nome vazio. O papel
+            // decide o Tipo gravado (Setting::getTypeForNewItem), e e' o Tipo
+            // que decide em qual grupo de abas o elemento aparece.
+            $role_choices = [];
+            foreach (Setting::getRoles() as $role_key) {
+                $role_choices[$role_key] = Setting::getRoleLabel($role_key);
+            }
+
+            echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' style='min-width:300px;max-width:420px'>";
             echo Html::hidden('action', ['value' => 'create_dgo']);
             echo Html::hidden('locations_id', ['value' => $locations_id]);
             echo Html::hidden('floor', ['value' => $floors_id]);
-            echo "<div class='input-group input-group-sm'>";
-            echo Html::input('name', ['placeholder' => __('Nome da nova DGO', 'dgoplus')]);
+            echo "<div class='d-flex align-items-center gap-1 flex-wrap'>";
+            Dropdown::showFromArray('role', $role_choices, [
+                'width'               => '110px',
+                'display_emptychoice' => true,
+                'emptylabel'          => __('Papel', 'dgoplus'),
+            ]);
+            echo "<div class='input-group input-group-sm' style='flex:1 1 180px'>";
+            echo Html::input('name', ['placeholder' => __('Nome do novo elemento', 'dgoplus')]);
             echo "<button type='submit' name='submit_create_dgo' class='btn btn-outline-primary'>"
-                . "<i class='ti ti-plus'></i>&nbsp;" . __('Nova DGO', 'dgoplus') . "</button>";
+                . "<i class='ti ti-plus'></i>&nbsp;" . __('Novo elemento', 'dgoplus') . "</button>";
+            echo "</div>";
             echo "</div>";
             Html::closeForm();
         }
@@ -1559,7 +1746,7 @@ class MapController
             echo "<div class='d-flex gap-2 mt-3 flex-wrap'>";
 
             if ($can_add) {
-                echo "<form method='post' action='" . htmlescape(self::getPageUrl()) . "'>";
+                echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "'>";
                 echo Html::hidden('action', ['value' => 'add_tube']);
                 echo Html::hidden('itemtype', ['value' => PassiveDCEquipment::class]);
                 echo Html::hidden('items_id', ['value' => $items_id]);
@@ -1570,7 +1757,7 @@ class MapController
             }
 
             if ($can_remove) {
-                echo "<form method='post' action='" . htmlescape(self::getPageUrl()) . "'>";
+                echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "'>";
                 echo Html::hidden('action', ['value' => 'remove_tube']);
                 echo Html::hidden('itemtype', ['value' => PassiveDCEquipment::class]);
                 echo Html::hidden('items_id', ['value' => $items_id]);
@@ -1581,7 +1768,7 @@ class MapController
             }
 
             if ($can_add_col) {
-                echo "<form method='post' action='" . htmlescape(self::getPageUrl()) . "'>";
+                echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "'>";
                 echo Html::hidden('action', ['value' => 'add_column']);
                 echo Html::hidden('itemtype', ['value' => PassiveDCEquipment::class]);
                 echo Html::hidden('items_id', ['value' => $items_id]);
@@ -1595,7 +1782,7 @@ class MapController
             }
 
             if ($can_rm_col) {
-                echo "<form method='post' action='" . htmlescape(self::getPageUrl()) . "'>";
+                echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "'>";
                 echo Html::hidden('action', ['value' => 'remove_column']);
                 echo Html::hidden('itemtype', ['value' => PassiveDCEquipment::class]);
                 echo Html::hidden('items_id', ['value' => $items_id]);
@@ -1669,7 +1856,7 @@ class MapController
             return;
         }
 
-        echo "<form method='post' action='" . htmlescape(self::getPageUrl()) . "' id='dgoplus-setfloor-form'>";
+        echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' id='dgoplus-setfloor-form'>";
         echo Html::hidden('action', ['value' => 'set_floor']);
         echo Html::hidden('itemtype', ['value' => PassiveDCEquipment::class]);
         echo Html::hidden('items_id', ['value' => $items_id]);
@@ -1962,9 +2149,18 @@ class MapController
         // data-dgoplus-port-form: o JS do bloco 4a se prende a este formulario
         // para salvar por AJAX. O form continua sendo um POST normal e completo
         // - se o JS nao carregar, o botao Salvar funciona como antes.
-        echo "<form method='post' action='" . htmlescape(self::getPageUrl()) . "'"
+        // Bloco 4a-3: o endpoint leva o papel na query para as celulas que o
+        // AJAX redesenha manterem o filtro nos links (renderCell -> scope le
+        // o $_GET da requisicao AJAX, nao o da pagina).
+        $ajax_url = self::getAjaxUrl('port.php');
+        $role     = Dashboard::currentRole();
+        if ($role !== null) {
+            $ajax_url .= '?role=' . $role;
+        }
+
+        echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "'"
             . " data-dgoplus-port-form='1'"
-            . " data-dgoplus-endpoint='" . htmlescape(self::getAjaxUrl('port.php')) . "'"
+            . " data-dgoplus-endpoint='" . htmlescape($ajax_url) . "'"
             . " data-dgoplus-cell-key='" . htmlescape($tube_num . '-' . $fiber_num) . "'>";
         echo Html::hidden('action', ['value' => 'save_port']);
         echo Html::hidden('itemtype', ['value' => PassiveDCEquipment::class]);
@@ -2018,7 +2214,7 @@ class MapController
         Html::closeForm();
 
         if ($found && Session::haveRight(Port::$rightname, DELETE)) {
-            echo "<form method='post' action='" . htmlescape(self::getPageUrl()) . "' class='d-flex justify-content-end'>";
+            echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' class='d-flex justify-content-end'>";
             echo Html::hidden('action', ['value' => 'delete_port']);
             echo Html::hidden('id', ['value' => $port->getID()]);
             echo Html::hidden('items_id', ['value' => $items_id]);
