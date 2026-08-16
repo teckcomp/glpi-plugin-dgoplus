@@ -314,6 +314,15 @@ class Port extends CommonDBChild
 
         $is_deleted = $found && (int) $port->fields['is_deleted'] === 1;
 
+        // Bloco 4c: se esta porta ALIMENTA alguem, duas regras abaixo mudam.
+        // A consulta so' roda quando a linha existe - porta sem linha nao tem
+        // id para o vinculo apontar.
+        $link_row = null;
+        if ($found) {
+            $links    = Link::findByOrigins([(int) $port->getID()]);
+            $link_row = $links[(int) $port->getID()] ?? null;
+        }
+
         // Os tres estados sao exclusivos: uma porta sem acoplador nao tem
         // numero de loja. Recusar e' melhor que gravar uma celula que a grade
         // nao saberia pintar.
@@ -321,9 +330,23 @@ class Port extends CommonDBChild
             return $fail(__('Uma porta sem acoplador não pode ter nome/número de loja. Limpe o campo ou desmarque a opção.', 'dgoplus'));
         }
 
+        // Bloco 4c: porta que alimenta um destino nao pode virar "sem
+        // acoplador" - sem acoplador nao passa sinal, e o vinculo diria o
+        // contrario. Recusa dura, como a do codigo + sem acoplador acima:
+        // gravar a contradicao faria o mapa mentir em silencio (licao 14).
+        if ($no_coupler && $link_row !== null) {
+            return $fail(__('Esta porta alimenta outro elemento e não pode ficar sem acoplador. Desmonte o vínculo primeiro.', 'dgoplus'));
+        }
+
         // Nada preenchido E sem a marca de "sem acoplador" = a porta voltou a
         // ser livre. Com a marca, a linha tem que existir para guardar o estado.
-        if ($code === '' && $comment === '' && !$no_coupler) {
+        //
+        // Bloco 4c: EXCETO quando ha vinculo pendurado nela. O que mantem a
+        // linha viva passa a ser o vinculo, nao o conteudo dos campos
+        // (documentada = tem codigo OU tem vinculo) - entao esvaziar os campos
+        // de uma porta que alimenta alguem NAO a apaga: cai no caminho de
+        // gravacao abaixo e a linha fica, vazia, sustentada pelo vinculo.
+        if ($code === '' && $comment === '' && !$no_coupler && $link_row === null) {
             if ($found && !$is_deleted) {
                 Session::checkRight(self::$rightname, DELETE);
                 $port->delete(['id' => $port->getID()]);
@@ -539,6 +562,136 @@ class Port extends CommonDBChild
         }
 
         return ['ok' => true, 'error' => '', 'id' => $id];
+    }
+
+    /**
+     * Garante que a linha da porta de GRADE exista, e devolve o id dela.
+     *
+     * Existe para a PROPOSTA de vinculo (bloco 4c): a origem de um vinculo e'
+     * sempre uma porta de grade, e a celula pode estar LIVRE - sem linha no
+     * banco - na hora de propor. O applyInput nao serve para isso: a regra
+     * dele e' "campo vazio apaga a linha", e a linha criada aqui nasce vazia
+     * de proposito - o que a mantem viva e' o vinculo que sera pendurado nela
+     * (documentada = tem codigo OU tem vinculo).
+     *
+     * NAO valida os limites da grade (fileira <= tubes, coluna <= largura):
+     * quem conhece o layout e' quem propoe, e a checagem mora em
+     * Link::propose. Aqui ficam as travas de mecanica, iguais as do
+     * ensureEntry: posicao positiva, pai visivel, restauracao da lixeira e
+     * criacao idempotente.
+     *
+     * tube_num >= 1 tambem garante que a linha achada pela chave unica nunca
+     * e' uma entrada (entrada e' sempre tube_num = 0) - e por isso nao ha
+     * filtro de kind no getFromDBByCrit, exatamente como manda a licao 112.
+     *
+     * @param string $itemtype
+     * @param int    $items_id
+     * @param int    $tube_num
+     * @param int    $fiber_num
+     * @return array{ok:bool, error:string, id:int, is_no_coupler:bool}
+     */
+    public static function ensureGrid(string $itemtype, int $items_id, int $tube_num, int $fiber_num): array
+    {
+        $fail = static function (string $error): array {
+            return ['ok' => false, 'error' => $error, 'id' => 0, 'is_no_coupler' => false];
+        };
+
+        if ($itemtype === '' || $items_id <= 0 || $tube_num < 1 || $fiber_num < 1) {
+            return $fail(__('Posição inválida.', 'dgoplus'));
+        }
+
+        // Mesma trava de pai do applyInput e do ensureEntry (bloco 3m):
+        // existir, ser CommonDBTM e ser visivel para este usuario.
+        if (!class_exists($itemtype)) {
+            return $fail(__('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'));
+        }
+
+        $parent = new $itemtype();
+        if (
+            !($parent instanceof \CommonDBTM)
+            || !$parent->getFromDB($items_id)
+            || !$parent->can($items_id, READ)
+        ) {
+            return $fail(__('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'));
+        }
+
+        $port  = new self();
+        $found = $port->getFromDBByCrit([
+            'itemtype'  => $itemtype,
+            'items_id'  => $items_id,
+            'tube_num'  => $tube_num,
+            'fiber_num' => $fiber_num,
+        ]);
+
+        if ($found) {
+            if ((int) $port->fields['is_deleted'] === 1) {
+                // Bloco 4c-2: posicao na lixeira e' posicao LIVRE para a tela,
+                // entao ela volta LIMPA. Restaurar com o conteudo antigo faria
+                // ressuscitar codigo e marca de acoplador que o usuario ja
+                // tinha apagado - e a porta reapareceria vermelha na grade por
+                // causa de uma proposta que ele acabou de fazer.
+                Session::checkRight(self::$rightname, CREATE);
+                $port->restore(['id' => $port->getID()]);
+                $port->update([
+                    'id'            => $port->getID(),
+                    'kind'          => self::KIND_GRID,
+                    'code'          => '',
+                    'comment'       => '',
+                    'is_no_coupler' => 0,
+                ]);
+
+                return ['ok' => true, 'error' => '', 'id' => (int) $port->getID(), 'is_no_coupler' => false];
+            }
+
+            return [
+                'ok'            => true,
+                'error'         => '',
+                'id'            => (int) $port->getID(),
+                'is_no_coupler' => (int) ($port->fields['is_no_coupler'] ?? 0) === 1,
+            ];
+        }
+
+        Session::checkRight(self::$rightname, CREATE);
+
+        $id = (int) $port->add([
+            'itemtype'      => $itemtype,
+            'items_id'      => $items_id,
+            'tube_num'      => $tube_num,
+            'fiber_num'     => $fiber_num,
+            'kind'          => self::KIND_GRID,
+            'code'          => '',
+            'comment'       => '',
+            'is_no_coupler' => 0,
+        ]);
+
+        if ($id <= 0) {
+            return $fail(__('Não foi possível criar a porta de origem.', 'dgoplus'));
+        }
+
+        return ['ok' => true, 'error' => '', 'id' => $id, 'is_no_coupler' => false];
+    }
+
+    /**
+     * Bloqueia a lixeira de uma porta que participa de vinculo. Bloco 4c.
+     *
+     * E' o unico gancho que cobre TODOS os caminhos de exclusao suave - o
+     * botao "Excluir porta" do painel, a acao em massa da lista nativa
+     * (front/port.php) e qualquer chamador futuro de delete(). O core chama
+     * pre_deleteItem() dentro de CommonDBTM::delete (11.0.6:2176) e false
+     * ABORTA a exclusao - sem mensagem, e por isso o caminho da tela
+     * (MapController::actionDeletePort) checa antes e explica; aqui e' a rede
+     * de seguranca dos caminhos sem tela.
+     *
+     * NAO interfere na purga do elemento: o PurgeCleaner apaga por SQL direto
+     * (nunca por delete()), e apaga os vinculos ANTES das portas.
+     * NAO interfere na faxina de Link::removeAndClean: la o vinculo ja saiu
+     * do banco quando as portas sao lixeiradas, e idsTouchingPorts devolve [].
+     *
+     * @return bool
+     */
+    public function pre_deleteItem()
+    {
+        return Link::idsTouchingPorts([(int) $this->getID()]) === [];
     }
 
     /**

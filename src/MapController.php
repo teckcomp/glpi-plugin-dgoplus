@@ -74,6 +74,7 @@ class MapController
         $edit_key     = $_GET['edit'] ?? '';
         $search       = trim((string) ($_GET['q'] ?? ''));
         $floors_id    = (int) ($_GET['floor'] ?? 0);
+        $entry_slot   = (int) ($_GET['entry'] ?? 0);
 
         // Piso que nao pertence a localizacao escolhida e' descartado: e' o que
         // faz "trocar de localizacao limpa o piso" valer inclusive para URL
@@ -117,7 +118,7 @@ class MapController
 
         $dgo = $dgos[$dgo_id];
 
-        self::displayGrid($dgo, $locations_id, $edit_key, $search, $floors_id);
+        self::displayGrid($dgo, $locations_id, $edit_key, $search, $floors_id, $entry_slot);
         self::displayDocumentsManager($dgo, $locations_id, $edit_key, $floors_id);
         self::displayEditPanel($dgo, $locations_id, $edit_key, $floors_id);
     }
@@ -363,6 +364,18 @@ class MapController
                 break;
             case 'save_entry_obs':
                 self::actionSaveEntryObs();
+                break;
+            case 'propose_link':
+                self::actionProposeLink();
+                break;
+            case 'confirm_link':
+                self::actionConfirmLink();
+                break;
+            case 'refuse_link':
+                self::actionRefuseLink();
+                break;
+            case 'dismantle_link':
+                self::actionDismantleLink();
                 break;
         }
     }
@@ -922,6 +935,130 @@ class MapController
     }
 
     /**
+     * Propoe um vinculo a partir da celula aberta no painel. Bloco 4c.
+     *
+     * A regra inteira (hierarquia, limites da grade, lados ja ocupados) mora
+     * em Link::propose - aqui fica so' o que e' de POST: mensagem na sessao e
+     * redirect mantendo o painel aberto na MESMA celula, para o resultado (a
+     * secao Alimenta redesenhada) aparecer onde o clique aconteceu.
+     *
+     * dst_itemtype nao vem do POST de proposito: o seletor so' lista
+     * PassiveDCEquipment, e aceitar itemtype forjado abriria a porta que a
+     * trava de pai fecha.
+     *
+     * @return void
+     */
+    private static function actionProposeLink(): void
+    {
+        $items_id     = (int) ($_POST['items_id'] ?? 0);
+        $locations_id = (int) ($_POST['locations_id'] ?? 0);
+        $floors_id    = (int) ($_POST['floor'] ?? 0);
+        $tube_num     = (int) ($_POST['tube_num'] ?? 0);
+        $fiber_num    = (int) ($_POST['fiber_num'] ?? 0);
+
+        $result = Link::propose([
+            'itemtype'     => $_POST['itemtype'] ?? PassiveDCEquipment::class,
+            'items_id'     => $items_id,
+            'tube_num'     => $tube_num,
+            'fiber_num'    => $fiber_num,
+            'dst_itemtype' => PassiveDCEquipment::class,
+            'dst_items_id' => $_POST['dst_items_id'] ?? 0,
+            'dst_slot'     => $_POST['dst_slot'] ?? 0,
+        ]);
+
+        if (!$result['ok']) {
+            Session::addMessageAfterRedirect($result['error'], false, ERROR);
+        }
+
+        self::redirectTo(self::scope($locations_id, $floors_id, [
+            'dgo'  => $items_id,
+            'edit' => $tube_num . '-' . $fiber_num,
+        ]));
+    }
+
+    /**
+     * Confirma um vinculo pendente, a partir do card da entrada. Bloco 4c.
+     *
+     * O 'entry' volta na URL para o card continuar aberto mostrando o estado
+     * novo (borda solida, quem confirmou).
+     *
+     * @return void
+     */
+    private static function actionConfirmLink(): void
+    {
+        $items_id     = (int) ($_POST['items_id'] ?? 0);
+        $locations_id = (int) ($_POST['locations_id'] ?? 0);
+        $floors_id    = (int) ($_POST['floor'] ?? 0);
+        $entry_slot   = (int) ($_POST['entry'] ?? 0);
+
+        $result = Link::confirm((int) ($_POST['link_id'] ?? 0));
+
+        if (!$result['ok']) {
+            Session::addMessageAfterRedirect($result['error'], false, ERROR);
+        }
+
+        $params = self::scope($locations_id, $floors_id, ['dgo' => $items_id]);
+        if ($entry_slot > 0) {
+            $params['entry'] = $entry_slot;
+        }
+
+        self::redirectTo($params);
+    }
+
+    /**
+     * Recusa um vinculo pendente, a partir do card da entrada. Bloco 4c.
+     *
+     * SEM 'entry' no redirect, de proposito: a recusa apaga a linha, o slot
+     * volta a ser livre e caixa livre nao tem card para abrir.
+     *
+     * @return void
+     */
+    private static function actionRefuseLink(): void
+    {
+        $items_id     = (int) ($_POST['items_id'] ?? 0);
+        $locations_id = (int) ($_POST['locations_id'] ?? 0);
+        $floors_id    = (int) ($_POST['floor'] ?? 0);
+
+        $result = Link::refuse((int) ($_POST['link_id'] ?? 0));
+
+        if (!$result['ok']) {
+            Session::addMessageAfterRedirect($result['error'], false, ERROR);
+        }
+
+        self::redirectTo(self::scope($locations_id, $floors_id, ['dgo' => $items_id]));
+    }
+
+    /**
+     * Desmonta um vinculo (pendente ou confirmado). Bloco 4c.
+     *
+     * Pode vir dos DOIS lados: do card da entrada (destino) e da secao
+     * Alimenta do painel da porta (origem). O 'edit' preserva o painel aberto
+     * quando o clique veio da origem; vindo do destino ele chega vazio.
+     *
+     * @return void
+     */
+    private static function actionDismantleLink(): void
+    {
+        $items_id     = (int) ($_POST['items_id'] ?? 0);
+        $locations_id = (int) ($_POST['locations_id'] ?? 0);
+        $floors_id    = (int) ($_POST['floor'] ?? 0);
+        $edit_key     = (string) ($_POST['edit'] ?? '');
+
+        $result = Link::dismantle((int) ($_POST['link_id'] ?? 0));
+
+        if (!$result['ok']) {
+            Session::addMessageAfterRedirect($result['error'], false, ERROR);
+        }
+
+        $params = self::scope($locations_id, $floors_id, ['dgo' => $items_id]);
+        if ($edit_key !== '') {
+            $params['edit'] = $edit_key;
+        }
+
+        self::redirectTo($params);
+    }
+
+    /**
      * @return void
      */
     private static function actionDeletePort(): void
@@ -935,7 +1072,20 @@ class MapController
 
         $port = new Port();
         if ($port->getFromDB($id)) {
-            $port->delete(['id' => $id]);
+            // Bloco 4c: porta que participa de vinculo (qualquer lado) nao
+            // vai para a lixeira - o vinculo apontaria para linha morta e o
+            // mapa mentiria em silencio. O Port::pre_deleteItem ja bloquearia
+            // o delete(), mas sem mensagem; aqui a tela EXPLICA (recusa dura,
+            // como nos botoes de coluna).
+            if (Link::idsTouchingPorts([$id]) !== []) {
+                Session::addMessageAfterRedirect(
+                    __('Esta porta participa de um vínculo. Desmonte o vínculo antes de excluir a porta.', 'dgoplus'),
+                    false,
+                    ERROR
+                );
+            } else {
+                $port->delete(['id' => $id]);
+            }
         }
 
         self::redirectTo(self::scope($locations_id, $floors_id, ['dgo' => $items_id]));
@@ -1532,9 +1682,9 @@ class MapController
      */
     private static function gridLegend(): string
     {
-        $swatch = static function (string $bg, string $border): string {
+        $swatch = static function (string $bg, string $border, bool $dashed = false): string {
             return "<span style='display:inline-block;width:10px;height:10px;border-radius:3px;"
-                . "background:" . $bg . ";border:1px solid " . $border . "'></span>";
+                . "background:" . $bg . ";border:1px " . ($dashed ? 'dashed' : 'solid') . " " . $border . "'></span>";
         };
 
         return "<div class='d-flex align-items-center gap-3 flex-wrap text-muted small'>"
@@ -1544,6 +1694,8 @@ class MapController
             . $swatch(self::CELL_FREE_BG, self::CELL_FREE_BORDER) . ' ' . __('Livre', 'dgoplus') . "</span>"
             . "<span class='d-flex align-items-center gap-1'>"
             . $swatch(self::CELL_NC_BG, self::CELL_NC_BORDER) . ' ' . __('Sem acoplador', 'dgoplus') . "</span>"
+            . "<span class='d-flex align-items-center gap-1'>"
+            . $swatch(self::CELL_DOC_BG, self::CELL_DOC_BORDER, true) . ' ' . __('Vínculo pendente', 'dgoplus') . "</span>"
             . "<span class='d-flex align-items-center gap-1'>"
             . $swatch('transparent', self::MATCH_COLOR) . ' ' . __('Resultado da busca', 'dgoplus') . "</span>"
             . "</div>";
@@ -1565,6 +1717,7 @@ class MapController
      * @param int         $f         Coluna (fibra)
      * @param array|null  $row       Linha da porta, ou null se a posicao esta livre
      * @param string      $edit_key  Posicao aberta no painel ("t-f")
+     * @param array|null  $link      Vinculo que SAI desta porta (bloco 4c), ou null
      * @param string      $search    Termo da busca, para o destaque ambar
      * @return string
      */
@@ -1577,6 +1730,7 @@ class MapController
         ?array $row,
         string $edit_key,
         int $fibers_per_tube,
+        ?array $link = null,
         string $search = ''
     ): string {
         $key    = $t . '-' . $f;
@@ -1584,6 +1738,17 @@ class MapController
         $no_cpl = $exists && (int) ($row['is_no_coupler'] ?? 0) === 1;
         $filled = $exists && !$no_cpl;
         $active = ($key === $edit_key);
+
+        // Bloco 4c: pendente = tracejada, mesma linguagem visual da faixa
+        // E1-E4 (decisao fechada da Fase 4). Confirmado fica com a borda
+        // solida de documentada - o vinculo em si mora no title e na linha do
+        // codigo quando ela esta vazia.
+        $pending_link = $link !== null
+            && (string) ($link['status'] ?? '') !== Link::STATUS_CONFIRMED;
+
+        $dst = $link !== null
+            ? Link::describeDestination((int) ($link['plugin_dgoplus_ports_id_dst'] ?? 0))
+            : null;
 
         $is_match = false;
         if ($search !== '' && $exists) {
@@ -1600,7 +1765,7 @@ class MapController
             $border = '1px solid ' . self::CELL_NC_BORDER;
         } elseif ($filled) {
             $bg     = self::CELL_DOC_BG;
-            $border = '1px solid ' . self::CELL_DOC_BORDER;
+            $border = ($pending_link ? '1px dashed ' : '1px solid ') . self::CELL_DOC_BORDER;
         } else {
             $bg     = self::CELL_FREE_BG;
             $border = '1px solid ' . self::CELL_FREE_BORDER;
@@ -1630,8 +1795,22 @@ class MapController
                 $title .= ': ' . $row['comment'];
             }
         } elseif ($filled) {
-            $title .= ' — ' . trim(
-                ($row['code'] ?? '') . ' ' . ($row['comment'] ?? '')
+            // Bloco 4c: porta vinculada pode ter os campos vazios, e ai o
+            // trim devolve '' - o travessao nao entra pendurado no nada.
+            $detail = trim(($row['code'] ?? '') . ' ' . ($row['comment'] ?? ''));
+            if ($detail !== '') {
+                $title .= ' — ' . $detail;
+            }
+        }
+
+        // Bloco 4c: quem esta celula alimenta, e em que pe o vinculo esta.
+        if ($dst !== null && $dst['ok']) {
+            $title .= ' — ' . sprintf(
+                $pending_link
+                    ? __('proposta: alimentar %1$s de %2$s (aguardando confirmação)', 'dgoplus')
+                    : __('alimenta %1$s de %2$s', 'dgoplus'),
+                $dst['label'],
+                $dst['item']
             );
         }
 
@@ -1658,8 +1837,14 @@ class MapController
             $html .= "<span class='d-block text-truncate text-muted' style='font-size:9.5px'>"
                 . htmlescape((string) ($row['comment'] ?? '')) . "&nbsp;</span>";
         } elseif ($filled) {
+            // Bloco 4c: porta vinculada sem numero de loja mostra PARA ONDE
+            // vai ("→ E1") em vez do traco de vazio - e' o vinculo que a
+            // documenta.
+            $code_line = $row['code'] ?: (
+                $dst !== null && $dst['ok'] ? '→ ' . $dst['label'] : '—'
+            );
             $html .= "<span class='d-block text-truncate' style='font-size:11px'><strong>"
-                . htmlescape($row['code'] ?: '—') . "</strong></span>";
+                . htmlescape($code_line) . "</strong></span>";
             $html .= "<span class='d-block text-truncate text-muted' style='font-size:9.5px'>"
                 . htmlescape((string) ($row['comment'] ?? '')) . "&nbsp;</span>";
         } else {
@@ -1706,7 +1891,7 @@ class MapController
      * @param int                $floors_id
      * @return void
      */
-    private static function displayGrid(PassiveDCEquipment $dgo, int $locations_id, string $edit_key, string $search = '', int $floors_id = 0): void
+    private static function displayGrid(PassiveDCEquipment $dgo, int $locations_id, string $edit_key, string $search = '', int $floors_id = 0, int $entry_slot = 0): void
     {
         $items_id = (int) $dgo->getID();
         $layout   = Panel::getLayoutForItem($dgo);
@@ -1722,6 +1907,16 @@ class MapController
         foreach ($rows as $row) {
             $byKey[$row['tube_num'] . '-' . $row['fiber_num']] = $row;
         }
+
+        // Bloco 4c: vinculos que SAEM das portas desta grade, numa consulta
+        // so' - nunca uma por celula. A celula de origem ganha a marca
+        // (tracejada em pendente) e o title diz quem ela alimenta.
+        $row_ids = [];
+        foreach ($rows as $row) {
+            $row_ids[] = (int) $row['id'];
+        }
+
+        $origin_links = Link::findByOrigins($row_ids);
 
         $capacity = $layout['tubes'] * $layout['fibers_per_tube'];
 
@@ -1762,8 +1957,12 @@ class MapController
         // nao couber - a quebra planejada dos 1000px.
         echo "<div class='d-flex align-items-end gap-3 flex-wrap mb-3'>";
         self::displayFloorAssignment($dgo, $locations_id, $floors_id);
-        self::displayEntryStrip($dgo, $locations_id, $floors_id, $edit_key);
+        self::displayEntryStrip($dgo, $locations_id, $floors_id, $edit_key, $entry_slot);
         echo "</div>";
+
+        // Bloco 4c: card da entrada aberta (?entry=N), LOGO ABAIXO da faixa -
+        // posicao literal do desenho aprovado. Sem slot aberto, nao imprime nada.
+        self::displayEntryCard($dgo, $locations_id, $floors_id, $edit_key, $entry_slot);
 
         echo "<div style='overflow-x:auto'>";
 
@@ -1773,7 +1972,8 @@ class MapController
                 . "<strong>F" . $t . "</strong></div>";
 
             for ($f = 1; $f <= $layout['fibers_per_tube']; $f++) {
-                $key = $t . '-' . $f;
+                $key    = $t . '-' . $f;
+                $row_at = $byKey[$key] ?? null;
 
                 echo self::renderCell(
                     $items_id,
@@ -1781,9 +1981,10 @@ class MapController
                     $floors_id,
                     $t,
                     $f,
-                    $byKey[$key] ?? null,
+                    $row_at,
                     $edit_key,
                     $layout['fibers_per_tube'],
+                    $row_at !== null ? ($origin_links[(int) $row_at['id']] ?? null) : null,
                     $search
                 );
             }
@@ -1959,7 +2160,8 @@ class MapController
         PassiveDCEquipment $dgo,
         int $locations_id,
         int $floors_id,
-        string $edit_key
+        string $edit_key,
+        int $entry_slot = 0
     ): void {
         $role = Setting::getRoleOfItem($dgo);
 
@@ -1983,7 +2185,25 @@ class MapController
         echo "<div class='d-flex align-items-center gap-2 flex-wrap' style='flex:1 1 auto;min-width:0'>";
 
         for ($slot = 1; $slot <= Port::MAX_ENTRIES; $slot++) {
-            echo self::renderEntryBox($slot, $entries[$slot] ?? null, $links);
+            $entry = $entries[$slot] ?? null;
+            $link  = $entry !== null ? ($links[(int) $entry['id']] ?? null) : null;
+
+            // Bloco 4c-2: a caixa ALTERNA o card. Aberta, o link dela aponta
+            // para a URL SEM o 'entry' - clicar de novo fecha. Sem isto o card
+            // ficava fixo na tela e nao havia caminho de volta pela interface.
+            $box_url = '';
+            if ($link !== null) {
+                $extra = ['dgo' => $items_id];
+                if ($slot !== $entry_slot) {
+                    $extra['entry'] = $slot;
+                }
+                if ($edit_key !== '') {
+                    $extra['edit'] = $edit_key;
+                }
+                $box_url = self::getPageUrl(self::scope($locations_id, $floors_id, $extra));
+            }
+
+            echo self::renderEntryBox($slot, $entry, $links, $box_url, $slot === $entry_slot);
         }
 
         self::displayEntryObs($dgo, $locations_id, $floors_id, $edit_key);
@@ -2002,13 +2222,25 @@ class MapController
      * fechada da Fase 4. Pendente ja ocupa a entrada, entao pintar de "livre"
      * seria mentira e pintar de "ocupada" esconderia que falta confirmar.
      *
+     * Caixa com vinculo e' um LINK para o card (?entry=N) - bloco 4c; caixa
+     * livre continua um div inerte. A caixa aberta ganha a mesma marca de
+     * "aberto" das celulas da grade: box-shadow INSET, nunca outline
+     * (licao 27 - o outline seria cortado pelo overflow do container).
+     *
      * @param int        $slot
-     * @param array|null $entry linha da porta de entrada, ou null se nem existe
-     * @param array      $links vinculos indexados por porta de destino
+     * @param array|null $entry   linha da porta de entrada, ou null se nem existe
+     * @param array      $links   vinculos indexados por porta de destino
+     * @param string     $box_url URL do card; vazia = caixa nao clicavel
+     * @param bool       $open    e' a entrada aberta no card?
      * @return string
      */
-    private static function renderEntryBox(int $slot, ?array $entry, array $links): string
-    {
+    private static function renderEntryBox(
+        int $slot,
+        ?array $entry,
+        array $links,
+        string $box_url = '',
+        bool $open = false
+    ): string {
         $label = Port::formatEntryLabel($slot);
 
         $state   = __('livre', 'dgoplus');
@@ -2046,13 +2278,21 @@ class MapController
         $style = "min-width:56px;text-align:center;padding:3px 6px;border-radius:6px;"
             . "background:" . $bg . ";border:" . $border . ";line-height:1.25";
 
-        $html  = "<div style='" . $style . "' title='" . htmlescape($title) . "'>";
-        $html .= "<div style='font-size:11.5px;font-weight:500'>" . htmlescape($label) . "</div>";
-        $html .= "<div class='" . ($muted ? 'text-muted' : '') . "' style='font-size:10.5px'>"
-            . htmlescape($state) . "</div>";
-        $html .= "</div>";
+        if ($open) {
+            $style .= ";box-shadow:inset 0 0 0 2px " . self::ACCENT;
+        }
 
-        return $html;
+        $inner  = "<div style='font-size:11.5px;font-weight:500'>" . htmlescape($label) . "</div>";
+        $inner .= "<div class='" . ($muted ? 'text-muted' : '') . "' style='font-size:10.5px'>"
+            . htmlescape($state) . "</div>";
+
+        if ($box_url !== '') {
+            return "<a href='" . htmlescape($box_url) . "#dgoplus-entry-card' class='text-decoration-none'"
+                . " style='" . $style . ";color:inherit;display:block' title='" . htmlescape($title) . "'>"
+                . $inner . "</a>";
+        }
+
+        return "<div style='" . $style . "' title='" . htmlescape($title) . "'>" . $inner . "</div>";
     }
 
     /**
@@ -2114,6 +2354,169 @@ class MapController
 
         echo Html::submit(__('Salvar', 'dgoplus'), ['class' => 'btn btn-sm btn-outline-primary']);
         Html::closeForm();
+    }
+
+    /**
+     * Card da entrada aberta (?entry=N): quem alimenta, quem propos e os
+     * botoes do fluxo. Bloco 4c.
+     *
+     * Renderiza NADA quando o slot nao tem vinculo: caixa livre nao e'
+     * clicavel, entao chegar aqui com slot livre e' URL editada a mao - e
+     * responder em silencio e' melhor que inventar um card vazio.
+     *
+     * Confirmar e Recusar pedem UPDATE (as duas metades da mesma resposta ao
+     * proponente); Desmontar pede DELETE (destroi documentacao estabelecida).
+     * Autoconfirmacao e' permitida: o botao nao distingue quem propos - o
+     * registro de QUEM confirmou (users_id_confirmer) e' a auditoria.
+     *
+     * @param PassiveDCEquipment $dgo
+     * @param int                $locations_id
+     * @param int                $floors_id
+     * @param string             $edit_key
+     * @param int                $entry_slot
+     * @return void
+     */
+    private static function displayEntryCard(
+        PassiveDCEquipment $dgo,
+        int $locations_id,
+        int $floors_id,
+        string $edit_key,
+        int $entry_slot
+    ): void {
+        if ($entry_slot < 1 || $entry_slot > Port::MAX_ENTRIES) {
+            return;
+        }
+
+        $role = Setting::getRoleOfItem($dgo);
+        if ($role !== Setting::ROLE_DGO && $role !== Setting::ROLE_CTO) {
+            return;
+        }
+
+        $items_id = (int) $dgo->getID();
+        $entries  = Port::entriesForItem(PassiveDCEquipment::class, $items_id);
+        $entry    = $entries[$entry_slot] ?? null;
+
+        if ($entry === null) {
+            return;
+        }
+
+        $links = Link::findByDestinations([(int) $entry['id']]);
+        $link  = $links[(int) $entry['id']] ?? null;
+
+        if ($link === null) {
+            return;
+        }
+
+        $pending = (string) ($link['status'] ?? '') !== Link::STATUS_CONFIRMED;
+        $origin  = Link::describeOrigin((int) $link['plugin_dgoplus_ports_id_src']);
+        $label   = Port::formatEntryLabel($entry_slot);
+
+        // Link para abrir o elemento de ORIGEM no mapa: quem confirma quer
+        // conferir de onde vem antes de clicar. getUrlForDgo ja e' o ponto
+        // unico dessa URL (licao 13).
+        $origin_url = '';
+        $src_port   = new Port();
+        if ($origin['ok'] && $src_port->getFromDB((int) $link['plugin_dgoplus_ports_id_src'])) {
+            $src_item = new PassiveDCEquipment();
+            if ($src_item->getFromDB((int) ($src_port->fields['items_id'] ?? 0))) {
+                $origin_url = self::getUrlForDgo($src_item);
+            }
+        }
+
+        echo "<div id='dgoplus-entry-card' class='card mb-3' style='max-width:520px'>";
+
+        echo "<div class='card-header d-flex align-items-center justify-content-between gap-2'>";
+        echo "<h3 class='card-title mb-0'>" . sprintf(__('Entrada %s', 'dgoplus'), htmlescape($label)) . "</h3>";
+        echo "<span class='d-flex align-items-center gap-2'>";
+        echo $pending
+            ? "<span class='badge bg-yellow-lt'>" . __('pendente', 'dgoplus') . "</span>"
+            : "<span class='badge bg-green-lt'>" . __('confirmado', 'dgoplus') . "</span>";
+
+        // Bloco 4c-2: fechar o card. Mesma URL da tela sem o 'entry' - quem
+        // rolou a pagina nao precisa voltar ate a faixa para recolher.
+        $close_extra = ['dgo' => $items_id];
+        if ($edit_key !== '') {
+            $close_extra['edit'] = $edit_key;
+        }
+        echo "<a href='" . htmlescape(self::getPageUrl(self::scope($locations_id, $floors_id, $close_extra)))
+            . "' class='text-muted text-decoration-none' title='" . htmlescape(__('Fechar', 'dgoplus')) . "'"
+            . " aria-label='" . htmlescape(__('Fechar', 'dgoplus')) . "'>&times;</a>";
+        echo "</span>";
+        echo "</div>";
+
+        echo "<div class='card-body py-2'>";
+
+        echo "<div class='d-flex justify-content-between gap-3 py-1'>";
+        echo "<span class='text-muted'>" . __('Alimentada por', 'dgoplus') . "</span>";
+        if ($origin['ok']) {
+            $item_html = $origin_url !== ''
+                ? "<a href='" . htmlescape($origin_url) . "'>" . htmlescape($origin['item']) . "</a>"
+                : htmlescape($origin['item']);
+            echo "<span>" . $item_html . " · " . htmlescape($origin['label']) . "</span>";
+        } else {
+            echo "<span class='text-muted'>" . __('origem removida', 'dgoplus') . "</span>";
+        }
+        echo "</div>";
+
+        echo "<div class='d-flex justify-content-between gap-3 py-1'>";
+        echo "<span class='text-muted'>" . __('Proposto por', 'dgoplus') . "</span>";
+        echo "<span>" . htmlescape((string) getUserName((int) ($link['users_id_proposer'] ?? 0)))
+            . " <span class='text-muted'>· " . htmlescape(Html::convDateTime($link['date_creation'] ?? null)) . "</span></span>";
+        echo "</div>";
+
+        if (!$pending) {
+            echo "<div class='d-flex justify-content-between gap-3 py-1'>";
+            echo "<span class='text-muted'>" . __('Confirmado por', 'dgoplus') . "</span>";
+            echo "<span>" . htmlescape((string) getUserName((int) ($link['users_id_confirmer'] ?? 0))) . "</span>";
+            echo "</div>";
+        }
+
+        $can_respond = Session::haveRight(Port::$rightname, UPDATE);
+        $can_break   = Session::haveRight(Port::$rightname, DELETE);
+
+        if ($pending && $can_respond) {
+            echo "<div class='d-flex gap-2 mt-2'>";
+
+            echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "'>";
+            echo Html::hidden('action', ['value' => 'confirm_link']);
+            echo Html::hidden('link_id', ['value' => (int) $link['id']]);
+            echo Html::hidden('items_id', ['value' => $items_id]);
+            echo Html::hidden('locations_id', ['value' => $locations_id]);
+            echo Html::hidden('floor', ['value' => $floors_id]);
+            echo Html::hidden('entry', ['value' => $entry_slot]);
+            echo Html::submit(__('Confirmar', 'dgoplus'), ['class' => 'btn btn-sm btn-primary']);
+            Html::closeForm();
+
+            echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "'>";
+            echo Html::hidden('action', ['value' => 'refuse_link']);
+            echo Html::hidden('link_id', ['value' => (int) $link['id']]);
+            echo Html::hidden('items_id', ['value' => $items_id]);
+            echo Html::hidden('locations_id', ['value' => $locations_id]);
+            echo Html::hidden('floor', ['value' => $floors_id]);
+            echo Html::submit(__('Recusar', 'dgoplus'), ['class' => 'btn btn-sm btn-outline-danger']);
+            Html::closeForm();
+
+            echo "</div>";
+            echo "<div class='form-hint mt-1'>"
+                . htmlescape(__('Recusar apaga a proposta e libera a entrada e a porta de origem (se vazia).', 'dgoplus'))
+                . "</div>";
+        }
+
+        if (!$pending && $can_break) {
+            echo "<div class='d-flex mt-2'>";
+            echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "'>";
+            echo Html::hidden('action', ['value' => 'dismantle_link']);
+            echo Html::hidden('link_id', ['value' => (int) $link['id']]);
+            echo Html::hidden('items_id', ['value' => $items_id]);
+            echo Html::hidden('locations_id', ['value' => $locations_id]);
+            echo Html::hidden('floor', ['value' => $floors_id]);
+            echo Html::submit(__('Desmontar vínculo', 'dgoplus'), ['class' => 'btn btn-sm btn-outline-danger']);
+            Html::closeForm();
+            echo "</div>";
+        }
+
+        echo "</div>"; // card-body
+        echo "</div>"; // card
     }
 
     /**
@@ -2455,6 +2858,18 @@ class MapController
 
         Html::closeForm();
 
+        // Bloco 4c: secao "Alimenta" - decisao aprovada: a proposta nasce
+        // AQUI, no painel da porta de origem.
+        self::displayFeedSection(
+            $dgo,
+            $locations_id,
+            $floors_id,
+            $tube_num,
+            $fiber_num,
+            $found ? (int) $port->getID() : 0,
+            $no_coupler
+        );
+
         if ($found && Session::haveRight(Port::$rightname, DELETE)) {
             echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' class='d-flex justify-content-end'>";
             echo Html::hidden('action', ['value' => 'delete_port']);
@@ -2471,5 +2886,224 @@ class MapController
 
         echo "</div>"; // card-body
         echo "</div>"; // card
+    }
+
+    /**
+     * Secao "Alimenta" do painel da porta. Bloco 4c.
+     *
+     * So' aparece quando o elemento tem papel E existe papel ABAIXO dele na
+     * hierarquia: DIO e DGO alimentam; CTO e' a ponta - o que sai dela vai
+     * para o cliente, fora do escopo do mapa. Papel novo no registro
+     * (Setting::ROLES) entra aqui sozinho, sem papel escrito a mao.
+     *
+     * Tres estados:
+     *  - a porta ja alimenta alguem: destino + status + Desmontar;
+     *  - sem vinculo e usuario com CREATE: formulario de proposta
+     *    (elemento -> entrada, decisao aprovada dos dois campos);
+     *  - sem direito ou porta sem acoplador: uma linha explicando o porque -
+     *    secao que some sem explicacao parece defeito (licao 16).
+     *
+     * O seletor de entrada imprime E1-E4 SEMPRE habilitadas: quem desabilita
+     * as ocupadas e' o JS (dgoplus.js), lendo o JSON embutido abaixo. Sem JS
+     * o formulario continua valido - o servidor recusa entrada ocupada com
+     * mensagem amigavel (Link::propose), que e' a unica validacao que conta.
+     *
+     * @param PassiveDCEquipment $dgo
+     * @param int                $locations_id
+     * @param int                $floors_id
+     * @param int                $tube_num
+     * @param int                $fiber_num
+     * @param int                $port_id  id da linha da porta, ou 0 se a celula esta livre
+     * @param bool               $no_coupler
+     * @return void
+     */
+    private static function displayFeedSection(
+        PassiveDCEquipment $dgo,
+        int $locations_id,
+        int $floors_id,
+        int $tube_num,
+        int $fiber_num,
+        int $port_id,
+        bool $no_coupler
+    ): void {
+        $role  = Setting::getRoleOfItem($dgo);
+        $roles = Setting::getRoles();
+        $pos   = $role !== null ? array_search($role, $roles, true) : false;
+
+        if ($pos === false) {
+            return;
+        }
+
+        $below = array_slice($roles, (int) $pos + 1);
+        if ($below === []) {
+            return;
+        }
+
+        $items_id = (int) $dgo->getID();
+        $edit_key = $tube_num . '-' . $fiber_num;
+
+        $link = null;
+        if ($port_id > 0) {
+            $links = Link::findByOrigins([$port_id]);
+            $link  = $links[$port_id] ?? null;
+        }
+
+        echo "<div class='mt-3 pt-3 border-top'>";
+        echo "<div class='d-flex align-items-center gap-2 mb-2'>";
+        echo "<i class='ti ti-plug'></i><strong>" . __('Alimenta', 'dgoplus') . "</strong>";
+        echo "</div>";
+
+        if ($link !== null) {
+            $pending = (string) ($link['status'] ?? '') !== Link::STATUS_CONFIRMED;
+            $dst     = Link::describeDestination((int) ($link['plugin_dgoplus_ports_id_dst'] ?? 0));
+
+            echo "<div class='d-flex align-items-center gap-2 flex-wrap'>";
+            echo "<span>" . sprintf(
+                __('%1$s de %2$s', 'dgoplus'),
+                htmlescape($dst['ok'] ? $dst['label'] : '?'),
+                htmlescape($dst['ok'] ? $dst['item'] : __('destino removido', 'dgoplus'))
+            ) . "</span>";
+            echo $pending
+                ? "<span class='badge bg-yellow-lt'>" . __('pendente', 'dgoplus') . "</span>"
+                : "<span class='badge bg-green-lt'>" . __('confirmado', 'dgoplus') . "</span>";
+
+            if (Session::haveRight(Port::$rightname, DELETE)) {
+                echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' class='ms-auto'>";
+                echo Html::hidden('action', ['value' => 'dismantle_link']);
+                echo Html::hidden('link_id', ['value' => (int) $link['id']]);
+                echo Html::hidden('items_id', ['value' => $items_id]);
+                echo Html::hidden('locations_id', ['value' => $locations_id]);
+                echo Html::hidden('floor', ['value' => $floors_id]);
+                echo Html::hidden('edit', ['value' => $edit_key]);
+                echo Html::submit(__('Desmontar vínculo', 'dgoplus'), ['class' => 'btn btn-sm btn-outline-danger']);
+                Html::closeForm();
+            }
+
+            echo "</div>";
+            echo "<div class='form-hint mt-1'>"
+                . htmlescape($pending
+                    ? __('Aguardando confirmação no elemento de destino. A porta já conta como ocupada.', 'dgoplus')
+                    : __('Vínculo confirmado. Desmontar remove o vínculo dos dois lados.', 'dgoplus'))
+                . "</div>";
+            echo "</div>";
+            return;
+        }
+
+        if (!Session::haveRight(Port::$rightname, CREATE)) {
+            echo "<div class='form-hint'>"
+                . htmlescape(__('Sem vínculo. Propor um vínculo exige permissão de criação.', 'dgoplus'))
+                . "</div>";
+            echo "</div>";
+            return;
+        }
+
+        if ($no_coupler) {
+            echo "<div class='form-hint'>"
+                . htmlescape(__('Porta sem acoplador não pode alimentar. Desmarque a opção para propor um vínculo.', 'dgoplus'))
+                . "</div>";
+            echo "</div>";
+            return;
+        }
+
+        // Candidatos: elementos com papel ABAIXO deste, na entidade, fora da
+        // lixeira. Papel sem Tipo mapeado nao contribui (getTypesForRole
+        // devolve []). A uniao e' por id de Tipo, nunca por nome (licao 32).
+        $type_ids = [];
+        foreach ($below as $below_role) {
+            foreach (Setting::getTypesForRole($below_role) as $tid) {
+                $type_ids[] = (int) $tid;
+            }
+        }
+        $type_ids = array_values(array_unique($type_ids));
+
+        $candidates = [];
+        if ($type_ids !== []) {
+            $element    = new PassiveDCEquipment();
+            $criteria   = getEntitiesRestrictCriteria('glpi_passivedcequipments', '', '', true);
+            $candidates = $element->find([
+                'is_deleted'             => 0,
+                Setting::getTypeField()  => $type_ids,
+            ] + $criteria, ['name']);
+        }
+
+        if ($candidates === []) {
+            echo "<div class='form-hint'>"
+                . htmlescape(__('Nenhum elemento de papel abaixo na hierarquia está cadastrado para receber o vínculo.', 'dgoplus'))
+                . "</div>";
+            echo "</div>";
+            return;
+        }
+
+        // Slots ja ocupados por elemento (pendente OCUPA, decisao fechada):
+        // uma consulta para as entradas de todos os candidatos e uma para os
+        // vinculos delas - nunca uma por elemento.
+        $entry_port = new Port();
+        $entry_rows = $entry_port->find([
+            'itemtype'   => PassiveDCEquipment::class,
+            'items_id'   => array_keys($candidates),
+            'is_deleted' => 0,
+        ] + Port::entryCriteria());
+
+        $entry_ids = [];
+        foreach ($entry_rows as $er) {
+            $entry_ids[] = (int) $er['id'];
+        }
+
+        $dst_links = Link::findByDestinations($entry_ids);
+
+        $occupied = [];
+        foreach ($entry_rows as $er) {
+            if (isset($dst_links[(int) $er['id']])) {
+                $occupied[(int) $er['items_id']][] = (int) $er['fiber_num'];
+            }
+        }
+
+        echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' data-dgoplus-link-form='1'>";
+        echo Html::hidden('action', ['value' => 'propose_link']);
+        echo Html::hidden('itemtype', ['value' => PassiveDCEquipment::class]);
+        echo Html::hidden('items_id', ['value' => $items_id]);
+        echo Html::hidden('tube_num', ['value' => $tube_num]);
+        echo Html::hidden('fiber_num', ['value' => $fiber_num]);
+        echo Html::hidden('locations_id', ['value' => $locations_id]);
+        echo Html::hidden('floor', ['value' => $floors_id]);
+
+        echo "<div class='row g-2 align-items-end'>";
+
+        echo "<div class='col-12 col-md-5'>";
+        echo "<label class='form-label mb-1'>" . __('Elemento de destino', 'dgoplus') . "</label>";
+        echo "<select name='dst_items_id' class='form-select form-select-sm' data-dgoplus-link-dst='1'>";
+        foreach ($candidates as $cid => $cand) {
+            $cand_role  = Setting::getRoleForType((int) ($cand[Setting::getTypeField()] ?? 0));
+            $cand_label = ($cand['name'] ?: ('#' . $cid))
+                . ($cand_role !== null ? ' (' . Setting::getRoleLabel($cand_role) . ')' : '');
+            echo "<option value='" . (int) $cid . "'>" . htmlescape($cand_label) . "</option>";
+        }
+        echo "</select>";
+        echo "</div>";
+
+        echo "<div class='col-6 col-md-3'>";
+        echo "<label class='form-label mb-1'>" . __('Entrada', 'dgoplus') . "</label>";
+        echo "<select name='dst_slot' class='form-select form-select-sm' data-dgoplus-link-slot='1'>";
+        for ($slot = 1; $slot <= Port::MAX_ENTRIES; $slot++) {
+            echo "<option value='" . $slot . "'>" . htmlescape(Port::formatEntryLabel($slot)) . "</option>";
+        }
+        echo "</select>";
+        echo "</div>";
+
+        echo "<div class='col-6 col-md-4'>";
+        echo Html::submit(__('Propor vínculo', 'dgoplus'), ['class' => 'btn btn-sm btn-outline-primary w-100']);
+        echo "</div>";
+
+        echo "</div>";
+
+        // JSON para o JS desabilitar as entradas ocupadas. HEX flags
+        // obrigatorias: nome de elemento contendo </script> quebraria a
+        // pagina inteira (mesma regra dos endpoints AJAX).
+        echo "<script type='application/json' data-dgoplus-link-occupied='1'>"
+            . json_encode($occupied, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)
+            . "</script>";
+
+        Html::closeForm();
+        echo "</div>";
     }
 }

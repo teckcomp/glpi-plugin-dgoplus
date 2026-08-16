@@ -192,3 +192,84 @@
         init();
     }
 })();
+
+/**
+ * DGO+ - bloco 4c: proposta de vinculo (secao "Alimenta" do painel).
+ *
+ * Desabilita as entradas E1-E4 ja ocupadas do elemento de destino escolhido,
+ * lendo o JSON que o PHP embute no formulario. PROGRESSIVO: sem este arquivo
+ * o formulario posta normal e o servidor recusa entrada ocupada com mensagem
+ * amigavel (Link::propose) - a validacao que conta e' a do servidor; aqui e'
+ * so' conveniencia para nao deixar o usuario escolher o que vai ser recusado.
+ */
+(function () {
+    'use strict';
+
+    function mount(form) {
+        var dst = form.querySelector('select[data-dgoplus-link-dst]');
+        var slot = form.querySelector('select[data-dgoplus-link-slot]');
+        var dataEl = form.querySelector('script[data-dgoplus-link-occupied]');
+        if (!dst || !slot || !dataEl) {
+            return;
+        }
+
+        var occupied = {};
+        try {
+            var parsed = JSON.parse(dataEl.textContent || '{}');
+            if (parsed && typeof parsed === 'object') {
+                occupied = parsed;
+            }
+        } catch (e) {
+            // JSON podre: melhor nao mexer em nada do que desabilitar errado -
+            // o servidor continua validando de qualquer forma.
+            return;
+        }
+
+        // Rotulos originais (E1..E4), para reescrever o sufixo a cada troca
+        // de elemento sem acumular " - ocupada - ocupada".
+        var labels = [];
+        for (var i = 0; i < slot.options.length; i++) {
+            labels.push(slot.options[i].textContent);
+        }
+
+        function refresh() {
+            var taken = occupied[dst.value];
+            if (!Array.isArray(taken)) {
+                taken = [];
+            }
+
+            for (var i = 0; i < slot.options.length; i++) {
+                var opt = slot.options[i];
+                var isTaken = taken.indexOf(parseInt(opt.value, 10)) !== -1;
+                opt.disabled = isTaken;
+                opt.textContent = labels[i] + (isTaken ? ' — ocupada' : ' — livre');
+            }
+
+            // Se a selecao atual caiu numa ocupada, pula para a primeira livre.
+            if (slot.selectedIndex === -1 || slot.options[slot.selectedIndex].disabled) {
+                for (var j = 0; j < slot.options.length; j++) {
+                    if (!slot.options[j].disabled) {
+                        slot.selectedIndex = j;
+                        break;
+                    }
+                }
+            }
+        }
+
+        dst.addEventListener('change', refresh);
+        refresh();
+    }
+
+    function init() {
+        var forms = document.querySelectorAll('form[data-dgoplus-link-form]');
+        for (var i = 0; i < forms.length; i++) {
+            mount(forms[i]);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();

@@ -17,6 +17,7 @@
  */
 
 use Glpi\Exception\Http\BadRequestHttpException;
+use GlpiPlugin\Dgoplus\Link;
 use GlpiPlugin\Dgoplus\MapController;
 use GlpiPlugin\Dgoplus\Panel;
 use GlpiPlugin\Dgoplus\Port;
@@ -85,6 +86,15 @@ if ($port->getFromDBByCrit([
     $row = $port->fields;
 }
 
+// Bloco 4c: a celula redesenhada precisa MANTER a marca de vinculo - salvar
+// o codigo de uma porta que alimenta alguem nao pode apagar o tracejado do
+// pendente nem o destino do title. Mesma consulta que a carga da pagina usa.
+$link = null;
+if ($row !== null) {
+    $links = Link::findByOrigins([(int) $row['id']]);
+    $link  = $links[(int) $row['id']] ?? null;
+}
+
 $layout   = Panel::getLayoutForItem($dgo);
 $capacity = $layout['tubes'] * $layout['fibers_per_tube'];
 $stats    = Port::statsForDgo($itemtype, $items_id);
@@ -101,7 +111,8 @@ echo json_encode([
         $fiber_num,
         $row,
         $edit_key,
-        $layout['fibers_per_tube']
+        $layout['fibers_per_tube'],
+        $link
     ),
     'badges_html' => MapController::renderBadges(
         $stats['documented'],
