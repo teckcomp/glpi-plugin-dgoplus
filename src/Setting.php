@@ -387,65 +387,28 @@ class Setting
     // -----------------------------------------------------------------
     // Compatibilidade com o 3l
     //
-    // O mapa, o painel e os hooks chamam estes metodos hoje. Eles continuam
-    // existindo e passam a valer para o CONJUNTO dos papeis - se apontassem
-    // so' para dgo_types, redistribuir os Tipos faria DIO e CTO sumirem do
-    // mapa no segundo seguinte. As chamadas migram para os metodos novos no
-    // 4a-2; ate' la' o comportamento e' identico ao de hoje.
+    // Bloco 4f: os quatro metodos sem chamador foram removidos -
+    // getDgoTypes(), setDgoTypes(), dgoCriteria() e getTypeForNewDgo().
+    // Os tres primeiros eram uma linha delegando para getAllTypes(),
+    // setTypesForRole(ROLE_DGO, ...) e typesCriteria(). O quarto tinha
+    // logica propria: se o papel DGO nao tivesse Tipo, caia para o
+    // primeiro Tipo de QUALQUER papel - fallback que getTypeForNewItem()
+    // nao faz. Fica registrado aqui caso alguem precise dele de volta.
+    //
+    // isDgo() CONTINUA, e nao por descuido: setup.php ainda o chama para
+    // decidir se a ficha do ativo ganha o botao "Abrir no mapa DGO+".
+    // Trocar a chamada por isMapped() exige editar o setup.php, proibido
+    // enquanto a versao do disco divergir da do repositorio (licao 105).
+    // Sai no bloco que fizer o bump.
     // -----------------------------------------------------------------
 
     /**
-     * @deprecated 4a - use getAllTypes() ou getTypesForRole()
-     * @return int[]
-     */
-    public static function getDgoTypes(): array
-    {
-        return self::getAllTypes();
-    }
-
-    /**
-     * @deprecated 4a - use setTypesForRole()
-     * @param int[] $ids
-     * @return void
-     */
-    public static function setDgoTypes(array $ids): void
-    {
-        self::setTypesForRole(self::ROLE_DGO, $ids);
-    }
-
-    /**
-     * @deprecated 4a - use typesCriteria()
-     * @return array
-     */
-    public static function dgoCriteria(): array
-    {
-        return self::typesCriteria();
-    }
-
-    /**
-     * @deprecated 4a - use isMapped()
+     * @deprecated 4a - use isMapped(). Mantido porque setup.php ainda chama.
      * @param CommonDBTM $item
      * @return bool
      */
     public static function isDgo(CommonDBTM $item): bool
     {
         return self::isMapped($item);
-    }
-
-    /**
-     * @deprecated 4a - use getTypeForNewItem()
-     * @return int
-     */
-    public static function getTypeForNewDgo(): int
-    {
-        $dgo = self::getTypeForNewItem(self::ROLE_DGO);
-
-        if ($dgo > 0) {
-            return $dgo;
-        }
-
-        $all = self::getAllTypes();
-
-        return $all === [] ? 0 : (int) $all[0];
     }
 }
