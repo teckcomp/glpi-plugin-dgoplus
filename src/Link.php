@@ -3,6 +3,7 @@
 namespace GlpiPlugin\Dgoplus;
 
 use CommonDBTM;
+use PassiveDCEquipment;
 use Session;
 
 /**
@@ -710,6 +711,182 @@ class Link extends CommonDBTM
         }
 
         return sprintf(__('elemento #%d', 'dgoplus'), $items_id);
+    }
+
+    /**
+     * As propostas em aberto, prontas para desenhar. Bloco 4d.
+     *
+     * PONTO UNICO das duas telas de pendencia (o cartao do painel e a pagina
+     * completa). Duas consultas que divergissem por uma virgula dariam numeros
+     * diferentes na mesma sessao, e numero que nao fecha com a tela custa mais
+     * confianca do que numero menor (a mesma razao do 3l).
+     *
+     * Em LOTE de proposito: a leitura ingenua chamaria describeOrigin() e
+     * describeDestination() por linha, e cada um faz getFromDB de porta mais
+     * getFromDB de elemento - quatro consultas por pendencia, mais a largura da
+     * grade. Aqui sao quatro consultas no total, independente do numero de
+     * linhas.
+     *
+     * O papel filtra pelo elemento de DESTINO: pendencia e' de quem tem de
+     * responder, e quem responde e' o lado alimentado. Filtrar pela origem
+     * mostraria ao operador de DIO uma fila que nao e' dele.
+     *
+     * Restricao de entidade igual a do painel e a do mapa: vinculo cujo destino
+     * o usuario nao enxerga nao entra na fila dele.
+     *
+     * @param string|null $role papel do elemento de destino; null = todos
+     * @return array<int, array{
+     *   id:int, date_creation:string, age_days:int, proposer:string,
+     *   src_item:string, src_label:string,
+     *   dst_item:string, dst_label:string, dst_items_id:int,
+     *   dst_locations_id:int, dst_slot:int, dst_role:string|null
+     * }>
+     */
+    public static function pendingRows(?string $role = null): array
+    {
+        if ($role !== null && !Setting::isRole($role)) {
+            $role = null;
+        }
+
+        $link = new self();
+        $rows = $link->find(['status' => self::STATUS_PENDING]);
+
+        if ($rows === []) {
+            return [];
+        }
+
+        // --- Portas das duas pontas, numa consulta ---
+        $port_ids = [];
+        foreach ($rows as $row) {
+            $port_ids[] = (int) $row['plugin_dgoplus_ports_id_src'];
+            $port_ids[] = (int) $row['plugin_dgoplus_ports_id_dst'];
+        }
+        $port_ids = self::cleanIds($port_ids);
+
+        if ($port_ids === []) {
+            return [];
+        }
+
+        $port_model = new Port();
+        $ports      = [];
+        foreach ($port_model->find(['id' => $port_ids]) as $row) {
+            $ports[(int) $row['id']] = $row;
+        }
+
+        // --- Elementos citados por qualquer ponta, com restricao de entidade ---
+        $item_ids = [];
+        foreach ($ports as $row) {
+            if ((string) ($row['itemtype'] ?? '') === PassiveDCEquipment::class) {
+                $item_ids[] = (int) $row['items_id'];
+            }
+        }
+        $item_ids = self::cleanIds($item_ids);
+
+        $items = [];
+        if ($item_ids !== []) {
+            $model = new PassiveDCEquipment();
+            $found = $model->find(
+                ['id' => $item_ids]
+                + getEntitiesRestrictCriteria('glpi_passivedcequipments', '', '', true)
+            );
+            foreach ($found as $row) {
+                $items[(int) $row['id']] = $row;
+            }
+        }
+
+        // --- Larguras de grade, para o rotulo continuo da origem ---
+        $widths = [];
+        if ($items !== []) {
+            $panel_model = new Panel();
+            $panels      = $panel_model->find([
+                'itemtype' => PassiveDCEquipment::class,
+                'items_id' => array_keys($items),
+            ]);
+            foreach ($panels as $row) {
+                $widths[(int) $row['items_id']] = Panel::sanitizeFibers((int) $row['fibers_per_tube']);
+            }
+        }
+
+        $type_field = Setting::getTypeField();
+        // Parenteses obrigatorios: o cast liga mais forte que o ??, e sem eles
+        // a leitura de chave ausente vira aviso no log a cada abertura da tela.
+        $now = strtotime((string) ($_SESSION['glpi_currenttime'] ?? '')) ?: time();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $src = $ports[(int) $row['plugin_dgoplus_ports_id_src']] ?? null;
+            $dst = $ports[(int) $row['plugin_dgoplus_ports_id_dst']] ?? null;
+
+            if ($src === null || $dst === null) {
+                continue;
+            }
+
+            $src_id = (int) $src['items_id'];
+            $dst_id = (int) $dst['items_id'];
+
+            // Elemento fora da entidade do usuario (ou apagado): a linha inteira
+            // sai. Mostrar meia pendencia, com um lado anonimo, seria vazamento
+            // de nome de ativo pela porta dos fundos.
+            if (!isset($items[$src_id]) || !isset($items[$dst_id])) {
+                continue;
+            }
+
+            $dst_role = Setting::getRoleForType((int) ($items[$dst_id][$type_field] ?? 0));
+
+            if ($role !== null && $dst_role !== $role) {
+                continue;
+            }
+
+            $created = (string) ($row['date_creation'] ?? '');
+            $stamp   = $created !== '' ? strtotime($created) : false;
+
+            $out[] = [
+                'id'            => (int) $row['id'],
+                'date_creation' => $created,
+                'age_days'      => $stamp !== false ? max(0, (int) floor(($now - $stamp) / 86400)) : 0,
+                'proposer'      => (string) getUserName((int) ($row['users_id_proposer'] ?? 0)),
+                'src_item'      => self::displayNameOf($items[$src_id], $src_id),
+                'src_label'     => Port::formatPosition(
+                    (int) $src['tube_num'],
+                    (int) $src['fiber_num'],
+                    $widths[$src_id] ?? Panel::DEFAULT_FIBERS
+                ),
+                'dst_item'         => self::displayNameOf($items[$dst_id], $dst_id),
+                'dst_label'        => Port::formatEntryLabel((int) $dst['fiber_num']),
+                'dst_items_id'     => $dst_id,
+                'dst_locations_id' => (int) ($items[$dst_id]['locations_id'] ?? 0),
+                'dst_slot'         => (int) $dst['fiber_num'],
+                'dst_role'         => $dst_role,
+            ];
+        }
+
+        // Mais VELHA primeiro: a fila existe para mostrar o que foi esquecido,
+        // nao o que acabou de chegar. Empate desempata por id, para a ordem nao
+        // dancar entre duas aberturas da mesma tela.
+        usort(
+            $out,
+            fn(array $a, array $b): int => strcmp($a['date_creation'], $b['date_creation']) ?: ($a['id'] <=> $b['id'])
+        );
+
+        return $out;
+    }
+
+    /**
+     * Nome de exibicao de uma linha de elemento ja carregada.
+     *
+     * Nao usa itemNameOf(): aquele faz getFromDB, e aqui a linha ja esta em
+     * maos - seria uma consulta por pendencia so para reler o que o find() ja
+     * trouxe.
+     *
+     * @param array $row
+     * @param int   $items_id
+     * @return string
+     */
+    private static function displayNameOf(array $row, int $items_id): string
+    {
+        $name = trim((string) ($row['name'] ?? ''));
+
+        return $name !== '' ? $name : sprintf(__('elemento #%d', 'dgoplus'), $items_id);
     }
 
     /**

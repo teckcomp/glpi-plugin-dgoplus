@@ -53,6 +53,30 @@ class Dashboard
     private const EMPTY_BAR = '#CBD5E1';
 
     /**
+     * Quantas pendencias cabem no cartao do painel. Bloco 4d.
+     *
+     * O cartao e' radar, nao mesa de trabalho: mostra o topo da fila e manda o
+     * resto para a pagina completa. Sem teto, uma fila grande esticaria a faixa
+     * inferior e empurraria o resto do painel para fora da tela.
+     */
+    private const PENDING_ON_CARD = 5;
+
+    /**
+     * Largura dos cartoes da faixa inferior. Bloco 4d: eram dois a meia
+     * largura, viraram tres.
+     *
+     * Em xl os tres ficam lado a lado; em lg, dois em cima e um embaixo; no
+     * celular, empilhados. Escrito uma vez porque tres literais iguais em tres
+     * lugares e' o comeco de uma faixa torta - basta alguem ajustar dois.
+     */
+    private const BOTTOM_COL = 'col-12 col-lg-6 col-xl-4';
+
+    /**
+     * A partir de quantos dias uma proposta em aberto muda de cor. Bloco 4d.
+     */
+    private const PENDING_OLD_DAYS = 7;
+
+    /**
      * Cor por PAPEL, indexada pela posicao na hierarquia - nunca pela sigla.
      *
      * Prender cor a 'dio'/'dgo'/'cto' contrariaria a decisao fechada no 4a-1
@@ -289,16 +313,26 @@ class Dashboard
         $ports       = [];
         $ports_trash = 0;
         if ($item_ids !== []) {
+            // Bloco 4d, parte C: gridCriteria() nas DUAS. Sem ele o painel
+            // contava entrada como porta documentada, enquanto o mapa (que
+            // sempre filtrou) contava so' a grade - duas telas com numeros
+            // diferentes para o mesmo elemento.
+            //
+            // Passou em branco no 4b-1 porque naquele dia nao existia UMA
+            // entrada no banco: filtro sem nada para filtrar nao falha. O 4c
+            // criou a primeira e o defeito nasceu junto, inflando o numerador
+            // de uma conta cujo denominador continua sendo so' a grade.
+            // E' a licao 112 no lugar mais visivel do produto.
             $ports = $port_model->find([
                 'itemtype'   => PassiveDCEquipment::class,
                 'items_id'   => $item_ids,
                 'is_deleted' => 0,
-            ]);
+            ] + Port::gridCriteria());
             $ports_trash = count($port_model->find([
                 'itemtype'   => PassiveDCEquipment::class,
                 'items_id'   => $item_ids,
                 'is_deleted' => 1,
-            ]));
+            ] + Port::gridCriteria()));
         }
 
         // --- Agregacao por elemento ---
@@ -394,9 +428,18 @@ class Dashboard
             ];
         }
 
+        // --- Pendencias de vinculo (bloco 4d) ---
+        // A consulta vive no Link, ponto unico das duas telas. Aqui so' se
+        // decide quantas cabem no cartao; o total sai da lista inteira, para o
+        // contador do cabecalho nunca dizer 5 quando ha 12.
+        $pending       = Link::pendingRows($role);
+        $pending_total = count($pending);
+
         return [
             'role'          => $role,
             'roles'         => $roles,
+            'pending'       => array_slice($pending, 0, self::PENDING_ON_CARD),
+            'pending_total' => $pending_total,
             'total_items'   => count($item_ids),
             'trash_items'   => $trash_items,
             'unmapped'      => $unmapped,
@@ -823,7 +866,7 @@ class Dashboard
         echo "<div class='row row-cards g-3'>";
 
         // --- Top 5 ---
-        echo "<div class='col-12 col-lg-6'>";
+        echo "<div class='" . self::BOTTOM_COL . "'>";
         echo "<div class='card h-100'>";
         echo "<div class='card-header'><h3 class='card-title mb-0'>"
             . "<i class='ti ti-flame me-1'></i>" . __('Equipamentos mais ocupados', 'dgoplus') . "</h3></div>";
@@ -857,8 +900,11 @@ class Dashboard
         }
         echo "</div></div>";
 
+        // --- Vinculos pendentes (bloco 4d) ---
+        self::displayPendingCard($d, $url_builder);
+
         // --- Atividade recente ---
-        echo "<div class='col-12 col-lg-6'>";
+        echo "<div class='" . self::BOTTOM_COL . "'>";
         echo "<div class='card h-100'>";
         echo "<div class='card-header'><h3 class='card-title mb-0'>"
             . "<i class='ti ti-history me-1'></i>" . __('Atividade recente', 'dgoplus') . "</h3></div>";
@@ -889,6 +935,119 @@ class Dashboard
         echo "</div></div>";
 
         echo "</div>";
+    }
+
+    /**
+     * O cartao de vinculos pendentes. Bloco 4d.
+     *
+     * Cada linha leva ao card da entrada do elemento de DESTINO, com o slot ja
+     * aberto: e' la' que confirmar e recusar vivem desde o 4c, com as guardas
+     * de direito que ja foram validadas na tela. Reimplementar os botoes aqui
+     * criaria um segundo lugar para a mesma regra de negocio - e' o defeito que
+     * o ponto unico do Port e do Link existem para evitar.
+     *
+     * A linha nao distingue quem propos: autoconfirmacao e' permitida e fica
+     * registrada (decisao do 4c), entao a fila nao tem por que discriminar.
+     *
+     * @param array                  $d
+     * @param callable(array):string $url_builder
+     * @return void
+     */
+    private static function displayPendingCard(array $d, callable $url_builder): void
+    {
+        $rows  = $d['pending'] ?? [];
+        $total = (int) ($d['pending_total'] ?? 0);
+
+        echo "<div class='" . self::BOTTOM_COL . "'>";
+        echo "<div class='card h-100'>";
+
+        echo "<div class='card-header d-flex align-items-center'>";
+        echo "<h3 class='card-title mb-0'>"
+            . "<i class='ti ti-git-pull-request me-1'></i>" . __('Vínculos pendentes', 'dgoplus') . "</h3>";
+        if ($total > 0) {
+            echo "<span class='badge bg-orange-lt ms-auto'>" . $total . "</span>";
+        }
+        echo "</div>";
+
+        if ($rows === []) {
+            echo "<div class='card-body text-muted'>" . __('Nenhuma proposta em aberto.', 'dgoplus') . "</div>";
+            echo "</div></div>";
+            return;
+        }
+
+        echo "<div class='table-responsive'><table class='table table-vcenter card-table mb-0'><tbody>";
+        foreach ($rows as $r) {
+            $url = $url_builder([
+                'location' => (int) $r['dst_locations_id'],
+                'dgo'      => (int) $r['dst_items_id'],
+                'entry'    => (int) $r['dst_slot'],
+            ]);
+
+            echo "<tr>";
+            echo "<td class='text-nowrap' style='width:70px'>"
+                . "<a href='" . htmlescape($url) . "' class='badge bg-blue-lt text-decoration-none'>"
+                . htmlescape($r['src_label']) . "</a></td>";
+
+            // Cada nome em text-nowrap: sem isso a quebra cai DENTRO do nome
+            // do elemento ("Teste / drop 001") em vez de cair na seta, e a
+            // linha fica ilegivel no cartao estreito. Visto na renderizacao.
+            echo "<td>";
+            echo "<span class='text-nowrap'>" . htmlescape($r['src_item']) . "</span>"
+                . " <i class='ti ti-arrow-right text-muted'></i> "
+                . "<span class='text-nowrap'>" . htmlescape($r['dst_item'])
+                . " <span class='text-muted'>" . htmlescape($r['dst_label']) . "</span></span>";
+            echo "<div class='text-muted small'>"
+                . htmlescape(sprintf(__('Proposto por %s', 'dgoplus'), $r['proposer']))
+                . "</div>";
+            echo "</td>";
+
+            echo "<td class='text-end text-nowrap " . self::ageClass((int) $r['age_days']) . "'>"
+                . htmlescape(self::ageLabel((int) $r['age_days'])) . "</td>";
+            echo "</tr>";
+        }
+        echo "</tbody></table></div>";
+
+        // O rodape so' aparece quando ha o que a pagina mostre alem do cartao.
+        // "Ver todas as 3" com as tres ja na tela seria um clique que nao leva
+        // a lugar nenhum.
+        if ($total > count($rows)) {
+            $params = $d['role'] !== null ? ['role' => (string) $d['role']] : [];
+            echo "<div class='card-footer text-center py-2'>";
+            echo "<a href='" . htmlescape(Pending::getPageUrl($params)) . "'>"
+                . htmlescape(sprintf(__('Ver todas as %d', 'dgoplus'), $total)) . "</a>";
+            echo "</div>";
+        }
+
+        echo "</div></div>";
+    }
+
+    /**
+     * Idade em texto curto. Bloco 4d.
+     *
+     * @param int $days
+     * @return string
+     */
+    public static function ageLabel(int $days): string
+    {
+        if ($days <= 0) {
+            return __('hoje', 'dgoplus');
+        }
+
+        return sprintf(_n('%d dia', '%d dias', $days, 'dgoplus'), $days);
+    }
+
+    /**
+     * Classe de cor da idade. Bloco 4d.
+     *
+     * O limite existe para separar "acabou de chegar" de "foi esquecido"; sem
+     * ele a coluna de idade seria um numero cinza que ninguem le.
+     *
+     * @param int $days
+     * @return string
+     */
+    public static function ageClass(int $days): string
+    {
+        return $days >= self::PENDING_OLD_DAYS ? 'text-orange' : 'text-muted';
     }
 
     /**

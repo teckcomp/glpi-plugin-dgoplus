@@ -189,6 +189,29 @@ class MapController
     }
 
     /**
+     * URL do card de uma entrada aberto. Bloco 4d.
+     *
+     * As telas de pendencia precisam levar ao lugar onde confirmar e recusar
+     * vivem desde o 4c. Elas NAO montam a query string por conta propria: o
+     * nome dos parametros ('location', 'dgo', 'entry') e' assunto deste
+     * controlador, e tres literais espalhados por dois arquivos e' o comeco de
+     * um link que quebra em silencio quando um deles mudar (licao 13).
+     *
+     * @param int $locations_id
+     * @param int $items_id
+     * @param int $slot entrada E<n>
+     * @return string
+     */
+    public static function getEntryUrl(int $locations_id, int $items_id, int $slot): string
+    {
+        return self::getPageUrl([
+            'location' => $locations_id,
+            'dgo'      => $items_id,
+            'entry'    => $slot,
+        ]);
+    }
+
+    /**
      * URL da tela de configuracao do plugin.
      *
      * Mesmo lugar que o core aponta pelo hook CONFIG_PAGE
