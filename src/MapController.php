@@ -361,6 +361,9 @@ class MapController
             case 'save_dgo_comment':
                 self::actionSaveDgoComment();
                 break;
+            case 'save_entry_obs':
+                self::actionSaveEntryObs();
+                break;
         }
     }
 
@@ -870,6 +873,50 @@ class MapController
         if ($edit_key !== '') {
             $params['edit'] = $edit_key;
         }
+
+        self::redirectTo($params);
+    }
+
+    /**
+     * Grava a OBS do elemento (faixa das entradas). Bloco 4b-2.
+     *
+     * UPDATE e nao CREATE: a OBS descreve o elemento, nao cria porta. Mesmo
+     * direito que o seletor de Piso exige, pela mesma razao.
+     *
+     * A trava de pai e' a mesma do 3m - existir e ser visivel para este
+     * usuario. Sem ela, um items_id forjado no POST escreveria OBS em elemento
+     * de outra entidade, que e' exatamente o furo que o 3m fechou nas portas.
+     *
+     * @return void
+     */
+    private static function actionSaveEntryObs(): void
+    {
+        Session::checkRight(Port::$rightname, UPDATE);
+
+        $items_id     = (int) ($_POST['items_id'] ?? 0);
+        $locations_id = (int) ($_POST['locations_id'] ?? 0);
+        $floors_id    = (int) ($_POST['floor'] ?? 0);
+        $edit_key     = (string) ($_POST['edit'] ?? '');
+        $obs          = trim((string) ($_POST['obs'] ?? ''));
+
+        $params = self::scope($locations_id, $floors_id, ['dgo' => $items_id]);
+        if ($edit_key !== '') {
+            $params['edit'] = $edit_key;
+        }
+
+        $item = new PassiveDCEquipment();
+
+        if ($items_id <= 0 || !$item->getFromDB($items_id) || !$item->can($items_id, READ)) {
+            Session::addMessageAfterRedirect(
+                __('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'),
+                false,
+                ERROR
+            );
+            self::redirectTo($params);
+            return;
+        }
+
+        Panel::setCommentForItem($item, $obs);
 
         self::redirectTo($params);
     }
@@ -1709,7 +1756,14 @@ class MapController
         // coluna de anexos para fora do card).
         echo "<div style='flex:1 1 520px;min-width:0'>";
 
+        // Bloco 4b-2: Piso e entradas dividem a MESMA linha (desenho do
+        // usuario). align-items:flex-end alinha o seletor com as caixas, que
+        // sao mais altas; flex-wrap derruba a faixa para baixo do Piso quando
+        // nao couber - a quebra planejada dos 1000px.
+        echo "<div class='d-flex align-items-end gap-3 flex-wrap mb-3'>";
         self::displayFloorAssignment($dgo, $locations_id, $floors_id);
+        self::displayEntryStrip($dgo, $locations_id, $floors_id, $edit_key);
+        echo "</div>";
 
         echo "<div style='overflow-x:auto'>";
 
@@ -1837,7 +1891,10 @@ class MapController
         $floors   = Floor::getForLocation($locations_id);
         $current  = Panel::getFloorForItem($dgo);
 
-        echo "<div class='d-flex align-items-center gap-2 flex-wrap mb-3'>";
+        // mb-3 removido no 4b-2: o espacamento agora e' do wrapper que abraca
+        // este seletor e a faixa de entradas. Mantido aqui, empurraria a faixa
+        // para fora do alinhamento por 1rem.
+        echo "<div class='d-flex align-items-center gap-2 flex-wrap'>";
         echo "<span class='text-muted d-flex align-items-center gap-1'>"
             . "<i class='ti ti-building'></i> " . htmlescape(Floor::getTypeName(1)) . "</span>";
 
@@ -1873,6 +1930,190 @@ class MapController
         Html::closeForm();
 
         echo "</div>";
+    }
+
+    /**
+     * Faixa das entradas E1-E4 mais o campo de OBS, na linha do Piso.
+     *
+     * Bloco 4b-2, e o desenho e' do usuario: quatro caixas pequenas e um campo
+     * largo ao lado, ANTES da grade - nao um card acima dela.
+     *
+     * So' em DGO e CTO. DIO e' a ponta de cima da hierarquia (a ordem de
+     * Setting::ROLES e' a hierarquia fisica): ninguem alimenta um DIO, entao
+     * quatro caixas eternamente livres seriam ruido permanente na tela dele.
+     * Elemento sem papel mapeado tambem fica de fora - sem papel nao ha como
+     * afirmar que ele recebe alimentacao.
+     *
+     * As quatro caixas aparecem SEMPRE, mesmo sem linha no banco: a faixa e' um
+     * mapa de slots fisicos, e slot livre e' informacao, nao ausencia dela. Por
+     * isso elas ficam FORA do contador de ocupacao - entrada nao e' porta
+     * alugavel, e' por onde a fibra chega.
+     *
+     * @param PassiveDCEquipment $dgo
+     * @param int                $locations_id
+     * @param int                $floors_id
+     * @param string             $edit_key porta aberta no painel, preservada no redirect
+     * @return void
+     */
+    private static function displayEntryStrip(
+        PassiveDCEquipment $dgo,
+        int $locations_id,
+        int $floors_id,
+        string $edit_key
+    ): void {
+        $role = Setting::getRoleOfItem($dgo);
+
+        if ($role !== Setting::ROLE_DGO && $role !== Setting::ROLE_CTO) {
+            return;
+        }
+
+        $items_id = (int) $dgo->getID();
+
+        // Uma consulta para as entradas e uma para os vinculos das quatro -
+        // nunca uma por caixa.
+        $entries = Port::entriesForItem(PassiveDCEquipment::class, $items_id);
+
+        $entry_ids = [];
+        foreach ($entries as $row) {
+            $entry_ids[] = (int) $row['id'];
+        }
+
+        $links = Link::findByDestinations($entry_ids);
+
+        echo "<div class='d-flex align-items-center gap-2 flex-wrap' style='flex:1 1 auto;min-width:0'>";
+
+        for ($slot = 1; $slot <= Port::MAX_ENTRIES; $slot++) {
+            echo self::renderEntryBox($slot, $entries[$slot] ?? null, $links);
+        }
+
+        self::displayEntryObs($dgo, $locations_id, $floors_id, $edit_key);
+
+        echo "</div>";
+    }
+
+    /**
+     * Uma caixa da faixa de entradas.
+     *
+     * Mostra so' E<n> e o estado. QUEM alimenta vai no title (hover): o nome do
+     * elemento de origem nao cabe numa caixa desta largura, e cortado com
+     * reticencias seria pior que ausente.
+     *
+     * Vinculo pendente usa BORDA TRACEJADA, nao uma quinta cor - decisao
+     * fechada da Fase 4. Pendente ja ocupa a entrada, entao pintar de "livre"
+     * seria mentira e pintar de "ocupada" esconderia que falta confirmar.
+     *
+     * @param int        $slot
+     * @param array|null $entry linha da porta de entrada, ou null se nem existe
+     * @param array      $links vinculos indexados por porta de destino
+     * @return string
+     */
+    private static function renderEntryBox(int $slot, ?array $entry, array $links): string
+    {
+        $label = Port::formatEntryLabel($slot);
+
+        $state   = __('livre', 'dgoplus');
+        $title   = sprintf(__('Entrada %s — livre', 'dgoplus'), $label);
+        $bg      = self::CELL_FREE_BG;
+        $border  = '1px solid ' . self::CELL_FREE_BORDER;
+        $muted   = true;
+
+        $link = $entry !== null ? ($links[(int) $entry['id']] ?? null) : null;
+
+        if ($link !== null) {
+            $origin  = Link::describeOrigin((int) $link['plugin_dgoplus_ports_id_src']);
+            $pending = (string) ($link['status'] ?? '') !== Link::STATUS_CONFIRMED;
+
+            $state = $origin['ok'] ? $origin['label'] : __('origem removida', 'dgoplus');
+            $muted = !$origin['ok'];
+
+            $title = $origin['ok']
+                ? sprintf(
+                    $pending
+                        ? __('Entrada %1$s — proposta de %2$s (%3$s), aguardando confirmação', 'dgoplus')
+                        : __('Entrada %1$s — alimentada por %2$s (%3$s)', 'dgoplus'),
+                    $label,
+                    $origin['label'],
+                    $origin['item']
+                )
+                : sprintf(__('Entrada %s — o vínculo aponta para uma porta que não existe mais', 'dgoplus'), $label);
+
+            $bg     = self::CELL_DOC_BG;
+            $border = $pending
+                ? '1px dashed ' . self::CELL_DOC_BORDER
+                : '1px solid ' . self::CELL_DOC_BORDER;
+        }
+
+        $style = "min-width:56px;text-align:center;padding:3px 6px;border-radius:6px;"
+            . "background:" . $bg . ";border:" . $border . ";line-height:1.25";
+
+        $html  = "<div style='" . $style . "' title='" . htmlescape($title) . "'>";
+        $html .= "<div style='font-size:11.5px;font-weight:500'>" . htmlescape($label) . "</div>";
+        $html .= "<div class='" . ($muted ? 'text-muted' : '') . "' style='font-size:10.5px'>"
+            . htmlescape($state) . "</div>";
+        $html .= "</div>";
+
+        return $html;
+    }
+
+    /**
+     * Campo de OBS do elemento, ao lado das quatro entradas.
+     *
+     * Um campo de texto livre por elemento: splitagem, fibra redundante, numero
+     * de fusao - o que for. Foi ele que resolveu o C1 (redundancia se registra
+     * em texto, nao em coluna), e por isso ele nasce junto com as entradas e
+     * nao num bloco depois.
+     *
+     * Mora em Panel::comment. Nao confundir com o comentario do ativo nativo
+     * (bloco 3t), que fica no card da coluna da direita.
+     *
+     * @param PassiveDCEquipment $dgo
+     * @param int                $locations_id
+     * @param int                $floors_id
+     * @param string             $edit_key
+     * @return void
+     */
+    private static function displayEntryObs(
+        PassiveDCEquipment $dgo,
+        int $locations_id,
+        int $floors_id,
+        string $edit_key
+    ): void {
+        $items_id = (int) $dgo->getID();
+        $current  = Panel::getCommentForItem($dgo);
+
+        if (!Session::haveRight(Port::$rightname, UPDATE)) {
+            if ($current === '') {
+                return;
+            }
+
+            echo "<span class='text-muted' style='font-size:12px'>"
+                . "<i class='ti ti-note'></i> " . htmlescape($current) . "</span>";
+
+            return;
+        }
+
+        echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "'"
+            . " class='d-flex align-items-center gap-2' style='flex:1 1 220px;min-width:180px'>";
+        echo Html::hidden('action', ['value' => 'save_entry_obs']);
+        echo Html::hidden('itemtype', ['value' => PassiveDCEquipment::class]);
+        echo Html::hidden('items_id', ['value' => $items_id]);
+        echo Html::hidden('locations_id', ['value' => $locations_id]);
+        echo Html::hidden('floor', ['value' => $floors_id]);
+
+        if ($edit_key !== '') {
+            echo Html::hidden('edit', ['value' => $edit_key]);
+        }
+
+        echo Html::input('obs', [
+            'value'       => $current,
+            'class'       => 'form-control form-control-sm',
+            'style'       => 'flex:1 1 auto;min-width:0',
+            'maxlength'   => 255,
+            'placeholder' => __('OBS: splitter, fibra reserva, fusão…', 'dgoplus'),
+        ]);
+
+        echo Html::submit(__('Salvar', 'dgoplus'), ['class' => 'btn btn-sm btn-outline-primary']);
+        Html::closeForm();
     }
 
     /**

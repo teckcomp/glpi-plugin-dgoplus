@@ -27,6 +27,7 @@ class Install
         $ports_table  = Port::getTable();
         $panels_table = Panel::getTable();
         $floors_table = Floor::getTable();
+        $links_table  = Link::getTable();
 
         // Tabela e itemtype do Setor, ABANDONADOS no bloco 3h. Escritos por
         // extenso de proposito: a classe Sector nao existe mais, entao nao ha
@@ -172,6 +173,55 @@ class Install
             $DB->doQuery($query);
         }
 
+        // ------------------------------------------------------------------
+        // Bloco 4b-2: a tabela de vinculos de topologia.
+        //
+        // DUAS chaves para a MESMA tabela de portas. A convencao do GLPI
+        // produz um nome so, e o core resolve isso com sufixo depois do
+        // nome-base (users_id_tech / users_id_recipient em glpi_tickets):
+        // getTableNameForForeignKeyField descarta o sufixo, entao _src e _dst
+        // continuam resolvendo para glpi_plugin_dgoplus_ports. A propria
+        // _ports ja usa esse padrao em items_id_link.
+        //
+        // UNIQUE em CADA lado, separadamente - nao um unique composto. Uma
+        // porta de grade alimenta um destino so, e uma entrada recebe uma
+        // origem so; unique composto (src, dst) permitiria a mesma porta
+        // alimentando duas entradas, que e' fibra fisica em dois lugares.
+        // Como "pendente ocupa a porta" e' regra fechada, a trava vale desde a
+        // proposta - por isso ela mora no BANCO e nao na tela.
+        //
+        // Sem is_deleted: vinculo nao tem lixeira (recusa apaga a linha).
+        // ------------------------------------------------------------------
+        if (!$DB->tableExists($links_table)) {
+            $migration->displayMessage("Criando $links_table");
+
+            $query = "CREATE TABLE `$links_table` (
+                `id` int $sign NOT NULL AUTO_INCREMENT,
+                `entities_id` int $sign NOT NULL DEFAULT '0',
+                `is_recursive` tinyint NOT NULL DEFAULT '0',
+                `plugin_dgoplus_ports_id_src` int $sign NOT NULL DEFAULT '0',
+                `plugin_dgoplus_ports_id_dst` int $sign NOT NULL DEFAULT '0',
+                `status` varchar(16) NOT NULL DEFAULT '" . Link::STATUS_PENDING . "',
+                `users_id_proposer` int $sign NOT NULL DEFAULT '0',
+                `users_id_confirmer` int $sign NOT NULL DEFAULT '0',
+                `comment` text,
+                `date_creation` timestamp NULL DEFAULT NULL,
+                `date_mod` timestamp NULL DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `unicity_src` (`plugin_dgoplus_ports_id_src`),
+                UNIQUE KEY `unicity_dst` (`plugin_dgoplus_ports_id_dst`),
+                KEY `entities_id` (`entities_id`),
+                KEY `is_recursive` (`is_recursive`),
+                KEY `status` (`status`),
+                KEY `users_id_proposer` (`users_id_proposer`),
+                KEY `users_id_confirmer` (`users_id_confirmer`),
+                KEY `date_creation` (`date_creation`),
+                KEY `date_mod` (`date_mod`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=$charset COLLATE=$collation ROW_FORMAT=DYNAMIC";
+
+            $DB->doQuery($query);
+        }
+
         // Vinculo da DGO com o piso. Toda coluna sob fieldExists: o
         // plugin:install --force reexecuta este metodo inteiro, e ALTER ADD
         // repetido sem guarda da 1060 (licao 31).
@@ -231,6 +281,7 @@ class Install
         // 'glpi_plugin_dgoplus_sectors' por extenso: classe abandonada no 3h,
         // mas a tabela pode existir em instalacao que passou pelo bloco 3g.
         $tables = [
+            Link::getTable(),
             Port::getTable(),
             Panel::getTable(),
             Floor::getTable(),
@@ -245,7 +296,7 @@ class Install
 
         $DB->delete('glpi_profilerights', ['name' => Port::$rightname]);
 
-        foreach ([Port::class, Floor::class, 'GlpiPlugin\\Dgoplus\\Sector'] as $itemtype) {
+        foreach ([Link::class, Port::class, Floor::class, 'GlpiPlugin\\Dgoplus\\Sector'] as $itemtype) {
             $DB->delete('glpi_displaypreferences', ['itemtype' => $itemtype]);
             $DB->delete('glpi_logs', ['itemtype' => $itemtype]);
         }

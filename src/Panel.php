@@ -209,6 +209,78 @@ class Panel extends CommonDBChild
     }
 
     /**
+     * A OBS do elemento (texto livre ao lado das entradas).
+     *
+     * Bloco 4b-2. Mora na coluna `comment` desta tabela, que ja existia, ja e'
+     * `text`, ja tem cardinalidade de uma por elemento (a unicity e'
+     * itemtype+items_id) e NUNCA foi usada por tela nenhuma - zero ALTER, zero
+     * migracao, zero risco de colidir com dado antigo.
+     *
+     * NAO e' o comentario do ativo nativo (esse e' o do bloco 3t, no proprio
+     * PassiveDCEquipment). Este e' o registro de splitagem, fibra redundante e
+     * numero de fusao - foi ele que resolveu o C1: redundancia se registra em
+     * texto livre, nao em coluna de schema.
+     *
+     * @param CommonDBTM $item
+     * @return string
+     */
+    public static function getCommentForItem(CommonDBTM $item): string
+    {
+        $panel = new self();
+
+        $found = $panel->getFromDBByCrit([
+            'itemtype' => $item->getType(),
+            'items_id' => $item->getID(),
+        ]);
+
+        if (!$found) {
+            return '';
+        }
+
+        return (string) ($panel->fields['comment'] ?? '');
+    }
+
+    /**
+     * Grava a OBS do elemento.
+     *
+     * Mesmo efeito colateral conhecido e aceito do setFloorForItem: elemento
+     * sem linha de layout ganha uma aqui, com o layout VIGENTE congelado
+     * dentro. A partir dai ele para de acompanhar mudanca futura das
+     * constantes DEFAULT_TUBES / DEFAULT_FIBERS - o que, diante da licao 113,
+     * e' protecao e nao defeito: quem escreveu OBS fica imune ao 2x8 retroativo.
+     *
+     * @param CommonDBTM $item
+     * @param string     $comment
+     * @return bool
+     */
+    public static function setCommentForItem(CommonDBTM $item, string $comment): bool
+    {
+        $panel = new self();
+
+        $found = $panel->getFromDBByCrit([
+            'itemtype' => $item->getType(),
+            'items_id' => $item->getID(),
+        ]);
+
+        if ($found) {
+            return (bool) $panel->update([
+                'id'      => $panel->getID(),
+                'comment' => $comment,
+            ]);
+        }
+
+        $layout = self::getLayoutForItem($item);
+
+        return (bool) $panel->add([
+            'itemtype'        => $item->getType(),
+            'items_id'        => $item->getID(),
+            'tubes'           => $layout['tubes'],
+            'fibers_per_tube' => $layout['fibers_per_tube'],
+            'comment'         => $comment,
+        ]);
+    }
+
+    /**
      * IDs dos ativos de um itemtype vinculados a um piso.
      *
      * @param string $itemtype

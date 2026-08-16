@@ -49,6 +49,22 @@ class Port extends CommonDBChild
     public const KIND_ENTRY = 'entrada';
 
     /**
+     * Fileira das entradas. ZERO nao e' "sem fileira": e' o que faz entrada e
+     * grade nunca colidirem na chave unica, porque grade e' sempre >= 1. E' a
+     * razao de kind ficar FORA da chave (licao 112).
+     */
+    public const ENTRY_TUBE = 0;
+
+    /**
+     * Quatro entradas por elemento, E1 a E4.
+     *
+     * Elas cobrem `n` filamentos - representam a chegada do splitter, nao
+     * quatro fibras nem quatro origens redundantes (decisao do usuario,
+     * 15/08). O invariante antigo de "uma entrada por elemento" esta revogado.
+     */
+    public const MAX_ENTRIES = 4;
+
+    /**
      * @param int $nb
      * @return string
      */
@@ -150,6 +166,18 @@ class Port extends CommonDBChild
             'field'    => 'comment',
             'name'     => __('Observacoes', 'dgoplus'),
             'datatype' => 'text',
+        ];
+
+        // Bloco 4b-2: sem esta opcao o relatorio lista entrada e porta de
+        // grade misturadas, sem coluna que as distinga e sem filtro para
+        // separar - e a contagem exportada em CSV passaria a mentir no dia em
+        // que a primeira entrada fosse criada.
+        $tab[] = [
+            'id'       => 10,
+            'table'    => $this->getTable(),
+            'field'    => 'kind',
+            'name'     => __('Tipo da porta (grade / entrada)', 'dgoplus'),
+            'datatype' => 'string',
         ];
 
         $tab[] = [
@@ -372,6 +400,148 @@ class Port extends CommonDBChild
     }
 
     /**
+     * Criterio para somar (+) a um find() que deve enxergar SO' as entradas.
+     *
+     * Par simetrico do gridCriteria(), pela mesma razao: filtro escrito a mao
+     * em cada tela e' filtro que alguem esquece, e esquecer aqui nao da erro -
+     * da numero errado em silencio.
+     *
+     * @return array
+     */
+    public static function entryCriteria(): array
+    {
+        return ['kind' => self::KIND_ENTRY];
+    }
+
+    /**
+     * As entradas documentadas de um elemento, indexadas por E<n>.
+     *
+     * Devolve SO' o que existe no banco. A faixa da tela desenha as quatro
+     * caixas sempre; slot sem linha aqui e' slot livre - nao ha linha vazia
+     * para representar entrada livre, e nao deve haver: linha de porta so
+     * nasce quando ha vinculo para pendurar nela.
+     *
+     * @param string $itemtype
+     * @param int    $items_id
+     * @return array<int, array> fiber_num (1-4) => linha
+     */
+    public static function entriesForItem(string $itemtype, int $items_id): array
+    {
+        if ($itemtype === '' || $items_id <= 0) {
+            return [];
+        }
+
+        $port = new self();
+        $rows = $port->find([
+            'itemtype'   => $itemtype,
+            'items_id'   => $items_id,
+            'is_deleted' => 0,
+        ] + self::entryCriteria());
+
+        $by_slot = [];
+        foreach ($rows as $row) {
+            $slot = (int) ($row['fiber_num'] ?? 0);
+            if ($slot >= 1 && $slot <= self::MAX_ENTRIES) {
+                $by_slot[$slot] = $row;
+            }
+        }
+
+        ksort($by_slot);
+
+        return $by_slot;
+    }
+
+    /**
+     * Garante que a linha da entrada E<n> exista, e devolve o id dela.
+     *
+     * PONTO UNICO de criacao de entrada, e de proposito FORA do applyInput.
+     * O applyInput e' o caminho do painel de edicao da GRADE (POST e AJAX), e
+     * a regra dele - tres estados exclusivos, "vazio apaga a linha" - nao vale
+     * para entrada: entrada nao tem numero de loja, nao tem acoplador e nao
+     * pode sumir por estar "vazia", porque o que a mantem viva e' o VINCULO
+     * pendurado nela, nao o conteudo dos campos. Passar entrada pelo applyInput
+     * faria a primeira gravacao apagar a linha e derrubar o vinculo junto.
+     *
+     * Sem filtro de is_deleted no getFromDBByCrit, e sem filtro de kind: a
+     * chave unica e' (itemtype, items_id, tube_num, fiber_num) e a licao 112
+     * vale igual aqui - busca pela chave unica nunca filtra kind, senao o
+     * INSERT seguinte bate em 1062 e a tela diz "erro inesperado".
+     *
+     * @param string $itemtype
+     * @param int    $items_id
+     * @param int    $slot fiber_num da entrada, 1 a 4
+     * @return array{ok:bool, error:string, id:int}
+     */
+    public static function ensureEntry(string $itemtype, int $items_id, int $slot): array
+    {
+        $fail = static function (string $error): array {
+            return ['ok' => false, 'error' => $error, 'id' => 0];
+        };
+
+        if ($itemtype === '' || $items_id <= 0) {
+            return $fail(__('Elemento inválido.', 'dgoplus'));
+        }
+
+        if ($slot < 1 || $slot > self::MAX_ENTRIES) {
+            return $fail(
+                sprintf(__('Entrada inválida: são %d entradas por elemento.', 'dgoplus'), self::MAX_ENTRIES)
+            );
+        }
+
+        // Mesma trava de pai do applyInput (bloco 3m): existir, ser CommonDBTM
+        // e ser visivel para este usuario. add() do core nao checa direito
+        // nenhum, entao a checagem tem que ser explicita aqui.
+        if (!class_exists($itemtype)) {
+            return $fail(__('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'));
+        }
+
+        $parent = new $itemtype();
+        if (
+            !($parent instanceof \CommonDBTM)
+            || !$parent->getFromDB($items_id)
+            || !$parent->can($items_id, READ)
+        ) {
+            return $fail(__('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'));
+        }
+
+        $port  = new self();
+        $found = $port->getFromDBByCrit([
+            'itemtype'  => $itemtype,
+            'items_id'  => $items_id,
+            'tube_num'  => self::ENTRY_TUBE,
+            'fiber_num' => $slot,
+        ]);
+
+        if ($found) {
+            if ((int) $port->fields['is_deleted'] === 1) {
+                Session::checkRight(self::$rightname, CREATE);
+                $port->restore(['id' => $port->getID()]);
+            }
+
+            return ['ok' => true, 'error' => '', 'id' => (int) $port->getID()];
+        }
+
+        Session::checkRight(self::$rightname, CREATE);
+
+        $id = (int) $port->add([
+            'itemtype'      => $itemtype,
+            'items_id'      => $items_id,
+            'tube_num'      => self::ENTRY_TUBE,
+            'fiber_num'     => $slot,
+            'kind'          => self::KIND_ENTRY,
+            'code'          => '',
+            'comment'       => '',
+            'is_no_coupler' => 0,
+        ]);
+
+        if ($id <= 0) {
+            return $fail(__('Não foi possível criar a entrada.', 'dgoplus'));
+        }
+
+        return ['ok' => true, 'error' => '', 'id' => $id];
+    }
+
+    /**
      * Contagem por estado de um DGO, para os badges do cabecalho da grade.
      *
      * "Documentadas" NAO conta as sem acoplador: elas nao sao ocupacao, sao
@@ -422,6 +592,17 @@ class Port extends CommonDBChild
      */
     protected function computeFriendlyName()
     {
+        // Bloco 4b-2: entrada nao tem fileira, entao nao tem rotulo de
+        // posicao. Sem este ramo, formatPosition(0, 1, ...) devolveria "F0.01"
+        // - proibido pela especificacao - e o valor vazaria para o Historico do
+        // ativo, que e' justamente o lugar onde ninguem olha ate' precisar.
+        // O ramo e' por KIND, nao por tube_num == 0: kind e' o que a linha
+        // declara ser, e formatPosition continua sendo o ponto unico do rotulo
+        // da GRADE, sem ganhar um caso especial que so ela conheceria.
+        if ((string) ($this->fields['kind'] ?? self::KIND_GRID) === self::KIND_ENTRY) {
+            return self::formatEntryLabel((int) ($this->fields['fiber_num'] ?? 0));
+        }
+
         // Bloco 3r: o rotulo continuo depende da largura da grade, entao o
         // Historico precisa dela tambem - senao o log registraria "F2.01" para
         // uma porta que a tela chama de "F2.17".
@@ -481,6 +662,21 @@ class Port extends CommonDBChild
         $width = $fibers_per_tube > 0 ? $fibers_per_tube : Panel::DEFAULT_FIBERS;
 
         return sprintf('F%d.%02d', $tube_num, ($tube_num - 1) * $width + $fiber_num);
+    }
+
+    /**
+     * Rotulo curto de uma entrada: E1 a E4.
+     *
+     * Ponto unico, como o formatPosition e' o da grade. Slot fora da faixa sai
+     * cru ("E0", "E9") em vez de virar E1 por conveniencia: numero plausivel
+     * escondendo dado invalido e' o defeito mais caro deste projeto (licao 14).
+     *
+     * @param int $slot fiber_num da entrada
+     * @return string
+     */
+    public static function formatEntryLabel(int $slot): string
+    {
+        return 'E' . $slot;
     }
 
     /**

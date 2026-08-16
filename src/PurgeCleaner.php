@@ -88,12 +88,22 @@ final class PurgeCleaner
 
         $ports_table  = Port::getTable();
         $panels_table = Panel::getTable();
+        $links_table  = Link::getTable();
 
         // ------------------------------------------------------------------
         // 1. Colher os ids ANTES de apagar. Ver o cabecalho desta classe.
         // ------------------------------------------------------------------
         $port_ids  = self::collectIds($ports_table, $itemtype, $items_id);
         $panel_ids = self::collectIds($panels_table, $itemtype, $items_id);
+
+        // Bloco 4b-2: o vinculo nao pertence ao elemento, pertence as PORTAS -
+        // e por qualquer um dos dois lados. Purgar um elemento apaga as portas
+        // dele, e todo vinculo que citava qualquer uma delas viraria linha
+        // apontando para porta inexistente: o mesmo defeito que esta classe
+        // existe para corrigir, um nivel acima. Colhido AQUI, junto com os
+        // outros ids e pelo mesmo motivo - depois dos deletes as portas ja
+        // teriam sumido e nao haveria mais como saber quais vinculos eram.
+        $link_ids = Link::idsTouchingPorts($port_ids);
 
         // ------------------------------------------------------------------
         // 2. Historico dos filhos. Port e Panel sao apagados em consultas
@@ -104,10 +114,18 @@ final class PurgeCleaner
         // ------------------------------------------------------------------
         $logs_removed  = self::purgeLogs(Port::class, $port_ids);
         $logs_removed += self::purgeLogs(Panel::class, $panel_ids);
+        $logs_removed += self::purgeLogs(Link::class, $link_ids);
 
         // ------------------------------------------------------------------
         // 3. As linhas do plugin. Sem filtro de is_deleted.
         // ------------------------------------------------------------------
+        // Os vinculos saem ANTES das portas: enquanto a porta existe, a linha
+        // do vinculo ainda e' legivel. A ordem inversa nao daria erro (nao ha
+        // constraint no banco), daria lixo silencioso.
+        if ($link_ids !== []) {
+            $DB->delete($links_table, ['id' => $link_ids]);
+        }
+
         if ($port_ids !== []) {
             $DB->delete($ports_table, ['id' => $port_ids]);
         }
@@ -121,7 +139,7 @@ final class PurgeCleaner
         //    ativo passivo que nunca foi DGO e' rotina, e nao deve virar
         //    linha de registro.
         // ------------------------------------------------------------------
-        if ($port_ids === [] && $panel_ids === []) {
+        if ($port_ids === [] && $panel_ids === [] && $link_ids === []) {
             return;
         }
 
@@ -131,9 +149,10 @@ final class PurgeCleaner
             3,
             'dgoplus',
             sprintf(
-                __('DGO+ removeu %1$d porta(s), %2$d painel(eis) e %3$d linha(s) de histórico da DGO purgada (id %4$d).', 'dgoplus'),
+                __('DGO+ removeu %1$d porta(s), %2$d painel(eis), %3$d vínculo(s) e %4$d linha(s) de histórico da DGO purgada (id %5$d).', 'dgoplus'),
                 count($port_ids),
                 count($panel_ids),
+                count($link_ids),
                 $logs_removed,
                 $items_id
             )
