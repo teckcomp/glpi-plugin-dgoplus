@@ -698,6 +698,290 @@ class Link extends CommonDBTM
      * @param int    $items_id
      * @return string
      */
+    /**
+     * A cadeia de alimentacao ACIMA de um elemento, nivel a nivel. Bloco 4e.
+     *
+     * Nivel 0 = pais diretos, nivel 1 = avos, e assim por diante. Cada nivel
+     * traz TODOS os pais lado a lado (decisao do 4e): um elemento com duas
+     * entradas confirmadas de origens diferentes tem dois pais no mesmo nivel,
+     * e esconder um deles seria o mapa mentindo por omissao.
+     *
+     * SO' vinculo CONFIRMADO sobe na trilha (decisao do 4e): pendente e'
+     * proposta, nao topologia - ele aparece nas listas com selo amarelo, nunca
+     * na cadeia.
+     *
+     * Em LOTE por nivel, nunca por elemento: entradas dos elementos do nivel
+     * numa consulta, vinculos noutra, portas de origem noutra, elementos-pai
+     * noutra. A trilha percorre varios niveis e o custo por elemento
+     * multiplicaria (regra do 4d, mesma do pendingRows).
+     *
+     * Teto de profundidade = numero de papeis registrados. A hierarquia
+     * permissiva desce um degrau por vinculo, entao uma cadeia legitima nunca
+     * tem mais niveis do que papeis - e o teto, junto com o conjunto de
+     * elementos ja visitados, garante parada mesmo com dado corrompido no
+     * banco (um ciclo que o propose nunca criaria, mas SQL na mao poderia).
+     *
+     * Restricao de entidade igual a do pendingRows: elemento-pai que o usuario
+     * nao enxerga nao entra no nivel - a trilha para nele, em vez de vazar
+     * nome de ativo de outra entidade.
+     *
+     * @param string $itemtype
+     * @param int    $items_id
+     * @return array<int, array<int, array{row: array, role: string|null}>>
+     */
+    public static function upstreamLevels(string $itemtype, int $items_id): array
+    {
+        if ($itemtype !== PassiveDCEquipment::class || $items_id <= 0) {
+            return [];
+        }
+
+        $type_field = Setting::getTypeField();
+        $max_levels = count(Setting::getRoles());
+
+        $levels  = [];
+        $seen    = [$items_id => true];
+        $current = [$items_id];
+
+        for ($depth = 0; $depth < $max_levels && $current !== []; $depth++) {
+            // --- Entradas dos elementos deste nivel, numa consulta ---
+            $port_model = new Port();
+            $entries    = $port_model->find([
+                'itemtype'   => PassiveDCEquipment::class,
+                'items_id'   => $current,
+                'is_deleted' => 0,
+            ] + Port::entryCriteria());
+
+            $entry_ids = [];
+            foreach ($entries as $row) {
+                $entry_ids[] = (int) $row['id'];
+            }
+
+            if ($entry_ids === []) {
+                break;
+            }
+
+            // --- Vinculos confirmados que chegam nessas entradas ---
+            $src_ids = [];
+            foreach (self::findByDestinations($entry_ids) as $link) {
+                if ((string) ($link['status'] ?? '') === self::STATUS_CONFIRMED) {
+                    $src_ids[] = (int) $link['plugin_dgoplus_ports_id_src'];
+                }
+            }
+            $src_ids = self::cleanIds($src_ids);
+
+            if ($src_ids === []) {
+                break;
+            }
+
+            // --- Portas de origem -> elementos-pai (sem os ja visitados) ---
+            $src_model  = new Port();
+            $parent_ids = [];
+            foreach ($src_model->find(['id' => $src_ids]) as $row) {
+                if ((string) ($row['itemtype'] ?? '') !== PassiveDCEquipment::class) {
+                    continue;
+                }
+                $pid = (int) $row['items_id'];
+                if ($pid > 0 && !isset($seen[$pid])) {
+                    $parent_ids[$pid] = $pid;
+                }
+            }
+
+            if ($parent_ids === []) {
+                break;
+            }
+
+            // --- Elementos-pai visiveis para este usuario ---
+            $model   = new PassiveDCEquipment();
+            $parents = $model->find(
+                ['id' => array_values($parent_ids)]
+                + getEntitiesRestrictCriteria('glpi_passivedcequipments', '', '', true)
+            );
+
+            if ($parents === []) {
+                break;
+            }
+
+            $level = [];
+            foreach ($parents as $row) {
+                $level[] = [
+                    'row'  => $row,
+                    'role' => Setting::getRoleForType((int) ($row[$type_field] ?? 0)),
+                ];
+            }
+
+            // Ordem estavel: nome, desempate por id - a trilha nao pode dancar
+            // entre duas aberturas da mesma tela (mesma razao do pendingRows).
+            usort(
+                $level,
+                fn(array $a, array $b): int =>
+                    strcmp((string) ($a['row']['name'] ?? ''), (string) ($b['row']['name'] ?? ''))
+                        ?: ((int) $a['row']['id'] <=> (int) $b['row']['id'])
+            );
+
+            $levels[] = $level;
+
+            $current = [];
+            foreach ($level as $node) {
+                $pid          = (int) $node['row']['id'];
+                $seen[$pid]   = true;
+                $current[]    = $pid;
+            }
+        }
+
+        return $levels;
+    }
+
+    /**
+     * Quem este elemento alimenta, agrupado por elemento de destino. Bloco 4e.
+     *
+     * A consulta reversa da trilha: portas de grade do elemento -> vinculos
+     * que saem delas -> entradas de destino -> elementos alimentados. Traz
+     * PENDENTES tambem (decisao do 4e): na lista eles aparecem com selo, so'
+     * na trilha e' que nao sobem.
+     *
+     * Em LOTE: grade numa consulta, vinculos noutra, entradas noutra,
+     * elementos noutra - nunca describe* em laco (regra do 4d).
+     *
+     * Restricao de entidade tira o GRUPO inteiro: destino que o usuario nao
+     * enxerga nao aparece nem anonimo (mesma regra do pendingRows).
+     *
+     * @param string $itemtype
+     * @param int    $items_id
+     * @return array<int, array{
+     *   row: array, role: string|null,
+     *   links: array<int, array{src_label:string, dst_label:string, pending:bool,
+     *                           tube_num:int, fiber_num:int}>
+     * }>
+     */
+    public static function downstreamOf(string $itemtype, int $items_id): array
+    {
+        if ($itemtype !== PassiveDCEquipment::class || $items_id <= 0) {
+            return [];
+        }
+
+        // --- Portas de grade do elemento ---
+        $port_model = new Port();
+        $grid_rows  = $port_model->find([
+            'itemtype'   => $itemtype,
+            'items_id'   => $items_id,
+            'is_deleted' => 0,
+        ] + Port::gridCriteria());
+
+        if ($grid_rows === []) {
+            return [];
+        }
+
+        $grid_by_id = [];
+        foreach ($grid_rows as $row) {
+            $grid_by_id[(int) $row['id']] = $row;
+        }
+
+        // --- Vinculos que saem dessas portas ---
+        $links = self::findByOrigins(array_keys($grid_by_id));
+
+        if ($links === []) {
+            return [];
+        }
+
+        // --- Entradas de destino, numa consulta ---
+        $dst_ids = [];
+        foreach ($links as $link) {
+            $dst_ids[] = (int) $link['plugin_dgoplus_ports_id_dst'];
+        }
+        $dst_ids = self::cleanIds($dst_ids);
+
+        $dst_model = new Port();
+        $dst_ports = [];
+        foreach ($dst_model->find(['id' => $dst_ids]) as $row) {
+            $dst_ports[(int) $row['id']] = $row;
+        }
+
+        // --- Elementos de destino visiveis, numa consulta ---
+        $dst_item_ids = [];
+        foreach ($dst_ports as $row) {
+            if ((string) ($row['itemtype'] ?? '') === PassiveDCEquipment::class) {
+                $dst_item_ids[] = (int) $row['items_id'];
+            }
+        }
+        $dst_item_ids = self::cleanIds($dst_item_ids);
+
+        $items = [];
+        if ($dst_item_ids !== []) {
+            $model = new PassiveDCEquipment();
+            $found = $model->find(
+                ['id' => $dst_item_ids]
+                + getEntitiesRestrictCriteria('glpi_passivedcequipments', '', '', true)
+            );
+            foreach ($found as $row) {
+                $items[(int) $row['id']] = $row;
+            }
+        }
+
+        if ($items === []) {
+            return [];
+        }
+
+        // Largura da grade DESTE elemento, para o rotulo continuo da origem.
+        $width = Panel::getWidthForItemId($itemtype, $items_id);
+
+        $type_field = Setting::getTypeField();
+
+        $groups = [];
+        foreach ($links as $src_port_id => $link) {
+            $src = $grid_by_id[$src_port_id] ?? null;
+            $dst = $dst_ports[(int) $link['plugin_dgoplus_ports_id_dst']] ?? null;
+
+            if ($src === null || $dst === null) {
+                continue;
+            }
+
+            $dst_item_id = (int) $dst['items_id'];
+            if (!isset($items[$dst_item_id])) {
+                continue;
+            }
+
+            if (!isset($groups[$dst_item_id])) {
+                $groups[$dst_item_id] = [
+                    'row'   => $items[$dst_item_id],
+                    'role'  => Setting::getRoleForType((int) ($items[$dst_item_id][$type_field] ?? 0)),
+                    'links' => [],
+                ];
+            }
+
+            $groups[$dst_item_id]['links'][] = [
+                'src_label' => Port::formatPosition(
+                    (int) $src['tube_num'],
+                    (int) $src['fiber_num'],
+                    $width
+                ),
+                'dst_label' => Port::formatEntryLabel((int) $dst['fiber_num']),
+                'pending'   => (string) ($link['status'] ?? '') !== self::STATUS_CONFIRMED,
+                'tube_num'  => (int) $src['tube_num'],
+                'fiber_num' => (int) $src['fiber_num'],
+            ];
+        }
+
+        // Linhas do grupo em ordem de posicao na grade; grupos por nome, com
+        // desempate por id - mesma estabilidade da trilha.
+        foreach ($groups as &$group) {
+            usort(
+                $group['links'],
+                fn(array $a, array $b): int =>
+                    ($a['tube_num'] <=> $b['tube_num']) ?: ($a['fiber_num'] <=> $b['fiber_num'])
+            );
+        }
+        unset($group);
+
+        uasort(
+            $groups,
+            fn(array $a, array $b): int =>
+                strcmp((string) ($a['row']['name'] ?? ''), (string) ($b['row']['name'] ?? ''))
+                    ?: ((int) $a['row']['id'] <=> (int) $b['row']['id'])
+        );
+
+        return array_values($groups);
+    }
+
     private static function itemNameOf(string $itemtype, int $items_id): string
     {
         if ($itemtype !== '' && $items_id > 0 && class_exists($itemtype)) {

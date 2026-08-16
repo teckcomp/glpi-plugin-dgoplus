@@ -2085,7 +2085,11 @@ class MapController
         // tres empilharem juntos.
         echo "<div style='flex:1 1 280px;min-width:0;max-width:420px'>";
         DgoIdentity::displayQrCard($dgo);
+        // Bloco 4e (ajuste na validacao): anexos ACIMA do "Alimenta" - ordem
+        // apontada pelo usuario na propria captura. O card "Alimenta" fecha a
+        // parte de topologia da coluna, antes dos comentarios.
         self::displayAttachmentsSidebar($dgo, $locations_id, $edit_key, $floors_id);
+        self::displayFeedsCard($dgo);
         DgoIdentity::displayCommentCard($dgo, $locations_id, $edit_key, $floors_id);
         echo "</div>"; // coluna da direita
 
@@ -2481,6 +2485,42 @@ class MapController
         }
         echo "</div>";
 
+        // Bloco 4e: a trilha completa ate o topo, entre "Alimentada por" e
+        // "Proposto por" - posicao literal do desenho aprovado. So' vinculo
+        // CONFIRMADO sobe (decisao do 4e); sem nenhum nivel confirmado acima,
+        // a linha nem aparece - trilha de um elemento so' nao informa nada.
+        $levels = Link::upstreamLevels(PassiveDCEquipment::class, $items_id);
+
+        if ($levels !== []) {
+            echo "<div class='py-2 my-1 border-top border-bottom'>";
+            echo "<div class='text-muted' style='font-size:12px'>" . __('Trilha', 'dgoplus') . "</div>";
+            echo "<div class='d-flex align-items-center gap-1 flex-wrap mt-1'>";
+
+            // Os niveis chegam de baixo para cima (0 = pais diretos) e a
+            // trilha desenha da esquerda para a direita a partir do TOPO -
+            // por isso o reverse. Nivel com mais de um pai mostra todos lado
+            // a lado (decisao do 4e).
+            foreach (array_reverse($levels) as $level) {
+                foreach ($level as $i => $node) {
+                    // O "+" separa pais do MESMO nivel; sem ele, dois chips
+                    // adjacentes leem como um degrau da trilha (visto na
+                    // renderizacao, nao deduzido - licao 104).
+                    if ($i > 0) {
+                        echo "<span class='text-muted'>+</span>";
+                    }
+                    echo self::renderTrailChip($node['row'], $node['role']);
+                }
+                echo "<i class='ti ti-arrow-right text-muted'></i>";
+            }
+
+            echo "<span class='badge bg-blue-lt'>"
+                . htmlescape(sprintf(__('%s · aqui', 'dgoplus'), $label)) . "</span>";
+            echo "</div>";
+            echo "<div class='form-hint mt-1'>"
+                . htmlescape(__('Só vínculos confirmados sobem na trilha.', 'dgoplus')) . "</div>";
+            echo "</div>";
+        }
+
         echo "<div class='d-flex justify-content-between gap-3 py-1'>";
         echo "<span class='text-muted'>" . __('Proposto por', 'dgoplus') . "</span>";
         echo "<span>" . htmlescape((string) getUserName((int) ($link['users_id_proposer'] ?? 0)))
@@ -2612,6 +2652,125 @@ class MapController
      * @param string             $edit_key
      * @return void
      */
+    /**
+     * Um elemento da trilha, como pastilha clicavel. Bloco 4e.
+     *
+     * Recebe a LINHA do find() (nao um objeto carregado) e hidrata um
+     * PassiveDCEquipment so' para a URL: getUrlForDgo le locations_id dos
+     * fields e getID()/getType() do proprio objeto, entao a linha completa
+     * basta - e recarregar do banco seria uma consulta por pastilha, a
+     * leitura em laco que o 4d aboliu.
+     *
+     * A sigla do papel entra na frente do nome, a mesma linguagem que o 4a-3
+     * pos no seletor ("DIO · nome"). Papel nulo (Tipo nao mapeado) mostra so'
+     * o nome.
+     *
+     * @param array       $row  linha de glpi_passivedcequipments
+     * @param string|null $role
+     * @return string
+     */
+    private static function renderTrailChip(array $row, ?string $role): string
+    {
+        $el         = new PassiveDCEquipment();
+        $el->fields = $row;
+
+        $name = (string) ($row['name'] ?? '');
+        if ($name === '') {
+            $name = '#' . (int) ($row['id'] ?? 0);
+        }
+
+        $text = ($role !== null ? Setting::getRoleLabel($role) . ' · ' : '') . $name;
+
+        return "<a href='" . htmlescape(self::getUrlForDgo($el)) . "'"
+            . " class='badge bg-secondary-lt text-decoration-none'>"
+            . htmlescape($text) . "</a>";
+    }
+
+    /**
+     * Card "Alimenta" da coluna da direita: quem este elemento alimenta,
+     * agrupado por elemento de destino. Bloco 4e.
+     *
+     * SO' LE E NAVEGA (decisao da Fase 4, a mesma das telas de pendencia):
+     * propor, confirmar, recusar e desmontar continuam no card da entrada do
+     * elemento de destino e no painel da porta de origem. Um segundo lugar
+     * escrevendo vinculo seria um segundo lugar para errar.
+     *
+     * So' aparece em papel que tem nivel abaixo (mesma regra do
+     * displayFeedSection): CTO nem renderiza o card, porque CTO nao propoe.
+     * Pendente entra na lista com selo amarelo (decisao do 4e).
+     *
+     * Nome do destino em text-nowrap com reticencias: sem isso a quebra cai
+     * dentro do nome, o defeito que o 4d viu na renderizacao ("Teste /
+     * drop 001").
+     *
+     * @param PassiveDCEquipment $dgo
+     * @return void
+     */
+    private static function displayFeedsCard(PassiveDCEquipment $dgo): void
+    {
+        $role  = Setting::getRoleOfItem($dgo);
+        $roles = Setting::getRoles();
+        $pos   = $role !== null ? array_search($role, $roles, true) : false;
+
+        if ($pos === false || array_slice($roles, (int) $pos + 1) === []) {
+            return;
+        }
+
+        $groups = Link::downstreamOf(PassiveDCEquipment::class, (int) $dgo->getID());
+
+        echo "<div class='card mb-3'>";
+
+        echo "<div class='card-header d-flex align-items-center gap-2'>";
+        echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>"
+            . "<i class='ti ti-plug'></i>" . __('Alimenta', 'dgoplus') . "</h3>";
+        echo "<span class='badge bg-secondary-lt ms-auto'>" . count($groups) . "</span>";
+        echo "</div>";
+
+        echo "<div class='card-body py-2'>";
+
+        if ($groups === []) {
+            // Estado vazio explicito (licao 16: vazio mudo parece defeito).
+            echo "<span class='text-muted'>" . __('Nenhum vínculo de saída.', 'dgoplus') . "</span>";
+        }
+
+        foreach ($groups as $i => $group) {
+            if ($i > 0) {
+                echo "<hr class='my-2'>";
+            }
+
+            $el         = new PassiveDCEquipment();
+            $el->fields = $group['row'];
+
+            $name = (string) ($group['row']['name'] ?? '');
+            if ($name === '') {
+                $name = '#' . (int) ($group['row']['id'] ?? 0);
+            }
+
+            $text = ($group['role'] !== null ? Setting::getRoleLabel((string) $group['role']) . ' · ' : '')
+                . $name;
+
+            echo "<div class='text-nowrap' style='overflow:hidden;text-overflow:ellipsis'>";
+            echo "<a href='" . htmlescape(self::getUrlForDgo($el)) . "'>" . htmlescape($text) . "</a>";
+            echo "</div>";
+
+            foreach ($group['links'] as $pair) {
+                echo "<div class='d-flex align-items-center gap-2 mt-1'>";
+                echo "<span class='font-monospace text-secondary' style='font-size:12.5px'>"
+                    . htmlescape($pair['src_label'])
+                    . " <i class='ti ti-arrow-right'></i> "
+                    . htmlescape($pair['dst_label'])
+                    . "</span>";
+                echo $pair['pending']
+                    ? "<span class='badge bg-yellow-lt'>" . __('pendente', 'dgoplus') . "</span>"
+                    : "<span class='badge bg-green-lt'>" . __('confirmado', 'dgoplus') . "</span>";
+                echo "</div>";
+            }
+        }
+
+        echo "</div>"; // card-body
+        echo "</div>"; // card
+    }
+
     private static function displayAttachmentsSidebar(PassiveDCEquipment $dgo, int $locations_id, string $edit_key, int $floors_id = 0): void
     {
         $items_id = (int) $dgo->getID();
@@ -2620,7 +2779,7 @@ class MapController
 
         echo "<div class='card-header d-flex align-items-center justify-content-between gap-2'>";
         echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>"
-            . "<i class='ti ti-files'></i>" . __('Anexos da DGO', 'dgoplus') . "</h3>";
+            . "<i class='ti ti-files'></i>" . __('Anexos do elemento', 'dgoplus') . "</h3>";
 
         if (!Document::canView()) {
             echo "</div><div class='card-body'>";
