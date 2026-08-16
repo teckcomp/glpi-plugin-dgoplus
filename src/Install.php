@@ -45,6 +45,7 @@ class Install
                 `items_id` int $sign NOT NULL DEFAULT '0',
                 `tube_num` int NOT NULL DEFAULT '1',
                 `fiber_num` int NOT NULL DEFAULT '1',
+                `kind` varchar(16) NOT NULL DEFAULT '" . Port::KIND_GRID . "',
                 `code` varchar(64) DEFAULT NULL,
                 `name` varchar(255) DEFAULT NULL,
                 `comment` text,
@@ -62,6 +63,7 @@ class Install
                 KEY `is_recursive` (`is_recursive`),
                 KEY `is_no_coupler` (`is_no_coupler`),
                 KEY `is_deleted` (`is_deleted`),
+                KEY `kind` (`kind`),
                 KEY `code` (`code`),
                 KEY `name` (`name`),
                 KEY `date_creation` (`date_creation`),
@@ -86,6 +88,28 @@ class Install
             $migration->displayMessage("Adicionando is_no_coupler em $ports_table");
             $DB->doQuery("ALTER TABLE `$ports_table` ADD `is_no_coupler` tinyint NOT NULL DEFAULT '0' AFTER `items_id_link`");
             $DB->doQuery("ALTER TABLE `$ports_table` ADD KEY `is_no_coupler` (`is_no_coupler`)");
+        }
+
+        // Bloco 4b-1: classificacao da linha de porta.
+        //
+        // DEFAULT 'grade' nao e' comodidade: e' a migracao. Toda linha que
+        // existe hoje E' porta de grade, entao o ALTER as marca corretamente
+        // sozinho, sem UPDATE de dado e sem janela em que a coluna esteja vazia.
+        //
+        // NAO entra na chave unica de proposito. A unicity e'
+        // (itemtype, items_id, tube_num, fiber_num) e assim continua: entrada
+        // usa tube_num = 0 e grade usa tube_num >= 1, entao os dois conjuntos
+        // ja nao colidem. Acrescentar kind a chave permitiria duas linhas na
+        // mesma posicao fisica, que e' justamente o que a chave existe para
+        // impedir.
+        //
+        // varchar(16) e nao ENUM: kind novo (splitter, no dia em que voltar)
+        // seria ALTER de tipo em ENUM, e ALTER de tipo com dado dentro e'
+        // exatamente o que este projeto evita.
+        if ($DB->tableExists($ports_table) && !$DB->fieldExists($ports_table, 'kind')) {
+            $migration->displayMessage("Adicionando kind em $ports_table");
+            $DB->doQuery("ALTER TABLE `$ports_table` ADD `kind` varchar(16) NOT NULL DEFAULT '" . Port::KIND_GRID . "' AFTER `fiber_num`");
+            $DB->doQuery("ALTER TABLE `$ports_table` ADD KEY `kind` (`kind`)");
         }
 
         if (!$DB->tableExists($panels_table)) {

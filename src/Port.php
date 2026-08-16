@@ -35,6 +35,20 @@ class Port extends CommonDBChild
     public $dohistory = true;
 
     /**
+     * Porta da GRADE: a matriz de fileiras x colunas do elemento. E' o unico
+     * kind que existia ate' o 4b-1, e por isso e' o DEFAULT da coluna: toda
+     * linha gravada antes deste bloco e' grade, e o ALTER as marca sozinho.
+     */
+    public const KIND_GRID = 'grade';
+
+    /**
+     * Porta de ENTRADA (E1-E4). Reservado no 4b-1, usado no 4b-2: a coluna
+     * nasce aqui para que os pontos de leitura ja aprendam a filtrar ANTES de
+     * existir linha de entrada para confundir o diagnostico.
+     */
+    public const KIND_ENTRY = 'entrada';
+
+    /**
      * @param int $nb
      * @return string
      */
@@ -297,11 +311,18 @@ class Port extends CommonDBChild
             ];
         }
 
+        // 'kind' entra na GRAVACAO, mas NAO no getFromDBByCrit acima. A chave
+        // unica e' (itemtype, items_id, tube_num, fiber_num) e nao inclui kind:
+        // procurar com kind faria uma posicao ocupada por linha de outro kind
+        // devolver "nao achei", o INSERT seguinte bateria em 1062 e o usuario
+        // veria "erro inesperado". Mesma armadilha que o comentario do
+        // is_deleted descreve, por baixo da mesma chave.
         $input = [
             'itemtype'      => $itemtype,
             'items_id'      => $items_id,
             'tube_num'      => $tube_num,
             'fiber_num'     => $fiber_num,
+            'kind'          => self::KIND_GRID,
             'code'          => $code,
             'comment'       => $comment,
             'is_no_coupler' => $no_coupler ? 1 : 0,
@@ -333,6 +354,24 @@ class Port extends CommonDBChild
     }
 
     /**
+     * Criterio para somar (+) a um find() que deve enxergar SO' a grade.
+     *
+     * Ponto unico de proposito, mesma razao de Dashboard::currentRole() ser o
+     * ponto unico do papel: sao OITO consultas que precisam deste filtro
+     * (contador, badge, grade, busca, trava de fileira, trava de coluna, trava
+     * de largura e painel de edicao). Escrito a mao em oito lugares, o nono
+     * ponto que alguem acrescentar vai esquecer - e esquecer aqui nao da erro,
+     * da numero errado em silencio, que e' o defeito mais caro deste projeto
+     * (licao 14).
+     *
+     * @return array
+     */
+    public static function gridCriteria(): array
+    {
+        return ['kind' => self::KIND_GRID];
+    }
+
+    /**
      * Contagem por estado de um DGO, para os badges do cabecalho da grade.
      *
      * "Documentadas" NAO conta as sem acoplador: elas nao sao ocupacao, sao
@@ -349,7 +388,7 @@ class Port extends CommonDBChild
             'itemtype'   => $itemtype,
             'items_id'   => $items_id,
             'is_deleted' => 0,
-        ]);
+        ] + self::gridCriteria());
 
         $no_coupler = 0;
         foreach ($rows as $row) {

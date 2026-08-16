@@ -546,7 +546,7 @@ class MapController
             'items_id'   => $items_id,
             'tube_num'   => $last_tube,
             'is_deleted' => 0,
-        ]);
+        ] + Port::gridCriteria());
 
         if ($busy !== []) {
             $positions = [];
@@ -634,7 +634,7 @@ class MapController
             'itemtype'   => $itemtype,
             'items_id'   => $items_id,
             'is_deleted' => 0,
-        ]);
+        ] + Port::gridCriteria());
 
         // A fileira 1 sai FORA aqui, em PHP, e nao no criterio do find():
         // uma DGO tem no maximo 48x48 posicoes, entao trazer tudo e filtrar
@@ -759,7 +759,7 @@ class MapController
             'items_id'   => $items_id,
             'fiber_num'  => $last_column,
             'is_deleted' => 0,
-        ]);
+        ] + Port::gridCriteria());
 
         if ($busy !== []) {
             $positions = [];
@@ -1117,6 +1117,7 @@ class MapController
                 'itemtype'   => PassiveDCEquipment::class,
                 'items_id'   => array_keys($dgo_info),
                 'is_deleted' => 0,
+                'kind'       => Port::KIND_GRID,
                 'OR'         => [
                     'code'    => ['LIKE', $like],
                     'name'    => ['LIKE', $like],
@@ -1472,7 +1473,7 @@ class MapController
             'items_id'      => $items_id,
             'is_deleted'    => 0,
             'is_no_coupler' => 0,
-        ]);
+        ] + Port::gridCriteria());
 
         return count($rows);
     }
@@ -1668,7 +1669,7 @@ class MapController
             'itemtype'   => PassiveDCEquipment::class,
             'items_id'   => $items_id,
             'is_deleted' => 0,
-        ]);
+        ] + Port::gridCriteria());
 
         $byKey = [];
         foreach ($rows as $row) {
