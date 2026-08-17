@@ -10,6 +10,7 @@
  * Bloco 3k: atalho da ficha do ativo para o mapa.
  * Bloco 3l: configuracao de quais Tipos sao DGO.
  * Bloco 3q: limpeza de portas, paineis e historico na PURGA do ativo.
+ * Bloco 4g: bump 1.3.0 e troca de isDgo() por isMapped().
  */
 
 use Glpi\Plugin\Hooks;
@@ -21,7 +22,7 @@ use GlpiPlugin\Dgoplus\ProfileTab;
 use GlpiPlugin\Dgoplus\PurgeCleaner;
 use GlpiPlugin\Dgoplus\Setting;
 
-define('PLUGIN_DGOPLUS_VERSION', '1.2.1');
+define('PLUGIN_DGOPLUS_VERSION', '1.3.0');
 define('PLUGIN_DGOPLUS_MIN_GLPI', '11.0.0');
 define('PLUGIN_DGOPLUS_MAX_GLPI', '11.9.99');
 
@@ -155,10 +156,17 @@ function plugin_dgoplus_post_item_form($params = [])
         return;
     }
 
-    // Bloco 3l: dispositivo passivo que nao e' DGO nao ganha botao de DGO. Com
-    // o filtro de Tipo desligado, isDgo() devolve true para todos e o
-    // comportamento e' o do 3k.
-    if (!Setting::isDgo($item)) {
+    // Bloco 3l: dispositivo passivo que o plugin nao reconhece nao ganha botao
+    // de DGO. Com o filtro de Tipo desligado, isMapped() devolve true para
+    // todos e o comportamento e' o do 3k.
+    //
+    // Bloco 4g: era isDgo(), que desde o 4a nao passava de um apelido de
+    // isMapped(). A troca so' pode acontecer aqui, e por isso esperou o bump:
+    // enquanto a versao do disco divergia da do repositorio, este arquivo
+    // estava proibido na copia disco->repositorio (licao 105). O nome novo
+    // tambem e' o correto: o criterio nunca foi "e' uma DGO", e sim "tem algum
+    // papel do plugin" - um DIO e uma CTO passam por aqui e precisam do botao.
+    if (!Setting::isMapped($item)) {
         return;
     }
 

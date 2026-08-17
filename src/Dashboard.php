@@ -1007,14 +1007,27 @@ class Dashboard
         }
         echo "</tbody></table></div>";
 
-        // O rodape so' aparece quando ha o que a pagina mostre alem do cartao.
-        // "Ver todas as 3" com as tres ja na tela seria um clique que nao leva
-        // a lugar nenhum.
-        if ($total > count($rows)) {
+        // Bloco 4g: o rodape aparece com QUALQUER pendencia, nao so' quando
+        // sobra fila fora do cartao.
+        //
+        // Ate' o 4f a condicao era $total > count($rows), e com isso a pagina
+        // de pendencias ficava inalcancavel na faixa de 1 a 5 - que e'
+        // justamente a faixa do dia a dia. O cartao e' o unico caminho para
+        // ela, entao "sem rodape" significava "sem porta".
+        //
+        // O texto continua respeitando a razao da trava original: "Ver todas
+        // as 3" com as tres ja na tela seria mentira. Quando a fila cabe
+        // inteira no cartao, o rodape anuncia o que a pagina ACRESCENTA - os
+        // filtros por papel, elemento e idade - em vez de prometer mais linhas.
+        if ($total > 0) {
             $params = $d['role'] !== null ? ['role' => (string) $d['role']] : [];
+            $label  = $total > count($rows)
+                ? sprintf(__('Ver todas as %d', 'dgoplus'), $total)
+                : __('Abrir a fila completa', 'dgoplus');
+
             echo "<div class='card-footer text-center py-2'>";
             echo "<a href='" . htmlescape(Pending::getPageUrl($params)) . "'>"
-                . htmlescape(sprintf(__('Ver todas as %d', 'dgoplus'), $total)) . "</a>";
+                . htmlescape($label) . "</a>";
             echo "</div>";
         }
 

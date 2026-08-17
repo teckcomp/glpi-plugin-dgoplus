@@ -385,30 +385,27 @@ class Setting
     }
 
     // -----------------------------------------------------------------
-    // Compatibilidade com o 3l
+    // Compatibilidade com o 3l - ENCERRADA
     //
-    // Bloco 4f: os quatro metodos sem chamador foram removidos -
-    // getDgoTypes(), setDgoTypes(), dgoCriteria() e getTypeForNewDgo().
-    // Os tres primeiros eram uma linha delegando para getAllTypes(),
-    // setTypesForRole(ROLE_DGO, ...) e typesCriteria(). O quarto tinha
-    // logica propria: se o papel DGO nao tivesse Tipo, caia para o
-    // primeiro Tipo de QUALQUER papel - fallback que getTypeForNewItem()
-    // nao faz. Fica registrado aqui caso alguem precise dele de volta.
+    // Bloco 4f: removidos os quatro metodos sem chamador. Os tres primeiros
+    // eram uma linha delegando para getAllTypes(), setTypesForRole() e
+    // typesCriteria(). O quarto tinha logica propria: se o papel DGO nao
+    // tivesse Tipo, caia para o primeiro Tipo de QUALQUER papel - fallback
+    // que getTypeForNewItem() nao faz. Registrado aqui caso volte a fazer
+    // falta.
     //
-    // isDgo() CONTINUA, e nao por descuido: setup.php ainda o chama para
-    // decidir se a ficha do ativo ganha o botao "Abrir no mapa DGO+".
-    // Trocar a chamada por isMapped() exige editar o setup.php, proibido
-    // enquanto a versao do disco divergir da do repositorio (licao 105).
-    // Sai no bloco que fizer o bump.
+    // Bloco 4g: removido o ultimo deles, que era um apelido de isMapped() e
+    // so' continuava vivo porque o setup.php estava proibido na copia
+    // disco->repositorio (licao 105). Com o bump da 1.3.0 a proibicao caiu, a
+    // chamada do setup.php foi trocada e o apelido saiu junto.
+    //
+    // Equivalencias, se aparecer chamador em codigo externo:
+    //   getDgoTypes()       -> getAllTypes()
+    //   setDgoTypes($ids)   -> setTypesForRole(ROLE_DGO, $ids)
+    //   dgoCriteria()       -> typesCriteria()
+    //   getTypeForNewDgo()  -> getTypeForNewItem(ROLE_DGO), SEM o fallback
+    //   isDgo($item)        -> isMapped($item), identico
+    //
+    // Nao existe mais superficie de compatibilidade do 3l nesta classe.
     // -----------------------------------------------------------------
-
-    /**
-     * @deprecated 4a - use isMapped(). Mantido porque setup.php ainda chama.
-     * @param CommonDBTM $item
-     * @return bool
-     */
-    public static function isDgo(CommonDBTM $item): bool
-    {
-        return self::isMapped($item);
-    }
 }
