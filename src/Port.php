@@ -845,6 +845,31 @@ class Port extends CommonDBChild
     }
 
     /**
+     * Campo que o core trata como "nome" da porta. Bloco 3u.
+     *
+     * O default do core devolve `name` - campo aposentado no 3i-b, vazio em
+     * tudo que foi documentado desde entao. O efeito visivel estava no
+     * relatorio: getDefaultToView() (SearchOption.php:742, 11.0.6) forca como
+     * primeira coluna a opcao de busca cujo campo e' o getNameField() do
+     * itemtype, fora do circuito de preferencias - e a engrenagem nao consegue
+     * oculta-la. A operacao ficava com uma primeira coluna quase toda vazia.
+     *
+     * Devolver `code` faz a coluna forcada virar a opcao 1 (Nome / Numero da
+     * Loja), que e' dado vivo, e a opcao 2 (historico) virar coluna comum,
+     * ocultavel. Nao ha efeito colateral no Historico nem nos rotulos: o
+     * computeFriendlyName() logo abaixo ja e' sobrescrito desde o 3j e nao
+     * passa por getNameField(). O SearchEngine deduplica a coluna forcada
+     * contra as preferencias (laco "Clean and reorder toview"), entao a
+     * preferencia global 11, 12, 1 continua valida como esta.
+     *
+     * @return string
+     */
+    public static function getNameField()
+    {
+        return 'code';
+    }
+
+    /**
      * Nome legivel de uma porta: posicao, mais o nome/numero da loja se houver.
      *
      * Sobrescrito no bloco 3j por causa de um efeito colateral do 3i-b: o
