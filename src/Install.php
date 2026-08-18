@@ -53,6 +53,8 @@ class Install
                 `itemtype_link` varchar(255) DEFAULT NULL,
                 `items_id_link` int $sign NOT NULL DEFAULT '0',
                 `is_no_coupler` tinyint NOT NULL DEFAULT '0',
+                `users_id_documenter` int $sign NOT NULL DEFAULT '0',
+                `date_documented` timestamp NULL DEFAULT NULL,
                 `is_deleted` tinyint NOT NULL DEFAULT '0',
                 `date_creation` timestamp NULL DEFAULT NULL,
                 `date_mod` timestamp NULL DEFAULT NULL,
@@ -65,6 +67,8 @@ class Install
                 KEY `is_no_coupler` (`is_no_coupler`),
                 KEY `is_deleted` (`is_deleted`),
                 KEY `kind` (`kind`),
+                KEY `users_id_documenter` (`users_id_documenter`),
+                KEY `date_documented` (`date_documented`),
                 KEY `code` (`code`),
                 KEY `name` (`name`),
                 KEY `date_creation` (`date_creation`),
@@ -111,6 +115,34 @@ class Install
             $migration->displayMessage("Adicionando kind em $ports_table");
             $DB->doQuery("ALTER TABLE `$ports_table` ADD `kind` varchar(16) NOT NULL DEFAULT '" . Port::KIND_GRID . "' AFTER `fiber_num`");
             $DB->doQuery("ALTER TABLE `$ports_table` ADD KEY `kind` (`kind`)");
+        }
+
+        // Bloco 3s: carimbo do ato de documentacao - QUEM e QUANDO.
+        //
+        // O dado ja existia no glpi_logs (Port tem dohistory = true), mas
+        // inutilizavel: o historico de subitem nao identifica a porta, so diz
+        // que "alguem alterou uma porta" (licao 63). Coluna e' o que torna o
+        // dado filtravel e exportavel no relatorio nativo.
+        //
+        // Sem DEFAULT de migracao, ao contrario do kind: nao ha valor correto
+        // para linha antiga. Toda porta documentada antes deste bloco fica com
+        // 0 / NULL para sempre, e isso e' verdade, nao lacuna - garimpar
+        // glpi_logs para adivinhar autoria daria carimbo plausivel e errado.
+        //
+        // users_id_documenter, com SUFIXO depois de users_id: e' a convencao
+        // que getTableNameForForeignKeyField exige para resolver em glpi_users
+        // (mesmo padrao de users_id_tech/users_id_recipient no core e de
+        // users_id_proposer na _links).
+        if ($DB->tableExists($ports_table) && !$DB->fieldExists($ports_table, 'users_id_documenter')) {
+            $migration->displayMessage("Adicionando users_id_documenter em $ports_table");
+            $DB->doQuery("ALTER TABLE `$ports_table` ADD `users_id_documenter` int $sign NOT NULL DEFAULT '0' AFTER `is_no_coupler`");
+            $DB->doQuery("ALTER TABLE `$ports_table` ADD KEY `users_id_documenter` (`users_id_documenter`)");
+        }
+
+        if ($DB->tableExists($ports_table) && !$DB->fieldExists($ports_table, 'date_documented')) {
+            $migration->displayMessage("Adicionando date_documented em $ports_table");
+            $DB->doQuery("ALTER TABLE `$ports_table` ADD `date_documented` timestamp NULL DEFAULT NULL AFTER `users_id_documenter`");
+            $DB->doQuery("ALTER TABLE `$ports_table` ADD KEY `date_documented` (`date_documented`)");
         }
 
         if (!$DB->tableExists($panels_table)) {

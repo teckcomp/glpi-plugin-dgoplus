@@ -35,6 +35,17 @@ class Port extends CommonDBChild
     public $dohistory = true;
 
     /**
+     * Bloco 3s: o carimbo de documentacao NAO gera linha de historico.
+     *
+     * A linha que o core ja grava para a alteracao do codigo tem o autor
+     * dentro dela (glpi_logs.user_name); registrar "Documentado por: fulano"
+     * ao lado seria a mesma informacao duas vezes, e dobraria o volume do
+     * Historico do ativo a cada gravacao. CommonDBTM:1736 e :1750 leem esta
+     * propriedade para decidir.
+     */
+    public $history_blacklist = ['users_id_documenter', 'date_documented'];
+
+    /**
      * Porta da GRADE: a matriz de fileiras x colunas do elemento. E' o unico
      * kind que existia ate' o 4b-1, e por isso e' o DEFAULT da coluna: toda
      * linha gravada antes deste bloco e' grade, e o ALTER as marca sozinho.
@@ -205,6 +216,36 @@ class Port extends CommonDBChild
             'nosearch'      => true,
         ];
 
+        // Bloco 3s: as duas unicas opcoes que o relatorio nao tinha e que a
+        // operacao pedia - QUEM documentou e QUANDO. Nada mais mudou aqui: o
+        // relatorio inteiro continua como estava, estas entram como
+        // complemento das opcoes que ja existiam.
+        //
+        // right => 'all' de proposito. O default do datatype dropdown sobre
+        // glpi_users e' 'interface', que lista apenas quem tem acesso a
+        // interface central - e quem documenta porta pode ter perfil so de
+        // self-service. Com o default, o filtro nao ofereceria justamente o
+        // usuario procurado.
+        $tab[] = [
+            'id'            => 11,
+            'table'         => 'glpi_users',
+            'field'         => 'name',
+            'linkfield'     => 'users_id_documenter',
+            'name'          => __('Documentado por', 'dgoplus'),
+            'datatype'      => 'dropdown',
+            'right'         => 'all',
+            'massiveaction' => false,
+        ];
+
+        $tab[] = [
+            'id'            => 12,
+            'table'         => $this->getTable(),
+            'field'         => 'date_documented',
+            'name'          => __('Data da documentação', 'dgoplus'),
+            'datatype'      => 'datetime',
+            'massiveaction' => false,
+        ];
+
         $tab[] = [
             'id'            => 19,
             'table'         => $this->getTable(),
@@ -247,6 +288,30 @@ class Port extends CommonDBChild
      * @return array{ok:bool, error:string, state:string, code:string,
      *               comment:string, id:int}
      */
+    /**
+     * Carimbo do ato de documentacao: quem esta gravando, e quando. Bloco 3s.
+     *
+     * PONTO UNICO das duas colunas, pela mesma razao de gridCriteria() ser o
+     * ponto unico do filtro de kind: sao TRES pontos de escrita em _ports
+     * (applyInput, ensureGrid, ensureEntry) e quem acrescentar um quarto
+     * precisa achar uma linha, nao lembrar de dois nomes de coluna. Esquecer
+     * aqui nao da erro - da coluna vazia em silencio.
+     *
+     * $_SESSION['glpi_currenttime'] e' o relogio da requisicao no GLPI, o
+     * mesmo que o core usa para date_mod: sem ele, duas gravacoes da mesma
+     * requisicao poderiam diferir em um segundo. O fallback cobre chamada fora
+     * de sessao (CLI), onde getLoginUserID() ja devolve 0.
+     *
+     * @return array{users_id_documenter:int, date_documented:string}
+     */
+    public static function documentStamp(): array
+    {
+        return [
+            'users_id_documenter' => (int) Session::getLoginUserID(),
+            'date_documented'     => $_SESSION['glpi_currenttime'] ?? date('Y-m-d H:i:s'),
+        ];
+    }
+
     public static function applyInput(array $params): array
     {
         $itemtype   = (string) ($params['itemtype'] ?? '');
@@ -314,6 +379,14 @@ class Port extends CommonDBChild
 
         $is_deleted = $found && (int) $port->fields['is_deleted'] === 1;
 
+        // Bloco 3s: codigo que estava gravado ANTES desta chamada, lido aqui
+        // porque restore()/update() mais abaixo substituem $port->fields.
+        //
+        // Linha na lixeira conta como codigo vazio: para quem olha a tela, a
+        // posicao estava LIVRE, e quem escrever um codigo nela esta
+        // documentando, nao corrigindo o que outro documentou.
+        $old_code = ($found && !$is_deleted) ? trim((string) ($port->fields['code'] ?? '')) : '';
+
         // Bloco 4c: se esta porta ALIMENTA alguem, duas regras abaixo mudam.
         // A consulta so' roda quando a linha existe - porta sem linha nao tem
         // id para o vinculo apontar.
@@ -378,6 +451,22 @@ class Port extends CommonDBChild
             'comment'       => $comment,
             'is_no_coupler' => $no_coupler ? 1 : 0,
         ];
+
+        // Bloco 3s: carimba o ato de documentar, e SO ele.
+        //
+        // A condicao e' mudanca de VALOR do codigo, nao "gravacao com codigo
+        // preenchido": corrigir uma virgula na OBS de uma porta ja documentada
+        // roubaria a autoria de quem a documentou de verdade. Pelo mesmo
+        // motivo, apagar o codigo nao carimba - o carimbo antigo fica, por
+        // decisao do usuario (16/08), e uma porta livre pode exibir quem a
+        // documentou por ultimo.
+        //
+        // Marcar "sem acoplador" tambem nao carimba: e' o oposto de
+        // documentar, e a regra de exclusao acima ja garante que ela vem sem
+        // codigo.
+        if ($code !== '' && $code !== $old_code) {
+            $input += self::documentStamp();
+        }
 
         if ($found) {
             if ($is_deleted) {
@@ -536,9 +625,26 @@ class Port extends CommonDBChild
         ]);
 
         if ($found) {
+            // Bloco 3s: lido ANTES do restore, que substitui $port->fields.
+            $has_code = trim((string) ($port->fields['code'] ?? '')) !== '';
+
             if ((int) $port->fields['is_deleted'] === 1) {
                 Session::checkRight(self::$rightname, CREATE);
                 $port->restore(['id' => $port->getID()]);
+            }
+
+            // Bloco 3s: a entrada esta sendo documentada AGORA, por um vinculo,
+            // e quem propoe e' quem carimba. So nao carimba se a linha ja
+            // tivesse codigo - carimbo de quem escreveu codigo e' mais antigo e
+            // mais verdadeiro que o de quem apenas ligou a fibra nela.
+            //
+            // Na pratica entrada nunca tem codigo (nasce vazia por
+            // construcao), mas a condicao fica escrita: e' a MESMA do
+            // ensureGrid, e uma regra so' nos dois lados nao divergem.
+            if (!$has_code) {
+                $port->update(
+                    ['id' => $port->getID()] + self::documentStamp()
+                );
             }
 
             return ['ok' => true, 'error' => '', 'id' => (int) $port->getID()];
@@ -555,7 +661,7 @@ class Port extends CommonDBChild
             'code'          => '',
             'comment'       => '',
             'is_no_coupler' => 0,
-        ]);
+        ] + self::documentStamp());
 
         if ($id <= 0) {
             return $fail(__('Não foi possível criar a entrada.', 'dgoplus'));
@@ -638,9 +744,20 @@ class Port extends CommonDBChild
                     'code'          => '',
                     'comment'       => '',
                     'is_no_coupler' => 0,
-                ]);
+                ] + self::documentStamp());
 
                 return ['ok' => true, 'error' => '', 'id' => (int) $port->getID(), 'is_no_coupler' => false];
+            }
+
+            // Bloco 3s: linha VIVA. Carimba so' quando ela nao tem codigo -
+            // nesse caso quem a torna documentada e' o vinculo, e o autor e'
+            // quem propoe. Com codigo gravado, o carimbo de quem documentou
+            // fica: propor vinculo sobre porta ja documentada nao transfere
+            // autoria.
+            if (trim((string) ($port->fields['code'] ?? '')) === '') {
+                $port->update(
+                    ['id' => $port->getID()] + self::documentStamp()
+                );
             }
 
             return [
@@ -662,7 +779,7 @@ class Port extends CommonDBChild
             'code'          => '',
             'comment'       => '',
             'is_no_coupler' => 0,
-        ]);
+        ] + self::documentStamp());
 
         if ($id <= 0) {
             return $fail(__('Não foi possível criar a porta de origem.', 'dgoplus'));
