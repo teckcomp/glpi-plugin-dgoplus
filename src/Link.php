@@ -352,7 +352,10 @@ class Link extends CommonDBTM
 
         // Papel vem do Tipo nativo, nunca do nome (regra dura do 4a).
         if (!self::hierarchyAllows(Setting::getRoleOfItem($origin), Setting::getRoleOfItem($dest))) {
-            return $fail(__('A hierarquia não permite este vínculo: a origem precisa estar acima do destino (DIO → DGO → CTO), nunca no mesmo nível nem abaixo.', 'dgoplus'));
+            return $fail(sprintf(
+                __('A hierarquia não permite este vínculo: a origem precisa estar acima do destino (%s), nunca no mesmo nível nem abaixo.', 'dgoplus'),
+                Setting::getRoleChainLabel()
+            ));
         }
 
         // Limite da grade da ORIGEM: uma celula forjada fora do layout

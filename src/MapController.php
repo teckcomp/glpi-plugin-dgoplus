@@ -428,7 +428,11 @@ class MapController
         }
 
         if (!Setting::isRole($role)) {
-            Session::addMessageAfterRedirect(__('Escolha o papel do novo elemento (DIO, DGO ou CTO).', 'dgoplus'), false, ERROR);
+            Session::addMessageAfterRedirect(
+                sprintf(__('Escolha o papel do novo elemento (%s).', 'dgoplus'), Setting::getRoleListLabel()),
+                false,
+                ERROR
+            );
             self::redirectTo(self::scope($locations_id, $floors_id));
             return;
         }
@@ -2166,9 +2170,10 @@ class MapController
      * Bloco 4b-2, e o desenho e' do usuario: quatro caixas pequenas e um campo
      * largo ao lado, ANTES da grade - nao um card acima dela.
      *
-     * So' em DGO e CTO. DIO e' a ponta de cima da hierarquia (a ordem de
-     * Setting::ROLES e' a hierarquia fisica): ninguem alimenta um DIO, entao
-     * quatro caixas eternamente livres seriam ruido permanente na tela dele.
+     * So' em papel que RECEBE alimentacao - todo papel abaixo do primeiro do
+     * registro (Setting::roleReceivesFeed(), ponto unico desde o 4h). O topo
+     * da hierarquia (DIO) fica de fora: ninguem alimenta um DIO, entao quatro
+     * caixas eternamente livres seriam ruido permanente na tela dele.
      * Elemento sem papel mapeado tambem fica de fora - sem papel nao ha como
      * afirmar que ele recebe alimentacao.
      *
@@ -2192,7 +2197,7 @@ class MapController
     ): void {
         $role = Setting::getRoleOfItem($dgo);
 
-        if ($role !== Setting::ROLE_DGO && $role !== Setting::ROLE_CTO) {
+        if (!Setting::roleReceivesFeed($role)) {
             return;
         }
 
@@ -2415,7 +2420,7 @@ class MapController
         }
 
         $role = Setting::getRoleOfItem($dgo);
-        if ($role !== Setting::ROLE_DGO && $role !== Setting::ROLE_CTO) {
+        if (!Setting::roleReceivesFeed($role)) {
             return;
         }
 

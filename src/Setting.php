@@ -38,11 +38,13 @@ class Setting
     public const DIO_TYPES = 'dio_types';
     public const DGO_TYPES = 'dgo_types';
     public const CTO_TYPES = 'cto_types';
+    public const PTO_TYPES = 'pto_types';
 
     /** Identificadores de papel */
     public const ROLE_DIO = 'dio';
     public const ROLE_DGO = 'dgo';
     public const ROLE_CTO = 'cto';
+    public const ROLE_PTO = 'pto';
 
     /**
      * O registro de papeis.
@@ -57,6 +59,7 @@ class Setting
         self::ROLE_DIO => self::DIO_TYPES,
         self::ROLE_DGO => self::DGO_TYPES,
         self::ROLE_CTO => self::CTO_TYPES,
+        self::ROLE_PTO => self::PTO_TYPES,
     ];
 
     // -----------------------------------------------------------------
@@ -107,6 +110,63 @@ class Setting
     public static function getRoleKey(string $role): string
     {
         return self::ROLES[$role] ?? '';
+    }
+
+    /**
+     * A hierarquia inteira como texto: "DIO → DGO → CTO → PTO".
+     *
+     * Bloco 4h: as mensagens de tela que descreviam a hierarquia tinham a
+     * triade escrita a mao e mentiriam a cada papel novo. Derivada do
+     * registro, a frase se corrige sozinha - mesmo principio do registro.
+     * PONTO UNICO: toda mensagem que cite a cadeia usa este metodo.
+     *
+     * @return string
+     */
+    public static function getRoleChainLabel(): string
+    {
+        return implode(' → ', array_map([self::class, 'getRoleLabel'], self::getRoles()));
+    }
+
+    /**
+     * Os papeis como lista de escolha: "DIO, DGO, CTO ou PTO".
+     *
+     * Mesma razao do getRoleChainLabel(), para as mensagens que oferecem os
+     * papeis em vez de ordena-los.
+     *
+     * @return string
+     */
+    public static function getRoleListLabel(): string
+    {
+        $labels = array_map([self::class, 'getRoleLabel'], self::getRoles());
+        $last   = (string) array_pop($labels);
+
+        if ($labels === []) {
+            return $last;
+        }
+
+        return implode(', ', $labels) . ' ' . __('ou', 'dgoplus') . ' ' . $last;
+    }
+
+    /**
+     * O papel RECEBE alimentacao (tem faixa de entradas E1-E4)?
+     *
+     * Regra do 4b-2, generalizada no 4h: todo papel ABAIXO do primeiro do
+     * registro recebe - ninguem alimenta o topo da hierarquia (DIO), e
+     * elemento sem papel mapeado fica de fora porque sem papel nao ha como
+     * afirmar que ele recebe. Antes do 4h isso estava escrito a mao
+     * (DGO/CTO) em dois pontos do MapController; agora o 5o papel ja nasce
+     * com a faixa. PONTO UNICO da regra.
+     *
+     * @param string|null $role
+     * @return bool
+     */
+    public static function roleReceivesFeed(?string $role): bool
+    {
+        if ($role === null || !self::isRole($role)) {
+            return false;
+        }
+
+        return $role !== (self::getRoles()[0] ?? null);
     }
 
     // -----------------------------------------------------------------
