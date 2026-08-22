@@ -144,6 +144,47 @@ class Panel extends CommonDBChild
     }
 
     /**
+     * Piso de varios ativos de uma vez. Bloco 5a.
+     *
+     * Espelho do getWidthsForItems: uma consulta para o conjunto, nunca uma
+     * por elemento. Item sem linha na tabela, ou com a FK em zero, devolve 0
+     * - a coluna e' NOT NULL DEFAULT 0, entao "sem piso" e "piso zero" sao o
+     * mesmo estado e o chamador nao precisa distinguir.
+     *
+     * @param string $itemtype
+     * @param array  $items_ids
+     * @return array<int,int> items_id => floors_id
+     */
+    public static function getFloorsForItems(string $itemtype, array $items_ids): array
+    {
+        $ids = [];
+        foreach ($items_ids as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+
+        $floors = array_fill_keys($ids, 0);
+
+        if ($ids === []) {
+            return $floors;
+        }
+
+        $panel = new self();
+        $rows  = $panel->find([
+            'itemtype' => $itemtype,
+            'items_id' => array_values($ids),
+        ]);
+
+        foreach ($rows as $row) {
+            $floors[(int) $row['items_id']] = (int) $row['plugin_dgoplus_floors_id'];
+        }
+
+        return $floors;
+    }
+
+    /**
      * Piso a que o ativo esta vinculado, 0 se nenhum.
      *
      * @param CommonDBTM $item

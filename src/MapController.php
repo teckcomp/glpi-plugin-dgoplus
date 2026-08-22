@@ -3254,7 +3254,90 @@ class MapController
         echo Html::hidden('locations_id', ['value' => $locations_id]);
         echo Html::hidden('floor', ['value' => $floors_id]);
 
+        // Bloco 5a: escopo do destino - Localizacao > Piso > Elemento.
+        //
+        // O recorte usa o `locations_id` NATIVO do elemento, a mesma coluna
+        // que o getDgosAtLocation() usa para as abas do mapa: e' o campo que
+        // esta preenchido na base (medido em 22/08: 31 de 31 elementos), ao
+        // contrario do piso, que mora na _panels e quase nunca esta atribuido.
+        // Por isso o piso e' refinamento OPCIONAL, nunca corte obrigatorio.
+        //
+        // Os dois seletores NAO tem atributo `name`: sao controles de tela, o
+        // POST continua sendo exatamente o do 4c (dst_items_id + dst_slot).
+        // PROGRESSIVO, como o 4c: sem o JS os tres selects aparecem completos
+        // e o formulario posta igual - o filtro e' conveniencia, nao validacao.
+        $cand_floors = Panel::getFloorsForItems(PassiveDCEquipment::class, array_keys($candidates));
+
+        $cand_scope = [];
+        $loc_ids    = [];
+        foreach ($candidates as $cid => $cand) {
+            $cloc = (int) ($cand['locations_id'] ?? 0);
+            $cand_scope[(int) $cid] = [
+                'loc'   => $cloc,
+                'floor' => (int) ($cand_floors[(int) $cid] ?? 0),
+            ];
+            if ($cloc > 0) {
+                $loc_ids[$cloc] = $cloc;
+            }
+        }
+
+        // So as localizacoes que TEM candidato entram na lista. Oferecer uma
+        // localizacao vazia so' produz um seletor de elemento vazio, sem
+        // dizer por que (licao 16: nada some sem explicacao).
+        $loc_options = [];
+        if ($loc_ids !== []) {
+            $loc_item = new Location();
+            $loc_rows = $loc_item->find(['id' => array_values($loc_ids)], ['completename']);
+            foreach ($loc_rows as $lrow) {
+                $loc_options[(int) $lrow['id']] = (string) ($lrow['completename'] ?: ($lrow['name'] ?? ''));
+            }
+        }
+
+        // Pisos de todas essas localizacoes, com o dono de cada um, para o JS
+        // poder podar o seletor de piso quando a localizacao muda.
+        $floor_options = [];
+        $floor_owner   = [];
+        foreach ($loc_options as $lid => $lname) {
+            foreach (Floor::getForLocation($lid) as $fid => $fname) {
+                $floor_options[(int) $fid] = (string) $fname;
+                $floor_owner[(int) $fid]   = (int) $lid;
+            }
+        }
+
+        // Valor inicial: a localizacao onde o usuario JA esta. Vazio significa
+        // "todas" - vinculo entre localizacoes diferentes continua possivel.
+        $dst_loc_initial = array_key_exists($locations_id, $loc_options) ? $locations_id : 0;
+
         echo "<div class='row g-2 align-items-end'>";
+
+        // Select nativo escrito a mao, como o dst_items_id e o dst_slot do 4c.
+        // Dropdown::showFromArray renderiza select2, que esconde o <select>
+        // real - opcao podada por JS continuaria visivel na caixa do select2.
+        echo "<div class='col-12 col-md-6'>";
+        echo "<label class='form-label mb-1'>" . htmlescape(Location::getTypeName(1)) . "</label>";
+        echo "<select class='form-select form-select-sm' data-dgoplus-link-loc='1'>";
+        echo "<option value='0'>" . htmlescape(__('Todas as localizações', 'dgoplus')) . "</option>";
+        foreach ($loc_options as $lid => $lname) {
+            echo "<option value='" . (int) $lid . "'"
+                . ((int) $lid === $dst_loc_initial ? " selected='selected'" : '')
+                . ">" . htmlescape($lname) . "</option>";
+        }
+        echo "</select>";
+        echo "</div>";
+
+        echo "<div class='col-12 col-md-6'>";
+        echo "<label class='form-label mb-1'>" . htmlescape(Floor::getTypeName(1)) . "</label>";
+        echo "<select class='form-select form-select-sm' data-dgoplus-link-floor='1'>";
+        echo "<option value='0'>" . htmlescape(__('Todos os pisos', 'dgoplus')) . "</option>";
+        foreach ($floor_options as $fid => $fname) {
+            echo "<option value='" . (int) $fid . "'>" . htmlescape($fname) . "</option>";
+        }
+        echo "</select>";
+        echo "</div>";
+
+        echo "</div>";
+
+        echo "<div class='row g-2 align-items-end mt-1'>";
 
         echo "<div class='col-12 col-md-5'>";
         echo "<label class='form-label mb-1'>" . __('Elemento de destino', 'dgoplus') . "</label>";
@@ -3288,6 +3371,15 @@ class MapController
         // pagina inteira (mesma regra dos endpoints AJAX).
         echo "<script type='application/json' data-dgoplus-link-occupied='1'>"
             . json_encode($occupied, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)
+            . "</script>";
+
+        // Bloco 5a: escopo de cada candidato e o dono de cada piso. Mesmas HEX
+        // flags - nome de localizacao com </script> quebraria a pagina.
+        echo "<script type='application/json' data-dgoplus-link-scope='1'>"
+            . json_encode(
+                ['items' => $cand_scope, 'floors' => $floor_owner],
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_FORCE_OBJECT
+            )
             . "</script>";
 
         Html::closeForm();

@@ -273,3 +273,132 @@
         init();
     }
 })();
+
+/**
+ * DGO+ - bloco 5a: escopo do elemento de destino (Localizacao > Piso).
+ *
+ * Poda o <select dst_items_id> para os elementos da localizacao e do piso
+ * escolhidos, lendo o JSON que o PHP embute no formulario. Roda DEPOIS do
+ * modulo 4c, entao o listener de entradas ocupadas ja esta montado e o
+ * dispatch de 'change' o obriga a recalcular E1-E4 do novo elemento.
+ *
+ * PROGRESSIVO: sem este arquivo os tres selects aparecem completos e o
+ * formulario posta igual. Os seletores de localizacao e piso nao tem `name`
+ * e nunca chegam ao servidor - quem valida o vinculo e' o Link::propose.
+ */
+(function () {
+    'use strict';
+
+    function mount(form) {
+        var loc = form.querySelector('select[data-dgoplus-link-loc]');
+        var floor = form.querySelector('select[data-dgoplus-link-floor]');
+        var dst = form.querySelector('select[data-dgoplus-link-dst]');
+        var dataEl = form.querySelector('script[data-dgoplus-link-scope]');
+        if (!loc || !floor || !dst || !dataEl) {
+            return;
+        }
+
+        var scope = { items: {}, floors: {} };
+        try {
+            var parsed = JSON.parse(dataEl.textContent || '{}');
+            if (parsed && typeof parsed === 'object') {
+                scope.items = parsed.items || {};
+                scope.floors = parsed.floors || {};
+            }
+        } catch (e) {
+            // JSON podre: deixa os tres selects completos, como sem JS.
+            return;
+        }
+
+        // Guarda as listas originais: podar tem que ser sempre a partir do
+        // conjunto inteiro, nunca do resultado da poda anterior.
+        var allDst = [];
+        for (var i = 0; i < dst.options.length; i++) {
+            allDst.push({ value: dst.options[i].value, label: dst.options[i].textContent });
+        }
+        var allFloors = [];
+        for (var j = 1; j < floor.options.length; j++) {
+            allFloors.push({ value: floor.options[j].value, label: floor.options[j].textContent });
+        }
+        var floorEmpty = floor.options.length ? floor.options[0].textContent : 'Todos os pisos';
+
+        function rebuild(select, rows, keepValue) {
+            var previous = keepValue ? select.value : '';
+            select.innerHTML = '';
+            for (var k = 0; k < rows.length; k++) {
+                var opt = document.createElement('option');
+                opt.value = rows[k].value;
+                opt.textContent = rows[k].label;
+                select.appendChild(opt);
+            }
+            if (previous !== '') {
+                select.value = previous;
+                if (select.selectedIndex === -1 && select.options.length) {
+                    select.selectedIndex = 0;
+                }
+            }
+        }
+
+        function refreshFloors() {
+            var wanted = parseInt(loc.value, 10) || 0;
+            var rows = [{ value: '0', label: floorEmpty }];
+            for (var k = 0; k < allFloors.length; k++) {
+                var owner = parseInt(scope.floors[allFloors[k].value], 10) || 0;
+                if (wanted === 0 || owner === wanted) {
+                    rows.push(allFloors[k]);
+                }
+            }
+            rebuild(floor, rows, true);
+        }
+
+        function refreshDst() {
+            var wantedLoc = parseInt(loc.value, 10) || 0;
+            var wantedFloor = parseInt(floor.value, 10) || 0;
+            var rows = [];
+            for (var k = 0; k < allDst.length; k++) {
+                var info = scope.items[allDst[k].value];
+                if (!info) {
+                    continue;
+                }
+                var okLoc = wantedLoc === 0 || (parseInt(info.loc, 10) || 0) === wantedLoc;
+                var okFloor = wantedFloor === 0 || (parseInt(info.floor, 10) || 0) === wantedFloor;
+                if (okLoc && okFloor) {
+                    rows.push(allDst[k]);
+                }
+            }
+
+            // Escopo sem nenhum elemento: em vez de um select vazio e mudo,
+            // uma opcao que DIZ o que aconteceu (licao 16).
+            if (rows.length === 0) {
+                rebuild(dst, [{ value: '', label: '— nenhum elemento neste escopo —' }], false);
+                dst.dispatchEvent(new Event('change'));
+                return;
+            }
+
+            rebuild(dst, rows, true);
+            dst.dispatchEvent(new Event('change'));
+        }
+
+        loc.addEventListener('change', function () {
+            refreshFloors();
+            refreshDst();
+        });
+        floor.addEventListener('change', refreshDst);
+
+        refreshFloors();
+        refreshDst();
+    }
+
+    function init() {
+        var forms = document.querySelectorAll('form[data-dgoplus-link-form]');
+        for (var i = 0; i < forms.length; i++) {
+            mount(forms[i]);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
