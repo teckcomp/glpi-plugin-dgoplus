@@ -2943,7 +2943,11 @@ class MapController
         $comment    = $found ? $port->fields['comment'] : '';
         $no_coupler = $found && (int) ($port->fields['is_no_coupler'] ?? 0) === 1;
 
-        $can_write = Session::haveRight(Port::$rightname, $found ? UPDATE : CREATE);
+        // Bloco 5f-1a: a trava da tela tem que perguntar EXATAMENTE o que
+        // Port::applyInput vai exigir - se divergirem, o campo aparece
+        // editavel e o Salvar bate em 403 (ou o contrario: campo bloqueado
+        // para quem podia gravar). Antes era "$found ? UPDATE : CREATE".
+        $can_write = Session::haveRight(Port::$rightname, UPDATE);
 
         // Html::formatAttribute() renderiza QUALQUER valor como atributo,
         // inclusive false -> readonly="" (que em HTML e' readonly ativo).

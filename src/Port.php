@@ -488,18 +488,30 @@ class Port extends CommonDBChild
             $input += self::documentStamp();
         }
 
+        // Bloco 5f-1a: DOCUMENTAR PORTA E' ATUALIZAR, sempre.
+        //
+        // Ate o 1.3.2 a exigencia dependia de a linha existir no banco: celula
+        // ja documentada pedia UPDATE, celula em branco pedia CREATE. Isso
+        // vazava um detalhe de implementacao para o usuario - a grade de 1665
+        // posicoes e' desenhada inteira na tela, mas so' vira linha quando
+        // alguem escreve nela, entao o tecnico com UPDATE via a grade toda e
+        // so' conseguia editar as posicoes que outra pessoa ja tinha tocado.
+        // Foi a causa real do "o tecnico nao consegue documentar" (licao 118).
+        //
+        // A semantica da Fase 5: CRIAR e' criar ESTRUTURA (fileira, coluna,
+        // piso, elemento); preencher celula da grade e' ATUALIZAR. Vale para o
+        // INSERT e para a restauracao da lixeira - nos dois casos o ato do
+        // usuario e' o mesmo: documentar uma posicao que a tela ja mostrava.
         if ($found) {
+            Session::checkRight(self::$rightname, UPDATE);
             if ($is_deleted) {
-                // Posicao estava na lixeira: exige CREATE (esta voltando a existir).
-                Session::checkRight(self::$rightname, CREATE);
                 $port->restore(['id' => $port->getID()]);
             }
-            Session::checkRight(self::$rightname, UPDATE);
             $input['id'] = $port->getID();
             $port->update($input);
             $id = $port->getID();
         } else {
-            Session::checkRight(self::$rightname, CREATE);
+            Session::checkRight(self::$rightname, UPDATE);
             $id = (int) $port->add($input);
         }
 
