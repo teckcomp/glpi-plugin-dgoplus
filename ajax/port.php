@@ -41,11 +41,12 @@ $locations_id = (int) ($_POST['locations_id'] ?? 0);
 $floors_id    = (int) ($_POST['floor'] ?? 0);
 $edit_key     = $tube_num . '-' . $fiber_num;
 
-// O ativo pai tem que existir e ser visivel para este usuario: sem isso, um
+// O ativo pai tem que existir e estar ao alcance deste usuario: sem isso, um
 // items_id forjado no POST faria o endpoint gravar porta em DGO de outra
-// entidade.
+// entidade. Bloco 5f-3a: a regra e' a mesma do applyInput porque e' o MESMO
+// metodo - Port::parentIsReachable -, e nao mais uma copia da expressao.
 $dgo = new $itemtype();
-if (!($dgo instanceof CommonDBTM) || !$dgo->getFromDB($items_id) || !$dgo->can($items_id, READ)) {
+if (!($dgo instanceof CommonDBTM) || !$dgo->getFromDB($items_id) || !Port::parentIsReachable($dgo)) {
     throw new BadRequestHttpException('Unknown or unreadable parent asset.');
 }
 

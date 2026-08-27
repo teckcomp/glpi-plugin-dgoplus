@@ -332,6 +332,39 @@ class Port extends CommonDBChild
         ];
     }
 
+    /**
+     * O ativo pai existe e esta ao alcance deste usuario?
+     *
+     * PONTO UNICO da regra de visibilidade do pai. Nasceu no bloco 5f-3a
+     * porque a mesma pergunta era feita em quatro lugares (applyInput,
+     * ensureEntry, ensureGrid e ajax/port.php) - e regra copiada em quatro
+     * lugares diverge em silencio no dia em que um deles for editado.
+     *
+     * O que mudou em relacao ao can($id, READ) que estava aqui: can() somava
+     * o direito GLOBAL no itemtype pai ('datacenter', no PassiveDCEquipment)
+     * com o acesso a' instancia. O direito global era o acoplamento que devolvia
+     * ao tecnico o menu "Dispositivos passivos" inteiro (licao 117). O acesso a'
+     * entidade - a protecao que o bloco 3m realmente queria - continua igual,
+     * agora perguntado direto:
+     *
+     *   - getEntityID() devolve -1 quando o itemtype nao e' entity-assign
+     *     (CommonDBTM.php:3197), e haveAccessToEntity(-1) e' false: falha
+     *     fechado, nunca aberto;
+     *   - isRecursive() cobre o ativo publicado numa entidade pai e visto de
+     *     baixo (glpi_passivedcequipments TEM is_recursive).
+     *
+     * @param mixed $parent ativo pai ja carregado por getFromDB
+     * @return bool
+     */
+    public static function parentIsReachable($parent): bool
+    {
+        if (!($parent instanceof \CommonDBTM) || (int) $parent->getID() <= 0) {
+            return false;
+        }
+
+        return Session::haveAccessToEntity($parent->getEntityID(), $parent->isRecursive());
+    }
+
     public static function applyInput(array $params): array
     {
         $itemtype   = (string) ($params['itemtype'] ?? '');
@@ -371,16 +404,19 @@ class Port extends CommonDBChild
         // (11.0.6: :1286, :1638, :2114, :2328 - zero chamadas a can* em todos
         // os quatro). Declarar a propriedade nunca protegeu esta gravacao.
         //
-        // can($id, READ) e' o mesmo par que canConnexityItem usaria com
-        // HAVE_VIEW_RIGHT_ON_ITEM (CommonDBConnexity.php): direito global do
-        // itemtype pai (datacenter, no caso do PassiveDCEquipment) + direito na
-        // instancia (entidade). Mensagem unica de proposito para os tres casos:
-        // dizer "existe mas voce nao pode ver" ja e' informacao demais.
+        // Bloco 5f-3a: a pergunta deixou de ser can($id, READ) e passou a ser
+        // parentIsReachable(). can() somava duas coisas - direito global no
+        // itemtype pai (datacenter) + entidade -, e era a primeira metade que
+        // devolvia ao tecnico o menu "Dispositivos passivos" inteiro so para
+        // ele poder documentar uma porta. A entidade, que e' a protecao que o
+        // 3m queria, continua exatamente igual. Mensagem unica de proposito
+        // para os tres casos: dizer "existe mas voce nao pode ver" ja e'
+        // informacao demais.
         $parent = new $itemtype();
         if (
             !($parent instanceof \CommonDBTM)
             || !$parent->getFromDB($items_id)
-            || !$parent->can($items_id, READ)
+            || !self::parentIsReachable($parent)
         ) {
             return $fail(__('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'));
         }
@@ -632,9 +668,10 @@ class Port extends CommonDBChild
             );
         }
 
-        // Mesma trava de pai do applyInput (bloco 3m): existir, ser CommonDBTM
-        // e ser visivel para este usuario. add() do core nao checa direito
-        // nenhum, entao a checagem tem que ser explicita aqui.
+        // Mesma trava de pai do applyInput (bloco 3m, revisto pelo 5f-3a):
+        // existir, ser CommonDBTM e estar ao alcance deste usuario. add() do
+        // core nao checa direito nenhum, entao a checagem tem que ser
+        // explicita aqui.
         if (!class_exists($itemtype)) {
             return $fail(__('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'));
         }
@@ -643,7 +680,7 @@ class Port extends CommonDBChild
         if (
             !($parent instanceof \CommonDBTM)
             || !$parent->getFromDB($items_id)
-            || !$parent->can($items_id, READ)
+            || !self::parentIsReachable($parent)
         ) {
             return $fail(__('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'));
         }
@@ -752,8 +789,9 @@ class Port extends CommonDBChild
             return $fail(__('Posição inválida.', 'dgoplus'));
         }
 
-        // Mesma trava de pai do applyInput e do ensureEntry (bloco 3m):
-        // existir, ser CommonDBTM e ser visivel para este usuario.
+        // Mesma trava de pai do applyInput e do ensureEntry (bloco 3m,
+        // revisto pelo 5f-3a): existir, ser CommonDBTM e estar ao alcance
+        // deste usuario.
         if (!class_exists($itemtype)) {
             return $fail(__('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'));
         }
@@ -762,7 +800,7 @@ class Port extends CommonDBChild
         if (
             !($parent instanceof \CommonDBTM)
             || !$parent->getFromDB($items_id)
-            || !$parent->can($items_id, READ)
+            || !self::parentIsReachable($parent)
         ) {
             return $fail(__('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'));
         }
