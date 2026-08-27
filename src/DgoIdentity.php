@@ -5,6 +5,7 @@ namespace GlpiPlugin\Dgoplus;
 use CommonDBTM;
 use Html;
 use PassiveDCEquipment;
+use Session;
 
 /**
  * DGO+ - bloco 3t: identidade da DGO na coluna da direita.
@@ -22,8 +23,8 @@ use PassiveDCEquipment;
  * CommonDBTM::update().
  *
  * NAO confundir com o 'comment' da PORTA (Port::applyInput): sao tabelas
- * diferentes, telas diferentes e direitos diferentes. Este exige UPDATE no
- * ativo (direito 'datacenter'); o da porta exige o direito do plugin.
+ * diferentes e telas diferentes. Bloco 5f-2a: o DIREITO deixou de ser
+ * diferente - os dois exigem 'plugin_dgoplus_port' UPDATE.
  */
 class DgoIdentity
 {
@@ -201,10 +202,20 @@ class DgoIdentity
     /**
      * Quem pode escrever no comentario do ativo.
      *
-     * E' o direito do ATIVO (datacenter UPDATE), nao o do plugin: o campo
-     * pertence a' ficha do PassiveDCEquipment. Quem tem o direito do plugin
-     * mas nao o do ativo continua vendo o texto, em somente leitura - e ve por
-     * que, em vez de encontrar um campo que nao obedece.
+     * Bloco 5f-2a: passou a ser o direito do PLUGIN (plugin_dgoplus_port
+     * UPDATE), nao mais o do ativo (datacenter UPDATE).
+     *
+     * O motivo e' o mesmo do 5f-1a e do 5f-1b: exigir o direito do
+     * PassiveDCEquipment para uma acao que so existe dentro do mapa devolvia
+     * ao tecnico o menu "Dispositivos passivos" inteiro - permissao demais
+     * para poder escrever uma linha de observacao. Quem tem ATUALIZAR em
+     * "Portas de DGO" documenta porta, propoe vinculo e agora tambem comenta,
+     * SEMPRE dentro da entidade dele: a trava de entidade continua onde
+     * sempre esteve, no can($items_id, READ) do applyComment (3m).
+     *
+     * O parametro $dgo continua na assinatura de proposito: os dois
+     * chamadores ja tem o objeto carregado, e o dia em que a regra precisar
+     * olhar o ativo (entidade, estado) ele esta aqui.
      *
      * @param CommonDBTM $dgo
      * @return bool
@@ -213,7 +224,7 @@ class DgoIdentity
     {
         $items_id = (int) $dgo->getID();
 
-        return $items_id > 0 && $dgo->can($items_id, UPDATE);
+        return $items_id > 0 && Session::haveRight(Port::$rightname, UPDATE);
     }
 
     /**
@@ -280,8 +291,12 @@ class DgoIdentity
             ]);
             echo "</div>";
         } else {
+            // Bloco 5f-2a: a tarja nomeia o direito que falta e onde ele mora
+            // (licao 119). "Somente leitura neste ativo" mandava o usuario
+            // pedir o direito ERRADO - o do ativo - agora que a regra e' a do
+            // plugin.
             echo "<div class='text-muted small mt-2'>"
-                . htmlescape(__('Você tem permissão apenas de leitura neste ativo.', 'dgoplus'))
+                . htmlescape(__('Somente leitura. Comentar exige a permissão "Atualizar" em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus'))
                 . "</div>";
         }
 
@@ -325,7 +340,10 @@ class DgoIdentity
         }
 
         if (!self::canWriteComment($dgo)) {
-            return ['ok' => false, 'error' => __('Você não tem permissão para alterar este ativo.', 'dgoplus')];
+            return [
+                'ok'    => false,
+                'error' => __('Comentar exige a permissão "Atualizar" em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus'),
+            ];
         }
 
         // Nada mudou: nao gravar. update() com valor identico ainda assim
