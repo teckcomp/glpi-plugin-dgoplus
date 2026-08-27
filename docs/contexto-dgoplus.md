@@ -3,11 +3,12 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v8 — 27/08/2026 (sessão da noite, segunda parte).
-> Substitui o v7 integralmente.
-> Emitido ao fim do **Bloco 5f-2a** — o comentário do elemento passa a exigir o
-> direito do plugin, não mais `datacenter` UPDATE. Fechado e validado em tela nas
-> duas pontas (com e sem ATUALIZAR), versão **1.3.5**, commit **`1114077`**.
+> **Versão deste documento:** v9 — 27/08/2026 (sessão da noite, terceira parte).
+> Substitui o v8 integralmente.
+> Emitido ao fim do **Bloco 5f-2b** — criar elemento pelo mapa passa a exigir só
+> `plugin_dgoplus_port` CREATE. Com ele o **5f-2 inteiro fecha**, e o plugin
+> deixa de citar o direito do ativo em qualquer lugar: versão **1.3.6**, commit
+> **`04ac8fd`**.
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
 
@@ -55,8 +56,8 @@ Release**.
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 27/08 (fim da sessão) | commit **`1114077`**, versão **1.3.5** |
-| Versão em homologação | **1.3.5**, confirmada na tela de plug-ins |
+| `master` em 27/08 (fim da sessão) | commit **`04ac8fd`**, versão **1.3.6** |
+| Versão em homologação | **1.3.6**, confirmada na tela de plug-ins |
 | **Paridade** | ✅ **Estrutural**: a pasta do plugin é a árvore de trabalho do clone. `git status` limpo **é** a prova |
 | Arquivos no repositório | **30** (27 do plugin + 3 em `docs/`) |
 | GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data` |
@@ -177,11 +178,11 @@ O zip **nasce do commit**, nunca de pasta montada à mão:
 
 ```bash
 cd /var/www/html/glpi/plugins/dgoplus
-git tag -a v1.3.5 -m "..." && git push origin v1.3.5
-git archive --format=zip --prefix=dgoplus/ -o /tmp/dgoplus-1.3.5.zip v1.3.5
+git tag -a v1.3.6 -m "..." && git push origin v1.3.6
+git archive --format=zip --prefix=dgoplus/ -o /tmp/dgoplus-1.3.6.zip v1.3.6
 ```
 
-⚠️ **A `v1.3.3`, a `v1.3.4` e a `v1.3.5` não têm tag nem Release.** Bloco REL-2.
+⚠️ **Da `v1.3.3` à `v1.3.6` não há tag nem Release.** Bloco REL-2.
 
 ### Outros plugins na mesma base
 
@@ -374,8 +375,8 @@ Quatro tabelas: `_ports`, `_panels`, `_floors`, `_links`. Direito próprio
 `plugin_dgoplus_port`, matriz de 4 níveis = **15**. Na tela do perfil a aba
 chama-se **DGO+** e a linha, **"Portas de DGO"**.
 
-**Como o direito se comporta em 1.3.5** — todos os números **verificados por
-`grep -n` no commit `1114077`**, nesta sessão:
+**Como o direito se comporta em 1.3.6** — todos os números **verificados por
+`grep -n` no commit `04ac8fd`**, nesta sessão:
 
 | Ação | Exige hoje | Onde |
 |---|---|---|
@@ -384,27 +385,31 @@ chama-se **DGO+** e a linha, **"Portas de DGO"**.
 | Esvaziar porta (volta a livre) | `plugin_dgoplus_port` DELETE | `Port.php:444` |
 | **Propor vínculo** | **`plugin_dgoplus_port` UPDATE** ✅ 5f-1b | `Link.php:439`; tela em `MapController:3189` |
 | Confirmar / recusar vínculo | `plugin_dgoplus_port` UPDATE | `Link.php:484`, `:526` |
+| Esvaziar fileira / coluna | `plugin_dgoplus_port` DELETE | `MapController:571`, `:780` |
 | Desmontar vínculo | `plugin_dgoplus_port` DELETE | `Link.php:565` |
 | **Comentário do elemento** | **`plugin_dgoplus_port` UPDATE** ✅ **5f-2a** | `DgoIdentity.php:227` (`canWriteComment`) |
-| Fileira / coluna / piso | `plugin_dgoplus_port` CREATE | `MapController:529`, `:735`, `Floor::$rightname` |
+| Fileira / coluna / piso | `plugin_dgoplus_port` CREATE | `MapController:534`, `:740`, `Floor::$rightname` |
+| **Criar elemento pelo mapa** | **`plugin_dgoplus_port` CREATE** ✅ **5f-2b** | `MapController:417` (POST) e `:1529` (tela) |
 | Qualquer gravação de porta | **também** `datacenter` READ ⚠️ *muda no 5f-3* | 7 pontos, abaixo |
-| **Criar elemento** | `datacenter` CREATE ⚠️ *muda no **5f-2b*** | `MapController:412` (POST) e `:1522` (tela) |
 | **Anexos** | `document` READ+UPDATE+CREATE **e `datacenter` UPDATE** | ✅ confirmado em tela |
-| Configurar papéis | `config` UPDATE | `MapController:1544` |
+| Configurar papéis | `config` UPDATE | `MapController:1551` |
 
 **Os sete pontos acoplados a `datacenter` READ** (todos `can($items_id, READ)`),
-**verificados por `grep -n` em `1114077`** — ⚠️ *note que três deles saíram do
-lugar em relação ao v7, que citava `6efab96`*:
+**verificados por `grep -n` em `04ac8fd`** — são o **último** acoplamento ao
+direito do ativo que resta no plugin:
 
-| Arquivo | Linha (em `1114077`) | Era no v7 | Contexto |
-|---|---|---|---|
-| `src/Port.php` | 383 | 383 | `applyInput` |
-| `src/Port.php` | 646 | 646 | `ensureEntry` |
-| `src/Port.php` | **765** | ~~751~~ | `ensureGrid` |
-| `ajax/port.php` | 48 | 48 | auto-save |
-| `src/MapController.php` | 949 | 949 | `actionSaveEntryObs` |
-| `src/Link.php` | **697** | ~~689~~ | `loadVisibleItem` |
-| `src/DgoIdentity.php` | **338** | ~~323~~ | `applyComment` — a trava de entidade (3m) |
+| Arquivo | Linha (em `04ac8fd`) | Contexto |
+|---|---|---|
+| `src/Port.php` | 383 | `applyInput` |
+| `src/Port.php` | 646 | `ensureEntry` |
+| `src/Port.php` | 765 | `ensureGrid` |
+| `ajax/port.php` | 48 | auto-save |
+| `src/MapController.php` | **954** *(era 949 antes do 5f-2b)* | `actionSaveEntryObs` |
+| `src/Link.php` | 697 | `loadVisibleItem` |
+| `src/DgoIdentity.php` | 338 | `applyComment` — a trava de entidade (3m) |
+
+✅ **`grep -c 'PassiveDCEquipment::$rightname' src/MapController.php` devolve 0**
+desde o 5f-2b: nenhuma linha do plugin cita mais o direito do ativo pelo nome.
 
 `front/map.php` exige **apenas** `Port::$rightname READ`.
 
@@ -414,7 +419,7 @@ lugar em relação ao v7, que citava `6efab96`*:
 |---|---|
 | LER | Ver mapa, painel, relatórios, comentários, descrição das portas |
 | ATUALIZAR | **Documentar portas** ✅ (5f-1a), **propor e confirmar vínculos** ✅ (5f-1b), **comentar o elemento** ✅ (5f-2a) |
-| CRIAR | Criar elementos pelo mapa (5f-2b), fileiras, colunas, pisos — **estrutura** |
+| CRIAR | **Criar elementos pelo mapa** ✅ (5f-2b), fileiras, colunas, pisos — **estrutura** |
 | DELETE | Esvaziar portas, recusar por desmontagem, excluir vínculos |
 
 **Fora do DGO+, por decisão:** criar Localização (dropdown do GLPI inteiro),
@@ -449,7 +454,7 @@ dgoplus/
     ├── Link.php           vínculo; propose é o ponto único — 1204 linhas
     ├── Panel.php          dimensões da grade e vínculo com o piso
     ├── Floor.php          o piso (rightname = plugin_dgoplus_port)
-    ├── MapController.php  a tela do mapa — 3398 linhas
+    ├── MapController.php  a tela do mapa — 3405 linhas
     ├── Dashboard.php      o painel
     ├── Pending.php        página de vínculos pendentes (4d)
     ├── DgoIdentity.php    identidade, QR e comentário (3t) — 370 linhas
@@ -458,18 +463,18 @@ dgoplus/
     └── MapPage.php        entrada de menu
 ```
 
-**Impressões digitais do 1.3.5** (commit `1114077`, baixado do GitHub e conferido
+**Impressões digitais do 1.3.6** (commit `04ac8fd`, baixado do GitHub e conferido
 pelo assistente nesta sessão):
 
 ```
-d0a417d03dec12eafb959a891bdd63f8  setup.php             (269 linhas)
+4c1e837e446efe08a3a57ebd9ee41416  setup.php             (269 linhas)
 b7487ba16bd9e4ecf6b7adfb6fe0c7b9  src/DgoIdentity.php   (370 linhas)
+570d703783670f76e858fddb5c96ac8d  src/MapController.php (3405 linhas)
 d84d8788ebce8939737ca1cee52c798b  src/Port.php          (1048 linhas)
 4f81bc233ffd5df1ce5a6e49e0fa0487  src/Link.php          (1204 linhas)
-846bef4e6d5936ddb4d56d6f4cc1c899  src/MapController.php (3398 linhas)
 ```
 
-*(Port, Link e MapController estão idênticos desde o `a690010`.)*
+*(Port e Link estão idênticos desde o `a690010`.)*
 
 ---
 
@@ -541,6 +546,8 @@ fato**.
 
 | **145** | **Documento também é entrega — e entrega sem a seção de envio não chega.** Ao fechar o 5f-2a o assistente deu os comandos de `cp`/`git` do contexto e do roadmap v8 **sem o `scp`**, e o servidor respondeu `cp: não foi possível obter estado de '/tmp/contexto-dgoplus-v8.md'`. Custo baixo (nada quebrou, `working tree clean`), mas a causa é a que interessa: **o formato de quatro seções vale para QUALQUER arquivo entregue**, inclusive `.md`. Se sai do sandbox para o servidor, sai com o `scp` na frente |
 
+| **146** | **Elemento novo nasce com 4 × 16 = 64 posições** (`Panel::DEFAULT_TUBES` = 4, `DEFAULT_FIBERS` = 16, conferido em `src/Panel.php:24` e `:27`), **e encolher a grade exige DELETE** (`MapController:571` e `:780`). Consequência prática vista no teste do 5f-2b: um perfil com **CRIAR e sem DELETE** cria uma CTO de 64 posições e **não consegue ajustá-la** — o painel passa a dizer "0 de 64" para uma caixa que na prática tem 8 ou 16, e a métrica de ocupação do parque piora sozinha. Não é defeito do 5f-2b; é uma decisão de produto que o bloco tornou alcançável pelo técnico |
+
 **Armadilhas do GLPI 11 que valem como regra permanente:**
 
 - **CSRF**: o core valida POST sozinho — nunca `Session::checkCSRF` manual.
@@ -587,7 +594,8 @@ fato**.
 | REL | Tag `v1.3.2` + Release com zip | Fechado e conferido por md5 (27/08) |
 | 5f-1a | Documentar porta exige UPDATE, não CREATE | Fechado (27/08), 1.3.3, `6efab96` |
 | 5f-1b | Propor vínculo exige UPDATE, não CREATE | Fechado e validado em tela + log (27/08), 1.3.4, `a690010` |
-| **5f-2a** | **Comentário do elemento exige o direito do plugin** | **Fechado e validado em tela nas duas pontas (27/08), 1.3.5, `1114077`** |
+| 5f-2a | Comentário do elemento exige o direito do plugin | Fechado e validado em tela nas duas pontas (27/08), 1.3.5, `1114077` |
+| **5f-2b** | **Criar elemento pelo mapa exige só o direito do plugin** | **Fechado e validado em tela (27/08), 1.3.6, `04ac8fd`** |
 
 ### O que o 5f-2a fez, em detalhe
 
@@ -625,6 +633,41 @@ READ:
 
 ⚠️ **Não conferido:** o Histórico da ficha do ativo, com `teste.001` como autor.
 Pendência 7 da Parte C — não bloqueia o bloco.
+
+### O que o 5f-2b fez, em detalhe
+
+Dois arquivos, **`+11 −4`** (previsto no sandbox, confirmado no servidor):
+
+| Onde | O quê |
+|---|---|
+| `MapController::actionCreateDgo` | **removida** a linha `Session::checkRight(PassiveDCEquipment::$rightname, CREATE)`. Ficou só a do `Port::$rightname` (hoje linha 417) |
+| `MapController::displayDgoTabs` | `$can_create` deixou de somar o direito do ativo: passou a espelhar exatamente a trava do POST (hoje linha 1529) |
+| `setup.php` | 1.3.5 → **1.3.6** |
+
+**Não mudou:** a entidade. O elemento continua nascendo em
+`Session::getActiveEntity()`, e a validação de nome, papel e Tipo (3l / 4a-3)
+ficou intacta.
+
+**Proveniência fechada** por md5 contra o commit `04ac8fd`; nenhum outro dos 30
+arquivos mudou.
+
+**Validado em tela (27/08)**, `Tecnicos N1 (ID 12)` com **LER + ATUALIZAR +
+CRIAR**, DELETE desmarcado, `datacenter` só READ:
+
+1. Plug-in em **1.3.6** ativo.
+2. Perfil com CRIAR marcado (tela do perfil conferida).
+3. No mapa do técnico apareceu o formulário **Papel + Nome do novo elemento +
+   "Novo elemento"** — e junto os botões **"Nova fileira"** e **"Nova coluna"**,
+   que sempre foram CREATE do plugin.
+4. Criado **`CTO TESTE 5f2b`**, papel CTO: nasceu, abriu direto, a aba **CTO
+   passou de 1 para 2** e o contador do escopo, de `DGO 2`.
+
+*(Os passos 5 e 6 do roteiro — conferir na lista de Dispositivos passivos e
+desmarcar CRIAR de novo — foram dados como ok pelo usuário, **sem tela**.)*
+
+⚠️ **Resíduos deste teste, na base de homologação:** o ativo `CTO TESTE 5f2b`
+existe (grade 4 × 16, piso não atribuído) e o perfil de teste ficou com **CRIAR
+ligado**. Ver Parte C, pendências 8 e 9 do roadmap.
 
 ---
 
@@ -664,6 +707,9 @@ Pendência 7 da Parte C — não bloqueia o bloco.
 - **CTO 01**, mesmo piso, grade de 16 posições; entradas **E1 (← DGO 01 · F1.01)**
   e **E2 (← DGO 01 · F1.04)**, ambas confirmadas.
 - Cartão "Anexos do elemento" da DGO 01: **0**.
+- **`CTO TESTE 5f2b`** criado no teste do 5f-2b, mesma localização, **piso não
+  atribuído**, grade **4 × 16 = 64 posições**, 0 documentadas. É lixo de teste —
+  ver lição 146.
 - Perfil de teste: **Tecnicos N1, ID 12**; usuário `teste.001`.
 - URL externa do GLPI: `http://177.87.230.179:2077/`.
 
@@ -695,13 +741,14 @@ ressuscitar como novidade.
 
 ## 9. Próximo passo imediato
 
-1. **Bloco 5f-2b** — criar elemento pelo mapa migra de `datacenter` CREATE para
-   `plugin_dgoplus_port` CREATE. Dois pontos, **verificados por `grep -n` em
-   `1114077`**: `MapController.php:412` (`Session::checkRight(PassiveDCEquipment::$rightname, CREATE)`
-   em `actionCreateDgo`) e `MapController.php:1522`
-   (`Session::haveRight(PassiveDCEquipment::$rightname, CREATE)` em
-   `displayDgoTabs`, que decide se o botão aparece). ⚠️ **O teste precisa do
-   direito CRIAR ligado no perfil de teste**, que hoje está desmarcado.
-2. **5f-3** → **5g**, nesta ordem. O **5h-2** cabe em qualquer intervalo: é um
-   atributo.
-3. **Tag + Release do 1.3.5** quando a Fase 5 tiver um marco.
+1. **Bloco 5f-3** — os sete `can($items_id, READ)` passam a
+   `Session::haveAccessToEntity()`. **É este bloco que faz "Dispositivos
+   passivos" sumir do menu do técnico**, que é o objetivo original da frente de
+   permissões. ⚠️ **Candidato a divisão**: sete pontos em cinco arquivos, e o
+   teste precisa cobrir gravação de porta, auto-save, OBS de entrada, vínculo,
+   comentário e identidade. Avaliar partir em `5f-3a` (caminho da porta:
+   `Port.php` + `ajax/port.php`) e `5f-3b` (o resto).
+2. Depois: **5g**. O **5h-2** cabe em qualquer intervalo: é um atributo.
+3. **Limpar o resíduo do teste**: purgar `CTO TESTE 5f2b` (o `PurgeCleaner` cuida
+   das linhas do plugin) e decidir se o perfil de teste fica com CRIAR.
+4. **Tag + Release do 1.3.6** quando a Fase 5 tiver um marco.
