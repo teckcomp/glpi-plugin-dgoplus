@@ -2,12 +2,12 @@
 
 > Companheiro do `contexto-dgoplus.md`. **Substituir**, nunca acumular.
 >
-> **Versão:** v9 — 27/08/2026 (sessão da noite, terceira parte). Sucede o v8.
-> A mudança que justifica a versão nova: o **5f-2b** fechou e com ele o **5f-2
-> inteiro**. O plugin não cita mais o direito do ativo em lugar nenhum
-> (`grep -c 'PassiveDCEquipment::$rightname'` = **0**). Resta o 5f-3, que é o
-> bloco que faz "Dispositivos passivos" sumir do menu do técnico.
-> Números verificados em `04ac8fd`.
+> **Versão:** v10 — 27/08/2026 (sessão da noite, quarta parte). Sucede o v9.
+> A mudança que justifica a versão nova: **o 5f acabou**. Com o 5f-3a e o 5f-3b,
+> o técnico trabalha no mapa inteiro **sem nenhum direito em Data centers**, e o
+> menu "Dispositivos passivos" sumiu — o objetivo que abriu esta frente em
+> 23/08. Sobra o **5g**, que é texto de tela.
+> Números verificados em `0005c90`.
 
 ---
 
@@ -23,7 +23,7 @@ Os 8 passos da revisão que gerou a Fase 5, com a decisão de cada um.
 | 4 | Papéis | **Aprovado.** Quatro degraus bastam; splitter fora da hierarquia |
 | 5 | Escopo Localização → Piso | Piso **fica**; lote **descartado**; meia-medida → Bloco 5b |
 | 6 | A grade no dia a dia | **Aprovado.** Digitação um a um é o fluxo certo |
-| 7 | Permissões | **Maior achado.** → 5f-1a, 5f-1b, 5f-2a e **5f-2b RESOLVIDOS**; faltam **5f-3** e 5g |
+| 7 | Permissões | **Maior achado.** → 5f-1a, 5f-1b, 5f-2a, 5f-2b, **5f-3a e 5f-3b RESOLVIDOS**; falta só o **5g** |
 | 8 | Relatório | **Bug** (erro 1054, lição 121) → Bloco 5h **RESOLVIDO e COMMITADO** |
 
 ---
@@ -84,6 +84,28 @@ acaba: `grep -c 'PassiveDCEquipment::$rightname' src/MapController.php` = **0**.
 ⚠️ *Passos 5 e 6 do roteiro (lista de Dispositivos passivos; desmarcar CRIAR)
 dados como ok pelo usuário, sem tela.*
 
+**5f-3a · Caminho da porta larga o `datacenter` READ** — **fechado e validado em
+tela + log (27/08), versão 1.3.7, commit `72d4e55`.**
+
+Criou `Port::parentIsReachable()` — o ponto único da visibilidade do pai — e
+trocou por ele os quatro pontos do caminho da porta. Prova: `POST ajax/port.php`
+**200** com o perfil sem nenhum direito em Data centers, gravando a F1.05.
+
+**5f-3b · OBS, vínculo e comentário largam o `datacenter` READ** — **fechado e
+validado em tela (27/08), versão 1.3.8, commit `0005c90`.**
+
+Os três pontos restantes passaram a chamar o mesmo método. Prova em tela: OBS do
+elemento gravada, comentário com "Salvo ✓", vínculo F1.06 → E3 do CTO TESTE 5f2b
+proposto e **confirmado**, e o menu **Ativos** exibindo **apenas Dashboard e
+DGO+**.
+
+**Os dois greps que fecham a frente:**
+
+```bash
+grep -rn -- '->can($items_id, READ)' src/ ajax/ front/ | wc -l    # 0
+grep -rc 'PassiveDCEquipment::$rightname' src/ | grep -v ':0'     # nada
+```
+
 **PAGER · `core.pager cat`** — aplicado (27/08).
 
 ---
@@ -93,40 +115,11 @@ dados como ok pelo usuário, sem tela.*
 A ordem importa: o **5g só depois dos outros**, senão documenta a regra antiga e
 vira mentira na tela.
 
-Sobrou **um** bloco nesta frente antes do 5g.
+**Sobrou o 5g, e só ele.** Todo o resto desta frente está em produção de teste
+desde a 1.3.8.
 
-✅ **Os números abaixo foram verificados por `grep -n` no commit `04ac8fd`**,
-nesta sessão. Ainda assim: **reconferir antes de escrever** — o 5f-2b já empurrou
-um deles em 5 linhas (lição 144).
-
-**5f-3 · Remover a exigência de `datacenter` READ**
-
-Os sete pontos `can($items_id, READ)` passam a `Session::haveAccessToEntity()`,
-preservando a proteção do 3m sem o acoplamento. **É este bloco que faz
-"Dispositivos passivos" sumir do menu do técnico** — o objetivo original.
-
-Os sete pontos, **em `04ac8fd`**:
-
-| Arquivo | Linha | Contexto |
-|---|---|---|
-| `src/Port.php` | 383 | `applyInput` |
-| `src/Port.php` | 646 | `ensureEntry` |
-| `src/Port.php` | 765 | `ensureGrid` |
-| `ajax/port.php` | 48 | auto-save |
-| `src/MapController.php` | **954** *(era 949: o 5f-2b empurrou +5)* | `actionSaveEntryObs` |
-| `src/Link.php` | 697 | `loadVisibleItem` |
-| `src/DgoIdentity.php` | 338 | `applyComment` |
-
-✅ Pré-requisito respondido: `glpi_passivedcequipments` **tem** `is_recursive`.
-⚠️ **Candidato a divisão**: sete pontos em cinco arquivos, e o teste teria que
-cobrir gravação de porta, auto-save, OBS de entrada, vínculo, comentário e
-identidade — passa dos ~8 passos. Proposta: **`5f-3a`** = caminho da porta
-(`Port.php` × 3 + `ajax/port.php`), **`5f-3b`** = o resto
-(`MapController`, `Link`, `DgoIdentity`).
-
-⚠️ **O teste do 5f-3 exige tirar `datacenter` READ do perfil** — é a única forma
-de provar que o acoplamento morreu. Com READ ligado, tudo funciona pelos dois
-motivos ao mesmo tempo e o teste não distingue nada.
+⚠️ Números de linha citados abaixo valem para `0005c90` — **reconferir por
+`grep -n` antes de escrever** (lição 144).
 
 **5g · Nota explicativa na aba DGO+ do perfil — e as mensagens de erro**
 
@@ -148,9 +141,14 @@ anexo, Localização, excluir o ativo, configurar papéis). Nasce da lição 119
 5. **Botões "Nova fileira"/"Nova coluna" de remoção** somem por falta de DELETE,
    com o mesmo silêncio.
 
-*Observação do 5f-2a: as mensagens do comentário já nasceram no padrão que o 5g
-vai generalizar — "Comentar exige a permissão «Atualizar» em «Portas de DGO»
-(Administração → Perfis → aba DGO+)". Serve de modelo.*
+*As mensagens do 5f-1b e do 5f-2a já nasceram no padrão que o 5g generaliza:
+"… exige a permissão «Atualizar» em «Portas de DGO» (Administração → Perfis →
+aba DGO+)". Serve de modelo.*
+
+⚠️ **Candidato a divisão:** as frentes 1 e 2 são JS (`dgoplus.js`), as 3 a 5 são
+texto em PHP, e a nota do perfil é `ProfileTab`. Três áreas independentes —
+avaliar `5g-1` (JS do auto-save), `5g-2` (textos das telas) e `5g-3` (nota no
+perfil).
 
 ---
 
@@ -190,10 +188,22 @@ escolher o errado cria topologia errada que nenhuma validação pega.
 
 ---
 
+**5i · Anexo pelo técnico, por formulário próprio** ⚠️ *candidato, sem escopo medido*
+
+Nasceu da **lição 148**: o formulário de anexo é do core e pergunta pelo
+`datacenter` UPDATE (`CommonDBRelation.php:659`), mas `CommonDBTM::add()`
+(`CommonDBTM.php:1286`) **não checa direito nenhum**. Um endpoint do plugin pode
+criar `Document` + `Document_Item` com a checagem do DGO+ — mesmo desenho de
+porta, vínculo e comentário. O perfil de teste já tem o direito `document`.
+
+**Antes de dimensionar:** ler o mecanismo de upload do GLPI (`Document::isValidDoc`,
+`files/_uploads`, `_filename` / `_prefix_filename`) e decidir se excluir anexo
+entra. Enquanto isso não for lido, qualquer estimativa é chute.
+
 ### Prioridade 3 — higiene
 
-**REL-2 · Tag `v1.3.6` + Release** — três comandos no `ssh`. Fazer quando a Fase 5
-tiver um marco, não a cada sub-bloco. O 1.3.3, o 1.3.4 e o 1.3.5 ficam sem Release, e tudo
+**REL-2 · Tag `v1.3.8` + Release** — três comandos no `ssh`. **A 1.3.8 É o marco**: é a versão em que o
+técnico trabalha sem direito em Data centers. As versões 1.3.3 a 1.3.7 ficam sem Release, e tudo
 bem: a Release é artefato de instalação, não registro de histórico (isso é o Git).
 
 **SKILL · Atualizar a skill `glpi-plugin-teckcomp`** — host, usuário, porta **e o
@@ -213,7 +223,7 @@ morto, e com um cliente que não autentica neste servidor.
 | 5 | Existe clone Git no servidor? | ✅ **Respondida: não existia. Foi criado.** |
 | 6 | A "Falha ao salvar" da F1.02 foi 403 por DELETE? | ✅ **Respondida: SIM, sete 403.** Lição 133 confirmada |
 | **7** | **O Histórico da ficha do ativo registra o técnico como autor do comentário?** | **Aberta (27/08).** Um passo: abrir DGO 01 → aba Histórico como admin. Esperado: `teste.001` alterando `comment`. Não bloqueia nada; é o efeito colateral do 5f-2a numa tela do core |
-| **8** | **Limpar `CTO TESTE 5f2b`** | **Aberta.** Ativo de teste do 5f-2b, com grade de 64 posições. Purgar como admin — o `PurgeCleaner` (3q) leva junto as linhas do plugin |
+| **8** | **Limpar `CTO TESTE 5f2b`** | **Aberta.** Ativo de teste do 5f-2b, grade de 64 posições, **com a entrada E3 confirmada vinda de DGO 01 · F1.06** (teste do 5f-3b). Purgar como admin — o `PurgeCleaner` (3q) leva as linhas do plugin e o vínculo |
 | **9** | **O perfil de teste fica com CRIAR?** | **Aberta.** Ficou ligado depois do 5f-2b. Decidir antes do 5f-3, porque o roteiro dele parte de um estado conhecido do perfil |
 
 ---
@@ -225,7 +235,7 @@ morto, e com um cliente que não autentica neste servidor.
 | 1 | **README desatualizado.** `dgoplus-v1.0.0.zip` (38, 45, 56), três tabelas quando são quatro (111, 142), linha 119 sobre portas órfãs | Bloco pequeno, sem risco |
 | 2 | **Sem catálogo de tradução** | Bloco médio; decisão de produto antes |
 | 3 | **Lista integral de lições (1–113)** não incorporada | Depende de achar o documento antigo |
-| 4 | **Sem tag/Release da 1.3.3 à 1.3.6** | Bloco REL-2 |
+| 4 | **Sem tag/Release da 1.3.3 à 1.3.8** | Bloco REL-2 |
 | 5 | **Skill `glpi-plugin-teckcomp` desatualizada** | Bloco SKILL |
 | 6 | **Texto fala de "Desmontar" sem o botão existir** | Cabe no 5g |
 
@@ -267,11 +277,12 @@ fato novo.**
 
 ## Próximo passo imediato
 
-1. **Bloco 5f-3** — o último acoplamento a `datacenter`, e o que faz "Dispositivos
-   passivos" sumir do menu do técnico. **Decidir primeiro se vai partido em
-   `5f-3a`/`5f-3b`**, e combinar o estado do perfil de teste (tirar `datacenter`
-   READ é obrigatório para o teste provar alguma coisa).
-2. Depois: **5g**, agora com cinco frentes anotadas.
-3. **5h-2** cabe em qualquer intervalo: é um atributo.
-4. **Higiene rápida**: pendências 7, 8 e 9 (Histórico, purgar `CTO TESTE 5f2b`,
-   estado do perfil) — minutos, a qualquer hora.
+1. **Bloco 5g** — o único que falta na frente de permissões, e o primeiro desta
+   fase que é sobre **o que a tela diz**, não sobre o que ela deixa fazer.
+   **Decidir antes se vai partido** em 5g-1 (JS do auto-save), 5g-2 (textos) e
+   5g-3 (nota no perfil).
+2. **REL-2** — tag `v1.3.8` + Release. A Fase 5 tem um marco agora.
+3. **Higiene**: pendências 7, 8 e 9 — Histórico do ativo, purgar o
+   `CTO TESTE 5f2b`, estado do perfil de teste.
+4. Depois, na ordem que fizer sentido: **5h-2** (um atributo), **5b**, **5c**,
+   **5d**, **5e**, e o candidato **5i**.
