@@ -2,12 +2,11 @@
 
 > Companheiro do `contexto-dgoplus.md`. **Substituir**, nunca acumular.
 >
-> **Versão:** v7 — 27/08/2026 (sessão da noite). Sucede o v6.
-> A mudança que justifica a versão nova: o **5f-1b** fechou, e com ele a **metade
-> do problema de permissão da Fase 5** — documentar porta e propor vínculo agora
-> cabem em ATUALIZAR. Os dois passos que o 5f-1a deixou sem confirmação foram
-> liquidados pelo log do Apache, e o método de entrega ganhou duas travas novas
-> (nome de arquivo com o bloco, `md5sum` de `/tmp` obrigatório).
+> **Versão:** v8 — 27/08/2026 (sessão da noite, segunda parte). Sucede o v7.
+> A mudança que justifica a versão nova: o **5f-2a** fechou — o comentário do
+> elemento saiu do `datacenter` UPDATE — e a reconferência dos alvos revelou que
+> **os números de linha do v7 para o 5f-3 estavam desatualizados** (lição 144).
+> Este documento traz os números verificados em `1114077`.
 
 ---
 
@@ -23,7 +22,7 @@ Os 8 passos da revisão que gerou a Fase 5, com a decisão de cada um.
 | 4 | Papéis | **Aprovado.** Quatro degraus bastam; splitter fora da hierarquia |
 | 5 | Escopo Localização → Piso | Piso **fica**; lote **descartado**; meia-medida → Bloco 5b |
 | 6 | A grade no dia a dia | **Aprovado.** Digitação um a um é o fluxo certo |
-| 7 | Permissões | **Maior achado.** Causa era `CREATE` do próprio plugin (lição 118) → **5f-1a e 5f-1b RESOLVIDOS**, faltam 5f-2, 5f-3, 5g |
+| 7 | Permissões | **Maior achado.** → 5f-1a, 5f-1b e **5f-2a RESOLVIDOS**; faltam 5f-2b, 5f-3, 5g |
 | 8 | Relatório | **Bug** (erro 1054, lição 121) → Bloco 5h **RESOLVIDO e COMMITADO** |
 
 ---
@@ -43,29 +42,32 @@ Os 8 passos da revisão que gerou a Fase 5, com a decisão de cada um.
 **GIT-1 e GIT-2 · Git no servidor** — fechados (27/08). A classe inteira de
 divergência servidor × repositório saiu de cena.
 
-**REL · Tag `v1.3.2` + Release** — fechada e conferida (27/08), 30 arquivos
-idênticos por md5 ao tarball do commit.
+**REL · Tag `v1.3.2` + Release** — fechada e conferida (27/08).
 
-**5f-1a · Documentar porta exige UPDATE** — fechado e validado em tela (27/08),
-versão 1.3.3, commit `6efab96`. **A lição 118 está morta.**
-✅ **Resíduo liquidado pelo 5f-1b** (ver abaixo).
+**5f-1a · Documentar porta exige UPDATE** — fechado e validado (27/08), versão
+1.3.3, commit `6efab96`. **A lição 118 está morta.**
 
-**5f-1b · Propor vínculo exige UPDATE** — **fechado e validado em tela + log
-(27/08), versão 1.3.4, commit `a690010`.** Cinco `checkRight(CREATE)` viraram
-`UPDATE` — dois em `ensureEntry`, dois em `ensureGrid` e o do ponto único
-`Link::propose` — mais a trava da tela e a mensagem, que agora nomeia o direito
-que falta e onde ele mora.
+**5f-1b · Propor vínculo exige UPDATE** — fechado e validado em tela + log
+(27/08), versão 1.3.4, commit `a690010`. Cinco `checkRight(CREATE)` viraram
+`UPDATE`, mais a trava da tela e a mensagem que nomeia o direito.
 
-Técnico com **ATUALIZAR e sem CRIAR** propôs vínculo de uma célula em branco
-(F1.04 da DGO 01 → E2 da CTO 01), confirmou do outro lado, e as duas linhas
-nasceram no banco. Proveniência conferida por md5 contra o commit publicado.
+**5f-2a · Comentário do elemento exige o direito do plugin** — **fechado e
+validado em tela nas duas pontas (27/08), versão 1.3.5, commit `1114077`.**
 
-**Os dois passos pendentes do 5f-1a, fechados pelo `other_vhosts_access.log`:**
+Uma linha decide tudo: `DgoIdentity::canWriteComment` deixou de perguntar
+`$dgo->can($items_id, UPDATE)` e passou a perguntar
+`Session::haveRight(Port::$rightname, UPDATE)`. Como o método tem **dois
+chamadores** — a tela e o ponto único `applyComment` —, POST, AJAX e renderização
+mudaram juntos, sem chance de divergir. Mais as duas mensagens, que agora nomeiam
+o direito e onde ele mora.
 
-| Requisição | Célula | Status | Veredito |
-|---|---|---|---|
-| `edit=1-3` | F1.03, já documentada | **200** ×2 | Passo 5 aprovado |
-| `edit=1-2` | F1.02, esvaziar sem DELETE | **403** ×7 | Passo 6 aprovado |
+Provado: técnico com **ATUALIZAR e sem CRIAR** comentou pelo auto-save
+("Salvo ✓"), o Super-Admin leu o mesmo texto em outra sessão, e **tirando
+ATUALIZAR** o campo voltou a `readonly` com a tarja nova. `+28 −10`, previsto no
+sandbox e confirmado no servidor. Proveniência fechada por md5.
+
+⚠️ **Resíduo:** o Histórico da ficha do ativo, com `teste.001` como autor, **não
+foi conferido**. Pendência 7 da Parte C.
 
 **PAGER · `core.pager cat`** — aplicado (27/08).
 
@@ -76,23 +78,25 @@ nasceram no banco. Proveniência conferida por md5 contra o commit publicado.
 A ordem importa: o **5g só depois dos outros**, senão documenta a regra antiga e
 vira mentira na tela.
 
-⚠️ **Os números de linha abaixo são do commit `6efab96`.** O 5f-1b acrescentou
-**+19 linhas ao `Port.php`** e **+6 ao `MapController.php`** — **reconferir em
-`a690010` antes de escrever qualquer um destes blocos.**
+✅ **Os números abaixo foram verificados por `grep -n` no commit `1114077`**,
+nesta sessão. Ainda assim: **reconferir antes de escrever** — foi exatamente
+assim que se descobriu que os do v7 tinham envelhecido (lição 144).
 
-**5f-2 · Comentário e criação de elemento migram para o direito do plugin**
+**5f-2b · Criar elemento pelo mapa migra para o direito do plugin**
 
-`DgoIdentity:216`: comentário passa de `datacenter` UPDATE para
-`plugin_dgoplus_port` UPDATE. `MapController:412` e `:1522`: criar elemento passa
-de `datacenter` CREATE para `plugin_dgoplus_port` CREATE.
+Dois pontos, os dois em `src/MapController.php`:
 
-Efeito colateral bom e **já visto em tela nesta sessão**: some a tarja "Você tem
-permissão apenas de leitura neste ativo" que o técnico vê no cartão de
-Comentários.
+| Linha | Código hoje | Papel |
+|---|---|---|
+| **412** | `Session::checkRight(PassiveDCEquipment::$rightname, CREATE)` | trava do POST, em `actionCreateDgo` |
+| **1522** | `&& Session::haveRight(PassiveDCEquipment::$rightname, CREATE)` | decide se o botão "criar elemento" aparece, em `displayDgoTabs` |
 
-⚠️ **Candidato a divisão.** São duas áreas independentes — comentário e criação de
-elemento. Se o roteiro passar de ~8 passos, parte em `5f-2a` e `5f-2b`, como o
-5f-1.
+As linhas **411** e **1521**, logo acima, já checam `Port::$rightname CREATE` —
+a mudança é **remover a exigência do ativo**, não trocá-la.
+
+⚠️ **Pré-condição do teste:** o perfil Tecnicos N1 está hoje com **CRIAR
+desmarcado**. Sem ligar CRIAR em "Portas de DGO", o botão continua escondido pelo
+motivo certo e o teste não prova nada.
 
 **5f-3 · Remover a exigência de `datacenter` READ**
 
@@ -100,11 +104,21 @@ Os sete pontos `can($items_id, READ)` passam a `Session::haveAccessToEntity()`,
 preservando a proteção do 3m sem o acoplamento. **É este bloco que faz
 "Dispositivos passivos" sumir do menu do técnico** — o objetivo original.
 
-Os sete pontos, em `6efab96`: `Port.php` **383**, **646**, **751**;
-`ajax/port.php` 48; `MapController.php` 949; `Link.php` 689; `DgoIdentity.php` 323.
+Os sete pontos, **em `1114077`** (três mudaram de lugar desde o v7):
+
+| Arquivo | Linha | Era no v7 |
+|---|---|---|
+| `src/Port.php` | 383 | 383 |
+| `src/Port.php` | 646 | 646 |
+| `src/Port.php` | **765** | ~~751~~ |
+| `ajax/port.php` | 48 | 48 |
+| `src/MapController.php` | 949 | 949 |
+| `src/Link.php` | **697** | ~~689~~ |
+| `src/DgoIdentity.php` | **338** | ~~323~~ |
 
 ✅ Pré-requisito respondido: `glpi_passivedcequipments` **tem** `is_recursive`.
-✅ **Sem contrapartida pendente:** a pendência do anexo foi decidida (Parte C).
+⚠️ **Candidato a divisão**: são sete pontos em cinco arquivos. Avaliar partir
+entre o caminho de gravação de porta (`Port.php` + `ajax/port.php`) e o resto.
 
 **5g · Nota explicativa na aba DGO+ do perfil — e as mensagens de erro**
 
@@ -112,17 +126,20 @@ Quadro abaixo da matriz, no `ProfileTab`, dizendo o que cada direito cobre e o
 que depende de permissão fora do DGO+ (Documentos **+ Data centers UPDATE** para
 anexo, Localização, excluir o ativo, configurar papéis). Nasce da lição 119.
 
-⚠️ **Escopo, agora com três frentes:**
+⚠️ **Escopo, com três frentes:**
 
-1. **O 403 do auto-save.** Lição 133, **confirmada com prova**: o `ajax/port.php`
+1. **O 403 do auto-save.** Lição 133, confirmada com prova: o `ajax/port.php`
    responde 403 e o usuário lê "Falha ao salvar. Use o botão Salvar" —
    indistinguível de erro de rede. O `dgoplus.js` precisa tratar o 403
    separadamente e nomear o direito faltante.
-2. **A insistência.** Sete 403 seguidos para uma ação só: o auto-save reenvia a
-   cada blur, e permissão não muda entre uma tentativa e outra. Depois do
-   primeiro 403 naquela célula, **parar de reenviar**.
+2. **A insistência.** Sete 403 seguidos para uma ação só. Depois do primeiro 403
+   naquela célula, **parar de reenviar**.
 3. **Texto que fala de ação indisponível.** O painel diz "Desmontar remove o
    vínculo dos dois lados" mesmo quando o botão não existe por falta de DELETE.
+
+*Observação do 5f-2a: as mensagens do comentário já nasceram no padrão que o 5g
+vai generalizar — "Comentar exige a permissão «Atualizar» em «Portas de DGO»
+(Administração → Perfis → aba DGO+)". Serve de modelo.*
 
 ---
 
@@ -136,15 +153,15 @@ localização e conferir a contagem). ⚠️ Vale checar o comportamento com
 
 **5b · Piso lista só os pisos com candidato**
 
-`refreshFloors()` (`public/dgoplus.js:342`) passa a cruzar cada piso com os
+`refreshFloors()` (`public/dgoplus.js`) passa a cruzar cada piso com os
 candidatos, como `refreshDst()` já faz. Só JS; Ctrl+F5.
 
 **5c · Trilha da entrada, não do elemento**
 
 `Link::upstreamLevels()` é chamado com o elemento, então o card da "Entrada E2"
 mostra a cadeia que chega pela E1. **Consumidor único.**
-⚠️ *Linha era `MapController:2497` no `bd28ffd`; deslocada duas vezes desde então
-(+4 pelo 5f-1a, +6 pelo 5f-1b). Reconferir em `a690010`.*
+⚠️ *A linha do consumidor no `MapController` foi deslocada três vezes desde o
+`bd28ffd`. Localizar por `grep -n upstreamLevels`, não por número.*
 
 **5d · Aceite no servidor para salto de degrau**
 
@@ -152,9 +169,7 @@ mostra a cadeia que chega pela E1. **Consumidor único.**
 degrau pulado; a tela reexibe com aceite explícito. A distância está a uma
 subtração: `$order[$dst] - $order[$src] > 1`.
 
-Mexe no **ponto único de criação** — bloco mais delicado da fase. O 5f-1b já
-tocou o `propose()` e o deixou com o `checkRight` no lugar certo, então o caminho
-está limpo.
+Mexe no **ponto único de criação** — bloco mais delicado da fase.
 
 **5e · Desambiguar nomes repetidos na lista de destino** ⚠️ *depende de confirmação*
 
@@ -166,9 +181,9 @@ escolher o errado cria topologia errada que nenhuma validação pega.
 
 ### Prioridade 3 — higiene
 
-**REL-2 · Tag `v1.3.4` + Release** — três comandos no `ssh`. Fazer quando a Fase 5
-tiver um marco, não a cada sub-bloco. O 1.3.3 fica sem Release, e tudo bem: a
-Release é artefato de instalação, não registro de histórico (isso é o Git).
+**REL-2 · Tag `v1.3.5` + Release** — três comandos no `ssh`. Fazer quando a Fase 5
+tiver um marco, não a cada sub-bloco. O 1.3.3 e o 1.3.4 ficam sem Release, e tudo
+bem: a Release é artefato de instalação, não registro de histórico (isso é o Git).
 
 **SKILL · Atualizar a skill `glpi-plugin-teckcomp`** — host, usuário, porta **e o
 comando de envio** (`pscp` → `scp`). Ela ainda manda para `192.168.1.50`, que está
@@ -180,12 +195,13 @@ morto, e com um cliente que não autentica neste servidor.
 
 | # | Pergunta | Situação |
 |---|---|---|
-| 1 | Anexo exige `datacenter` UPDATE? | ✅ **Respondida (27/08): SIM.** Virou decisão de produto: **o técnico não anexa**. Lição 134 |
+| 1 | Anexo exige `datacenter` UPDATE? | ✅ **Respondida: SIM.** Decisão de produto: **o técnico não anexa**. Lição 134 |
 | 2 | Qual `jointype` para tabela polimórfica? | ✅ **Respondida:** `itemtype_item_revert` + `specific_itemtype` obrigatório |
 | 3 | `glpi_passivedcequipments` tem `is_recursive`? | ✅ **Respondida:** tem, confirmado no schema do core |
 | 4 | Os dois "PTO 001" são ativos distintos? | **Aberta.** Ativos → Dispositivos passivos, conferir ids |
-| 5 | Existe clone Git no servidor? | ✅ **Respondida (27/08): não existia. Foi criado.** |
-| 6 | A "Falha ao salvar" da F1.02 foi 403 por DELETE? | ✅ **Respondida (27/08): SIM, 403 — sete deles.** Provado no `other_vhosts_access.log`. Lição 133 confirmada |
+| 5 | Existe clone Git no servidor? | ✅ **Respondida: não existia. Foi criado.** |
+| 6 | A "Falha ao salvar" da F1.02 foi 403 por DELETE? | ✅ **Respondida: SIM, sete 403.** Lição 133 confirmada |
+| **7** | **O Histórico da ficha do ativo registra o técnico como autor do comentário?** | **Aberta (27/08).** Um passo: abrir DGO 01 → aba Histórico como admin. Esperado: `teste.001` alterando `comment`. Não bloqueia nada; é o efeito colateral do 5f-2a numa tela do core |
 
 ---
 
@@ -196,12 +212,9 @@ morto, e com um cliente que não autentica neste servidor.
 | 1 | **README desatualizado.** `dgoplus-v1.0.0.zip` (38, 45, 56), três tabelas quando são quatro (111, 142), linha 119 sobre portas órfãs | Bloco pequeno, sem risco |
 | 2 | **Sem catálogo de tradução** | Bloco médio; decisão de produto antes |
 | 3 | **Lista integral de lições (1–113)** não incorporada | Depende de achar o documento antigo |
-| 4 | **Sem tag/Release do 1.3.3 e do 1.3.4** | Bloco REL-2 |
+| 4 | **Sem tag/Release do 1.3.3, 1.3.4 e 1.3.5** | Bloco REL-2 |
 | 5 | **Skill `glpi-plugin-teckcomp` desatualizada** | Bloco SKILL |
 | 6 | **Texto fala de "Desmontar" sem o botão existir** | Cabe no 5g |
-
-*(As dívidas do v6 — passos 5 e 6 do 5f-1a, `core.pager` — foram liquidadas em
-27/08.)*
 
 ---
 
@@ -218,9 +231,9 @@ Candidatos, **nenhum comprometido**, com a fonte declarada.
 | Atualizar o README | Dívida 1 — escopo fechado |
 | **Formulário próprio de upload de anexo** | **Sem dono:** a decisão de 27/08 foi que o técnico não anexa |
 | Colunas novas no relatório (papel, piso, estado do vínculo) | Passo 8 — o caminho para "Piso" é o mesmo do 5h |
-| Rotina periódica de conferência md5 servidor × `master` | **Obsoleta:** `git status` faz isso melhor |
 | `git pull` no servidor como forma de aplicar bloco | Nasceu do GIT-2 — evitaria o `scp` quando o assistente puder commitar, mas ele não tem token nem deve ter |
 | **Badge da CTO contar entradas, não só grade** | Observação do teste do 5f-1b: "CTO 01 · 0 de 16 documentadas" com E1 e E2 ocupadas. **Pode ser correto de propósito** — decidir antes de mexer |
+| **Comentário do elemento com carimbo de autor na própria tela** | Observação do 5f-2a: o Histórico do ativo guarda quem alterou, mas o cartão do mapa não mostra. Só faz sentido depois de responder a pendência 7 |
 
 > A numeração de fases do roadmap antigo (do tempo do `mapadgo`) **não**
 > corresponde à numeração de blocos atual.
@@ -229,17 +242,19 @@ Candidatos, **nenhum comprometido**, com a fonte declarada.
 
 ## Parte F — decisões negativas
 
-Ver a seção 8 do `contexto-dgoplus.md`. Quatorze ideias avaliadas e recusadas com
+Ver a seção 8 do `contexto-dgoplus.md`. Quinze ideias avaliadas e recusadas com
 motivo — piso em lote, splitter como papel, importação CSV, anexo pelo técnico,
 documentos versionados no repositório, DELETE para recusar vínculo, `pscp` como
-veículo de envio. **Não ressuscitar sem fato novo.**
+veículo de envio, mudar a assinatura de `canWriteComment`. **Não ressuscitar sem
+fato novo.**
 
 ---
 
 ## Próximo passo imediato
 
-1. **Bloco 5f-2** — comentário e criação de elemento migram para o direito do
-   plugin. **Reconferir as linhas em `a690010` antes de escrever.** Avaliar se
-   parte em 5f-2a (comentário) e 5f-2b (criar elemento).
-2. **5f-3** → **5g**, nesta ordem.
+1. **Bloco 5f-2b** — criar elemento pelo mapa passa a exigir só
+   `plugin_dgoplus_port` CREATE. `MapController:412` e `:1522`. **Ligar CRIAR no
+   perfil de teste antes do roteiro.**
+2. **5f-3** (avaliar divisão) → **5g**, nesta ordem.
 3. **5h-2** cabe em qualquer intervalo: é um atributo.
+4. **Pendência 7** (Histórico do ativo) resolve-se em um clique, a qualquer hora.

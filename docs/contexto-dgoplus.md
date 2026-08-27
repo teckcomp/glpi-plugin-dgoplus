@@ -3,12 +3,11 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v7 — 27/08/2026 (sessão da noite). Substitui o v6
-> integralmente.
-> Emitido ao fim da sessão que entregou o **Bloco 5f-1b** — propor vínculo passa a
-> exigir ATUALIZAR — e que, de quebra, **liquidou as duas dívidas pendentes do
-> 5f-1a** com prova no log do Apache, corrigiu o comando de envio do projeto
-> (`scp`, não `pscp`) e configurou o `core.pager`.
+> **Versão deste documento:** v8 — 27/08/2026 (sessão da noite, segunda parte).
+> Substitui o v7 integralmente.
+> Emitido ao fim do **Bloco 5f-2a** — o comentário do elemento passa a exigir o
+> direito do plugin, não mais `datacenter` UPDATE. Fechado e validado em tela nas
+> duas pontas (com e sem ATUALIZAR), versão **1.3.5**, commit **`1114077`**.
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
 
@@ -42,8 +41,8 @@ Convive com a regra de precisão do projeto porque são duas perguntas diferente
    teste.** Reprovou? `git revert` ou `git checkout --`.
 6. Console do GLPI + restart, e então o roteiro de teste.
 
-**O passo 2 não é opcional** — foi ele que pegou, nesta sessão, três arquivos
-antigos sendo enviados no lugar dos novos (lição 140).
+**O passo 2 não é opcional** — foi ele que pegou três arquivos antigos sendo
+enviados no lugar dos novos (lição 140).
 
 O zip deixou de ser o veículo do bloco. Ele sobrevive só como **artefato de
 Release**.
@@ -56,8 +55,8 @@ Release**.
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 27/08 (fim da sessão) | commit **`a690010`**, versão **1.3.4** |
-| Versão em homologação | **1.3.4**, confirmada na tela de plug-ins |
+| `master` em 27/08 (fim da sessão) | commit **`1114077`**, versão **1.3.5** |
+| Versão em homologação | **1.3.5**, confirmada na tela de plug-ins |
 | **Paridade** | ✅ **Estrutural**: a pasta do plugin é a árvore de trabalho do clone. `git status` limpo **é** a prova |
 | Arquivos no repositório | **30** (27 do plugin + 3 em `docs/`) |
 | GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data` |
@@ -82,7 +81,7 @@ git config --global user.name "Claudio Morett"
 git config --global user.email "claudio.morett@gmail.com"
 git config --global --add safe.directory /var/www/html/glpi/plugins/dgoplus
 git config --global credential.helper store
-git config --global core.pager cat          # aplicado em 27/08 (sessão da noite)
+git config --global core.pager cat
 ```
 
 O `safe.directory` é obrigatório: a pasta é do `www-data` e o git roda como root
@@ -90,12 +89,14 @@ O `safe.directory` é obrigatório: a pasta é do `www-data` e o git roda como r
 `/root/.git-credentials` (0600, root); autenticação por **token fine-grained**
 (Contents: Read and write) — senha de conta não funciona em HTTPS.
 
-O `core.pager cat` **já está aplicado**: o `git diff` não prende mais no
-paginador.
-
 **Depois de todo `git pull`/`checkout`**, rodar
 `chown -R www-data:www-data /var/www/html/glpi/plugins/dgoplus` — o git escreve
 como root.
+
+⚠️ **O `master` avança sem o código mudar.** Com `docs/` versionado, um commit só
+de documentação move o HEAD. **O HEAD do `ls-remote` não é necessariamente o
+último commit de código** — conferir o delta antes de assumir que a base do
+bloco anterior ainda é o topo (lição 143).
 
 ### Comandos do dia a dia
 
@@ -105,15 +106,8 @@ como root.
 scp -P 2078 "%USERPROFILE%\Downloads\<arquivo>" resolutto@177.87.230.179:/tmp/
 ```
 
-`-P` maiúsculo é a porta. Aceita vários arquivos numa linha só. Usa a mesma chave
-e a mesma configuração do `ssh` que o usuário já usa. Verificado nesta sessão:
-**não converte quebra de linha** — md5 idêntico dos dois lados.
-
-**⚠️ O `pscp` NÃO funciona neste ambiente.** Ele é da suíte PuTTY, lê chaves só em
-`.ppk` de sessões salvas, e o usuário não usa PuTTY. Falha com
-`FATAL ERROR: No supported authentication methods available (server sent: publickey)`.
-Isso é **diferente** da lição 128 (`Remote side unexpectedly closed`), que era
-conexão morrendo.
+`-P` maiúsculo é a porta. Aceita vários arquivos numa linha só. **Não converte
+quebra de linha** — md5 idêntico dos dois lados, verificado.
 
 **Trazer do servidor para o PC:**
 
@@ -141,6 +135,8 @@ git checkout -- <arquivos>      # descarta a cópia, ainda não commitada
 git revert HEAD && git push     # desfaz o commit já empurrado
 ```
 
+**⚠️ O `pscp` NÃO funciona neste ambiente** (suíte PuTTY, só lê `.ppk`). É `scp`.
+
 ### Os dois logs que interessam
 
 **Erro de PHP e de SQL.** Não há `sql-errors.log` (lição 122). Erro de SQL vai
@@ -158,8 +154,7 @@ grep -h "port.php" /var/log/apache2/access.log /var/log/apache2/other_vhosts_acc
 ```
 
 O `Referer` traz a URL do mapa com `edit=<tubo>-<fibra>`, então dá para saber
-**qual célula** gerou cada requisição sem perguntar ao usuário. Foi assim que os
-passos 5 e 6 do 5f-1a foram fechados.
+**qual célula** gerou cada requisição sem perguntar ao usuário.
 
 ### Topologia web
 
@@ -172,7 +167,6 @@ Consequência que encerra um risco: **nada dentro de `plugins/` é alcançável 
 arquivo pelo navegador** — nem o `.git`, nem `files/`, nem `config/`. Testado:
 `curl` em `/glpi/plugins/dgoplus/public/dgoplus.js` devolve **404 com
 `Set-Cookie: glpi_...`**, ou seja, quem respondeu foi o front controller do GLPI.
-Sem necessidade de regra de bloqueio.
 
 ### Release — o artefato de instalação
 
@@ -183,11 +177,11 @@ O zip **nasce do commit**, nunca de pasta montada à mão:
 
 ```bash
 cd /var/www/html/glpi/plugins/dgoplus
-git tag -a v1.3.4 -m "..." && git push origin v1.3.4
-git archive --format=zip --prefix=dgoplus/ -o /tmp/dgoplus-1.3.4.zip v1.3.4
+git tag -a v1.3.5 -m "..." && git push origin v1.3.5
+git archive --format=zip --prefix=dgoplus/ -o /tmp/dgoplus-1.3.5.zip v1.3.5
 ```
 
-⚠️ **A `v1.3.3` e a `v1.3.4` não têm tag nem Release.** Bloco REL-2.
+⚠️ **A `v1.3.3`, a `v1.3.4` e a `v1.3.5` não têm tag nem Release.** Bloco REL-2.
 
 ### Outros plugins na mesma base
 
@@ -195,7 +189,7 @@ git archive --format=zip --prefix=dgoplus/ -o /tmp/dgoplus-1.3.4.zip v1.3.4
 `archimap`, `gantt`, `moreticket`, **`projectplus` 1.1.0-beta**, **`shopmap`
 0.1.0**, `stab`, `tag`, **`taskplus` 0.2.1-beta**, `tasklists`, `Diagrams` 3.3.14,
 `Additional fields` 1.24.4, `Alerts` 1.14.1, `Tag Management` 2.14.6, `Tasks list`
-2.1.8.
+2.1.12.
 
 ### Quando reinstalar — decidir, não pedir por precaução
 
@@ -213,7 +207,7 @@ git archive --format=zip --prefix=dgoplus/ -o /tmp/dgoplus-1.3.4.zip v1.3.4
 
 Método **entrega-em-blocos**: um bloco = uma mudança testável de uma sentada. Se
 o teste passa de ~8 passos ou toca duas áreas independentes, divide-se — foi o
-que aconteceu com o 5f-1, partido em `5f-1a` e `5f-1b`.
+que aconteceu com o 5f-1 (`5f-1a`/`5f-1b`) e com o 5f-2 (`5f-2a`/`5f-2b`).
 
 Toda entrega tem quatro seções fixas: **(1)** o que muda, com a decisão de
 reinstalar em negrito na primeira linha; **(2)** o comando `scp` literal **com os
@@ -223,8 +217,8 @@ o log e como reverter.
 
 ### Nome de arquivo entregue leva o bloco
 
-**Todo arquivo de bloco sai com o bloco no nome** — `Port-5f1b.php`,
-`setup-5f1b.php` — e o `cp` no servidor é que renomeia. Sem isso o download
+**Todo arquivo de bloco sai com o bloco no nome** — `DgoIdentity-5f2a.php`,
+`setup-5f2a.php` — e o `cp` no servidor é que renomeia. Sem isso o download
 colide com o do bloco anterior na pasta Downloads, o navegador salva como
 `Port_1.php`, e o `scp` manda o **antigo** com sucesso aparente (lição 140).
 
@@ -242,21 +236,32 @@ https://github.com/teckcomp/glpi-plugin-dgoplus/releases/download/<tag>/<arquivo
 (`api.github.com` bate no limite anônimo — 403.)
 
 ⚠️ **Preferir o `codeload` com o SHA ao `raw`**: o `raw` tem cache de CDN e pode
-devolver o estado anterior logo após um commit (lição 132).
+devolver o estado anterior logo após um commit (lição 132). O `codeload` aceita
+SHA abreviado, **mas a pasta extraída sai com o nome abreviado** — não presumir o
+SHA completo no `cd`.
 
 **Padrão de trabalho do assistente ao preparar um bloco:** baixar o tarball do
 commit atual, editar a cópia, `php -l`, e **provar por md5 que só os arquivos do
 escopo mudaram** antes de entregar. Depois do push, **baixar o commit publicado e
-conferir os md5 de novo** — foi feito no 5f-1b e fecha a proveniência.
+conferir os md5 de novo** — feito no 5f-1b e no 5f-2a, e é o que fecha a
+proveniência.
 
-**Número previsto (`git diff --stat`, `grep -c`) sai de comando, não de olho.**
-Ver lição 141: no 5f-1b eu previ `+41 −8` e `MapController:3`, e o certo era
-`+44 −11` e `:2`.
+**Número previsto (`git diff --stat`, `grep -c`) sai de comando, não de olho**
+(lição 141): `git init` sobre o tarball do commit, copiar os arquivos do bloco
+por cima, rodar o `stat` de verdade. No 5f-2a o previsto `+28 −10` foi o que
+apareceu no servidor.
+
+**Documento é entrega, e entrega tem quatro seções** (lição 145): o contexto e o
+roadmap também saem com o comando `scp` literal, nunca só com os comandos do
+servidor.
+
+**Número de linha citado em documento é ponteiro, não fato** (lição 144).
+Reconferir por `grep -n` no commit do dia, sempre — nunca copiar da versão
+anterior deste documento.
 
 ### O core do GLPI também é legível
 
-`github.com/glpi-project/glpi` na **tag `11.0.6`**, pelos mesmos raw URLs. Dois
-detalhes de caminho:
+`github.com/glpi-project/glpi` na **tag `11.0.6`**, pelos mesmos raw URLs:
 
 - Classes com namespace `Glpi\` ficam em **`src/Glpi/...`**, não em `src/...`.
 - O schema completo está em `install/mysql/glpi-empty.sql` — forma mais rápida de
@@ -269,10 +274,6 @@ dois comandos separados** — o `update` sai com código ≠ 0 e encadear com `&
 faz o `install` nunca rodar (lição 126). Validado com PHP 8.3.6. **Todo arquivo
 PHP entregue passa por `php -l` antes de sair.** Continua valendo: `php -l`
 **não** pega incompatibilidade de assinatura com a classe-pai.
-
-O sandbox também consegue **simular o `git diff --stat` do servidor**: `git init`
-sobre o tarball do commit, copiar os arquivos do bloco por cima, rodar o `stat`.
-É a forma correta de prever o número que o usuário vai ver.
 
 Não há `sudo` no sandbox (já é root) e a homologação é inalcançável de lá.
 
@@ -288,6 +289,7 @@ Não há `sudo` no sandbox (já é root) e a homologação é inalcançável de 
 - Remontar arquivo a partir do `master` + a descrição do bloco (lição 129).
 - **Ritual de `md5sum` dos 27 arquivos** — `git status` faz isso melhor.
 - **Pedir F12 ao usuário para saber status HTTP** — o `other_vhosts_access.log` diz.
+- **Reaproveitar número de linha de documento antigo** (lição 144).
 
 ---
 
@@ -337,8 +339,19 @@ Uma tabela, dois tipos de linha, separados por `kind`:
 - `Link::propose()` é o **ponto único de criação**.
 - **Recusar e confirmar pedem o mesmo direito (UPDATE)**, de propósito: exigir
   DELETE para recusar deixaria um perfil capaz de aceitar mas incapaz de dizer
-  não. Desmontar (vínculo já confirmado) pede DELETE. Conferido em código:
-  `Link::refuse` e a tela (`MapController:2542`) perguntam a mesma coisa.
+  não. Desmontar (vínculo já confirmado) pede DELETE.
+
+### Comentário do elemento
+
+`DgoIdentity::applyComment()` é o **ponto único**, usado pelo POST clássico
+(`MapController::actionSaveDgoComment`) e pelo `ajax/dgocomment.php` — os dois não
+podem divergir (lição 47). Grava o campo `comment` **nativo** do
+`PassiveDCEquipment` por `CommonDBTM::update()`, então aparece na ficha do ativo
+e no Histórico dele.
+
+Quem decide o direito é `DgoIdentity::canWriteComment()`, **um método com dois
+chamadores** (tela e ponto único). Desde o 5f-2a ele pergunta pelo direito do
+plugin.
 
 ### Busca e relatório — tabela polimórfica
 
@@ -361,37 +374,37 @@ Quatro tabelas: `_ports`, `_panels`, `_floors`, `_links`. Direito próprio
 `plugin_dgoplus_port`, matriz de 4 níveis = **15**. Na tela do perfil a aba
 chama-se **DGO+** e a linha, **"Portas de DGO"**.
 
-**Como o direito se comporta em 1.3.4** (números conferidos em 27/08 no commit
-`a690010`):
+**Como o direito se comporta em 1.3.5** — todos os números **verificados por
+`grep -n` no commit `1114077`**, nesta sessão:
 
 | Ação | Exige hoje | Onde |
 |---|---|---|
 | Ver mapa, painel, relatório | `plugin_dgoplus_port` READ | `front/map.php` |
-| **Documentar porta (existente ou não)** | **`plugin_dgoplus_port` UPDATE** ✅ 5f-1a | `Port.php:506` e `:514`; tela em `MapController:2950` |
+| **Documentar porta (existente ou não)** | **`plugin_dgoplus_port` UPDATE** ✅ 5f-1a | `Port.php:506` e `:514` |
 | Esvaziar porta (volta a livre) | `plugin_dgoplus_port` DELETE | `Port.php:444` |
-| **Propor vínculo** | **`plugin_dgoplus_port` UPDATE** ✅ 5f-1b | `Link.php:434`; tela em `MapController:3189` |
-| Confirmar / recusar vínculo | `plugin_dgoplus_port` UPDATE | `Link.php:483`, `:525` |
-| Desmontar vínculo | `plugin_dgoplus_port` DELETE | `Link.php:~570` |
+| **Propor vínculo** | **`plugin_dgoplus_port` UPDATE** ✅ 5f-1b | `Link.php:439`; tela em `MapController:3189` |
+| Confirmar / recusar vínculo | `plugin_dgoplus_port` UPDATE | `Link.php:484`, `:526` |
+| Desmontar vínculo | `plugin_dgoplus_port` DELETE | `Link.php:565` |
+| **Comentário do elemento** | **`plugin_dgoplus_port` UPDATE** ✅ **5f-2a** | `DgoIdentity.php:227` (`canWriteComment`) |
 | Fileira / coluna / piso | `plugin_dgoplus_port` CREATE | `MapController:529`, `:735`, `Floor::$rightname` |
 | Qualquer gravação de porta | **também** `datacenter` READ ⚠️ *muda no 5f-3* | 7 pontos, abaixo |
-| Comentário do elemento | `datacenter` UPDATE ⚠️ *muda no 5f-2* | `DgoIdentity:216` |
+| **Criar elemento** | `datacenter` CREATE ⚠️ *muda no **5f-2b*** | `MapController:412` (POST) e `:1522` (tela) |
 | **Anexos** | `document` READ+UPDATE+CREATE **e `datacenter` UPDATE** | ✅ confirmado em tela |
-| Criar elemento | `datacenter` CREATE ⚠️ *muda no 5f-2* | `MapController:412` e `:1522` |
 | Configurar papéis | `config` UPDATE | `MapController:1544` |
 
 **Os sete pontos acoplados a `datacenter` READ** (todos `can($items_id, READ)`),
-**verificados em 27/08 no commit `6efab96`**. ⚠️ **O 5f-1b acrescentou +19 linhas
-ao `Port.php` e +6 ao `MapController.php` — reconferir antes de escrever o 5f-3:**
+**verificados por `grep -n` em `1114077`** — ⚠️ *note que três deles saíram do
+lugar em relação ao v7, que citava `6efab96`*:
 
-| Arquivo | Linha (em `6efab96`) | Contexto |
-|---|---|---|
-| `src/Port.php` | 383 | `applyInput` |
-| `src/Port.php` | 646 | `ensureEntry` |
-| `src/Port.php` | 751 | `ensureGrid` |
-| `ajax/port.php` | 48 | auto-save |
-| `src/MapController.php` | 949 | `actionSaveEntryObs` |
-| `src/Link.php` | 689 | `loadVisibleItem` (3 chamadas) |
-| `src/DgoIdentity.php` | 323 | identidade |
+| Arquivo | Linha (em `1114077`) | Era no v7 | Contexto |
+|---|---|---|---|
+| `src/Port.php` | 383 | 383 | `applyInput` |
+| `src/Port.php` | 646 | 646 | `ensureEntry` |
+| `src/Port.php` | **765** | ~~751~~ | `ensureGrid` |
+| `ajax/port.php` | 48 | 48 | auto-save |
+| `src/MapController.php` | 949 | 949 | `actionSaveEntryObs` |
+| `src/Link.php` | **697** | ~~689~~ | `loadVisibleItem` |
+| `src/DgoIdentity.php` | **338** | ~~323~~ | `applyComment` — a trava de entidade (3m) |
 
 `front/map.php` exige **apenas** `Port::$rightname READ`.
 
@@ -400,8 +413,8 @@ ao `Port.php` e +6 ao `MapController.php` — reconferir antes de escrever o 5f-
 | Direito | Significa |
 |---|---|
 | LER | Ver mapa, painel, relatórios, comentários, descrição das portas |
-| ATUALIZAR | **Documentar portas** ✅ (5f-1a), **propor e confirmar vínculos** ✅ (5f-1b), comentar o elemento (5f-2) |
-| CRIAR | Criar elementos pelo mapa, fileiras, colunas, pisos — **estrutura** |
+| ATUALIZAR | **Documentar portas** ✅ (5f-1a), **propor e confirmar vínculos** ✅ (5f-1b), **comentar o elemento** ✅ (5f-2a) |
+| CRIAR | Criar elementos pelo mapa (5f-2b), fileiras, colunas, pisos — **estrutura** |
 | DELETE | Esvaziar portas, recusar por desmontagem, excluir vínculos |
 
 **Fora do DGO+, por decisão:** criar Localização (dropdown do GLPI inteiro),
@@ -410,7 +423,10 @@ anexos (direito `document` **+ `datacenter` UPDATE**) e excluir o elemento.
 **O que a Fase 5 assume conscientemente:** depois do 5f, quem tiver
 `plugin_dgoplus_port` UPDATE grava porta, vínculo e comentário em elementos **da
 sua entidade** sem ter direito nesses ativos. Escalada deliberada e delimitada,
-decidida pelo administrador ao conceder o direito.
+decidida pelo administrador ao conceder o direito. **Efeito visível no core:** o
+comentário passa pelo `update()` do ativo, então **o Histórico do
+`PassiveDCEquipment` registra a alteração em nome do técnico** — desejável para
+auditoria, e é a primeira vez que o direito do plugin aparece numa tela do core.
 
 ### Arquivos
 
@@ -436,21 +452,24 @@ dgoplus/
     ├── MapController.php  a tela do mapa — 3398 linhas
     ├── Dashboard.php      o painel
     ├── Pending.php        página de vínculos pendentes (4d)
-    ├── DgoIdentity.php    identidade e QR do elemento (3t)
+    ├── DgoIdentity.php    identidade, QR e comentário (3t) — 370 linhas
     ├── PurgeCleaner.php   limpeza na purga do ativo (3q)
     ├── ProfileTab.php     aba de direitos no Perfil
     └── MapPage.php        entrada de menu
 ```
 
-**Impressões digitais do 1.3.4** (commit `a690010`, baixado do GitHub e conferido
-pelo assistente; idênticas no servidor e no sandbox):
+**Impressões digitais do 1.3.5** (commit `1114077`, baixado do GitHub e conferido
+pelo assistente nesta sessão):
 
 ```
-0aa69700238257136ea598b714eb08e9  setup.php             (269 linhas)
+d0a417d03dec12eafb959a891bdd63f8  setup.php             (269 linhas)
+b7487ba16bd9e4ecf6b7adfb6fe0c7b9  src/DgoIdentity.php   (370 linhas)
 d84d8788ebce8939737ca1cee52c798b  src/Port.php          (1048 linhas)
 4f81bc233ffd5df1ce5a6e49e0fa0487  src/Link.php          (1204 linhas)
 846bef4e6d5936ddb4d56d6f4cc1c899  src/MapController.php (3398 linhas)
 ```
+
+*(Port, Link e MapController estão idênticos desde o `a690010`.)*
 
 ---
 
@@ -492,31 +511,35 @@ fato**.
 | 115 | `pscp` usa `-P` maiúsculo para a porta. *Vale igual para o `scp` — ver lição 139* |
 | 116 | **Bump de versão no `setup.php` conta como mudança de instalação.** `--force` + `activate` mesmo com `Install.php` idêntico |
 | 117 | **`$parent->can($items_id, READ)` acopla o plugin ao direito do itemtype pai — e ao menu do core.** `Session::haveAccessToEntity()` preserva a proteção sem o acoplamento |
-| 118 | **`$can_write = haveRight($rightname, $found ? UPDATE : CREATE)`**: porta ainda não documentada exigia CREATE. ✅ *Corrigida pelo 5f-1a* |
+| 118 | ~~`$can_write = haveRight($rightname, $found ? UPDATE : CREATE)`~~ ✅ *Corrigida pelo 5f-1a* |
 | 119 | **Mensagem de permissão que não nomeia o direito faltante custa horas** |
 | 120 | ✅ Anexar documento a um ativo exige **`datacenter` UPDATE**. Ver lição 134 |
 | 121 | **`joinparams.beforejoin` apontando para a própria tabela gera 1054** |
 | 122 | **Não existe `sql-errors.log` no GLPI 11.0.6.** Erro de SQL vai para `php-errors.log` como `glpi.CRITICAL` |
 | 123 | **O direito Documentos fica na aba Gerência do perfil, não em Ativos** |
-| 124 | A homologação também pode estar À FRENTE do `master`. *Encerrada: com o clone no servidor, a classe do problema saiu de cena* |
+| 124 | A homologação também pode estar À FRENTE do `master`. *Encerrada pelo clone no servidor* |
 | 125 | **`jointype` inexistente não dá erro: cai no `default`.** E, no `itemtype_item_revert`, esquecer `specific_itemtype` devolve a coluna vazia |
 | 126 | **O sandbox do assistente tem PHP.** `apt-get update` sai com código ≠ 0 — **dois comandos separados** |
 | 127 | **O CSV exportado do GLPI abre torto no Excel por duplo clique.** Solução: *Dados → Obter dados → De texto/CSV*, UTF-8, coluna como Texto |
-| 128 | **`pscp` pode falhar com `Remote side unexpectedly closed network connection` e voltar sozinho.** *Distinto da lição 139: ali a conexão morre, aqui a autenticação nem começa* |
+| 128 | **`pscp` pode falhar com `Remote side unexpectedly closed network connection`.** *Distinta da 139: ali a conexão morre, aqui a autenticação nem começa* |
 | 129 | **Arquivo remontado a partir do `master` + a descrição do bloco NÃO é verificação** |
 | 130 | **O GitHub é canônico.** Qualquer ordem que deixe código existindo só no servidor já custou perda de trabalho uma vez |
 | 131 | Upload pela web do GitHub cria arquivo novo em silêncio quando o nome não bate. *Aposentada pelo `git push`* |
 | 132 | **`raw.githubusercontent.com` tem cache de CDN.** Para commit recém-feito: `ls-remote` para o HEAD, tarball do `codeload` para o conteúdo |
-| 133 | ✅ **CONFIRMADA (27/08, log do Apache): falha de permissão no auto-save chega ao usuário como erro de rede.** O `ajax/port.php` responde **403** e o `.catch()` do `dgoplus.js` mostra **"Falha ao salvar. Use o botão Salvar."** Pior: o auto-save **reenvia** — foram **sete 403 seguidos** para uma única ação do usuário, contra uma parede que nunca vai ceder. Escopo do 5g |
+| 133 | ✅ **CONFIRMADA: falha de permissão no auto-save chega ao usuário como erro de rede.** O `ajax/port.php` responde **403** e o `.catch()` do `dgoplus.js` mostra **"Falha ao salvar. Use o botão Salvar."** Pior: o auto-save **reenvia** — sete 403 seguidos para uma ação só. Escopo do 5g |
 | 134 | **Anexo a ativo exige UPDATE no ativo.** O formulário é do core (`Document_Item`) e pergunta se o usuário pode atualizar o ATIVO |
 | 135 | **O direito "Data centers" também fica na aba Gerência do perfil**, junto com Documentos, Contratos, Clusters, Domínios e Cabos |
-| 136 | **A raiz web efetiva vem de `conf-enabled/glpi.conf` e vence o `000-default.conf`.** **404 com `Set-Cookie: glpi_` é o GLPI respondendo**, não o Apache servindo arquivo |
-| 137 | **Com o clone Git na pasta do plugin, `git diff` É a conferência do bloco** e `git checkout --` é o rollback instantâneo. ✅ *`core.pager cat` aplicado em 27/08* |
+| 136 | **A raiz web efetiva vem de `conf-enabled/glpi.conf` e vence o `000-default.conf`.** **404 com `Set-Cookie: glpi_` é o GLPI respondendo** |
+| 137 | **Com o clone Git na pasta do plugin, `git diff` É a conferência do bloco** e `git checkout --` é o rollback instantâneo |
 | 138 | **O escopo real de um bloco de permissão está no PONTO ÚNICO, não na linha da tela.** Antes de escrever, procurar o `checkRight` no ponto único |
-| **139** | **O envio é `scp`, não `pscp` — e o servidor recusa senha.** O usuário usa o **OpenSSH do Windows com chave**; o `pscp` é da suíte PuTTY, só lê `.ppk` de sessão salva, e morre com `No supported authentication methods available (server sent: publickey)`. O contexto registrou "autenticação por senha" desde o v1 e **estava errado**: o que o usuário digita é a frase-secreta da chave. Verificado nesta sessão: o `scp` **não** converte quebra de linha (md5 idêntico dos dois lados) |
-| **140** | **Arquivo de bloco com o nome final colide na pasta Downloads e o `scp` manda o ANTIGO em silêncio.** Aconteceu: `setup.php`, `Port.php` e `MapController.php` do 5f-1a ainda estavam lá, o navegador salvou os novos como `setup_1.php`, `Port_1.php`, `MapController_1.php`, e o envio "teve sucesso" com três arquivos de duas horas antes. Só o `Link.php` chegou certo — era o único nome sem colisão. **Duas regras nasceram daqui: o nome entregue leva o bloco (`Port-5f1b.php`), e o `md5sum` de `/tmp` ANTES do `cp` deixa de ser opcional.** Foi ele que pegou |
-| **141** | **Número previsto de `git diff --stat` e `grep -c` sai de comando, não de contagem a olho.** Previ `+41 −8` e `MapController:3`; o certo era `+44 −11` e `:2` — comentário substituindo linha de código conta `+1 −1`, e um dos três pontos tocados não continha a string procurada. Divergência de número previsto gera desconfiança falsa num bloco correto. **No sandbox: `git init` sobre o tarball do commit, copiar os arquivos por cima, rodar o `stat` de verdade** |
-| **142** | **As requisições do GLPI caem no `other_vhosts_access.log`, não no `access.log`.** E o `Referer` traz `edit=<tubo>-<fibra>`, então o log diz **qual célula** gerou cada requisição. Isso substitui pedir F12 ao usuário: `grep -h "port.php" /var/log/apache2/access.log /var/log/apache2/other_vhosts_access.log \| tail`. Foi assim que os passos 5 e 6 do 5f-1a foram fechados sem depender da aba Rede |
+| 139 | **O envio é `scp`, não `pscp` — e o servidor recusa senha.** O `pscp` só lê `.ppk` de sessão salva e morre com `No supported authentication methods available (server sent: publickey)`. O que o usuário digita é a frase-secreta da chave. O `scp` **não** converte quebra de linha |
+| 140 | **Arquivo de bloco com o nome final colide na pasta Downloads e o `scp` manda o ANTIGO em silêncio.** Duas regras nasceram daqui: o nome entregue leva o bloco (`Port-5f1b.php`), e o `md5sum` de `/tmp` ANTES do `cp` deixa de ser opcional |
+| 141 | **Número previsto de `git diff --stat` e `grep -c` sai de comando, não de contagem a olho.** No sandbox: `git init` sobre o tarball do commit, copiar os arquivos por cima, rodar o `stat` de verdade |
+| 142 | **As requisições do GLPI caem no `other_vhosts_access.log`, não no `access.log`.** E o `Referer` traz `edit=<tubo>-<fibra>`, então o log diz **qual célula** gerou cada requisição. Substitui pedir F12 |
+| **143** | **Com `docs/` versionado, o HEAD do `master` avança sem o código mudar.** O roadmap v7 apontava `a690010` como topo; o HEAD real era `4144a5c`, e o delta eram só os dois documentos. Nenhum erro aconteceu porque o assistente **conferiu o delta** antes de usar a base. Regra: `ls-remote` para o HEAD, `diff -rq` entre o HEAD e o último commit de código conhecido, e **só então** decidir a base do bloco |
+| **144** | **Número de linha em documento é ponteiro, não fato — e envelhece a cada bloco.** O v7 citava, para o 5f-3, `Port.php:751`, `Link.php:689` e `DgoIdentity.php:323`; em `1114077` são **765**, **697** e **338**. O `Link::propose` estava como 434 e é **439**. O deslocamento vem de blocos anteriores que acrescentaram linhas ACIMA do ponto. **Todo bloco reconfere os seus alvos por `grep -n` no commit do dia, antes de escrever a primeira linha** |
+
+| **145** | **Documento também é entrega — e entrega sem a seção de envio não chega.** Ao fechar o 5f-2a o assistente deu os comandos de `cp`/`git` do contexto e do roadmap v8 **sem o `scp`**, e o servidor respondeu `cp: não foi possível obter estado de '/tmp/contexto-dgoplus-v8.md'`. Custo baixo (nada quebrou, `working tree clean`), mas a causa é a que interessa: **o formato de quatro seções vale para QUALQUER arquivo entregue**, inclusive `.md`. Se sai do sandbox para o servidor, sai com o `scp` na frente |
 
 **Armadilhas do GLPI 11 que valem como regra permanente:**
 
@@ -547,7 +570,7 @@ fato**.
 | 3q | `PurgeCleaner` | Fechado |
 | 3r | Posição exibida contínua | Fechado |
 | 3s | Carimbo de documentação | Fechado |
-| 3t | Identidade, QR e comentário | Fechado |
+| 3t | Identidade, QR e comentário | Fechado — direito revisto pelo 5f-2a |
 | 4a-1/2/3 | Auto-save; papel no painel; abas e filtro por papel | Fechado |
 | 4b-1/2 | `kind` na porta; tabela de vínculos + entradas E1–E4 | Fechado |
 | 4c/4c-2 | Propor, confirmar, recusar, desmontar | Fechado |
@@ -562,49 +585,46 @@ fato**.
 | GIT-1 | Clone Git na pasta do plugin | Fechado (27/08) |
 | GIT-2 | Primeiro `push` do servidor, com token | Fechado (27/08) |
 | REL | Tag `v1.3.2` + Release com zip | Fechado e conferido por md5 (27/08) |
-| 5f-1a | Documentar porta exige UPDATE, não CREATE | Fechado (27/08), 1.3.3, `6efab96` — **resíduo liquidado pelo 5f-1b** |
-| **5f-1b** | **Propor vínculo exige UPDATE, não CREATE** | **Fechado e validado em tela + log (27/08), 1.3.4, `a690010`** |
+| 5f-1a | Documentar porta exige UPDATE, não CREATE | Fechado (27/08), 1.3.3, `6efab96` |
+| 5f-1b | Propor vínculo exige UPDATE, não CREATE | Fechado e validado em tela + log (27/08), 1.3.4, `a690010` |
+| **5f-2a** | **Comentário do elemento exige o direito do plugin** | **Fechado e validado em tela nas duas pontas (27/08), 1.3.5, `1114077`** |
 
-### O que o 5f-1b fez, em detalhe
+### O que o 5f-2a fez, em detalhe
 
-Quatro arquivos, `+44 −11`:
+Dois arquivos, **`+28 −10`** (número previsto no sandbox e confirmado no
+servidor):
 
 | Onde | O quê |
 |---|---|
-| `src/Port.php`, `ensureEntry` (2 pontos) | restauração da lixeira e INSERT da linha de entrada: `CREATE` → **UPDATE** |
-| `src/Port.php`, `ensureGrid` (2 pontos) | restauração da lixeira e INSERT da linha de grade: `CREATE` → **UPDATE** |
-| `src/Link.php`, `propose()` | **o ponto único de criação de vínculo**: `CREATE` → **UPDATE** |
-| `src/MapController.php` (trava da tela) | `haveRight(CREATE)` → **UPDATE**, e a mensagem passou a nomear o direito: *"exige a permissão «Atualizar» em «Portas de DGO» (Administração → Perfis → aba DGO+)"* |
-| `src/MapController.php` (docblock) | "usuario com CREATE" → "usuario com UPDATE" |
-| `setup.php` | 1.3.3 → **1.3.4** |
+| `src/DgoIdentity.php`, `canWriteComment` | `$dgo->can($items_id, UPDATE)` → **`Session::haveRight(Port::$rightname, UPDATE)`**. Um método, **dois chamadores** — tela e ponto único mudaram juntos |
+| `src/DgoIdentity.php` (imports) | `use Session;` |
+| `src/DgoIdentity.php` (tarja da tela) | *"Você tem permissão apenas de leitura neste ativo"* → **"Somente leitura. Comentar exige a permissão «Atualizar» em «Portas de DGO» (Administração → Perfis → aba DGO+)."** (lição 119) |
+| `src/DgoIdentity.php` (`applyComment`) | a mesma frase na recusa do POST/AJAX |
+| `src/DgoIdentity.php` (2 docblocks) | a regra antiga estava documentada; ficaria mentindo |
+| `setup.php` | 1.3.4 → **1.3.5** |
 
-**Proveniência fechada:** o assistente baixou o commit `a690010` do GitHub e
-provou por md5 que os quatro arquivos publicados são idênticos aos preparados no
-sandbox, e que **nenhum outro dos 30 arquivos mudou**.
+**Não mudou:** a trava de entidade (`can($items_id, READ)`, hoje na linha 338) —
+é do 3m e é o **5f-3** que mexe nela.
 
-**Validado em tela (27/08)** com o perfil **Tecnicos N1 (ID 12)** em
-LER + ATUALIZAR, **CRIAR e DELETE desmarcados**, e `datacenter` só READ:
+**Proveniência fechada:** o assistente baixou o commit `1114077` e provou por md5
+que os dois arquivos publicados são idênticos aos preparados no sandbox, e que
+**nenhum outro dos 30 arquivos mudou**.
 
-1. Plug-in em **1.3.4** ativo.
-2. Célula **livre** (F1.04 da DGO 01): a seção "Alimenta" mostra os seletores e o
-   botão **Propor vínculo**. **Era aqui que o 1.3.3 exibia a mensagem cinza.**
-3. Proposta gravada: **"E2 de CTO 01 · pendente"**. Duas linhas nasceram no banco
-   — grade e entrada — **sem o perfil ter CRIAR**.
-4. O técnico **confirmou** o vínculo do lado do CTO 01 (`Confirmado por
-   teste.001`) e o F1.04 voltou mostrando **confirmado**. Ciclo completo em
-   ATUALIZAR.
-5. A aba de escopo passou de **DGO 01 (3)** para **DGO 01 (4)**.
+**Validado em tela (27/08)**, perfil **Tecnicos N1 (ID 12)**, usuário
+`teste.001`, LER + ATUALIZAR, **CRIAR e DELETE desmarcados**, `datacenter` só
+READ:
 
-**Escopo não vazou:** o cartão de Comentários continua com *"Você tem permissão
-apenas de leitura neste ativo"* — é o `datacenter` UPDATE do `DgoIdentity:216`,
-que é o **5f-2**, ainda não tocado.
+1. Plug-in em **1.3.5** ativo.
+2. Cartão Comentários com o textarea **editável** e o botão Salvar — **a tarja
+   cinza sumiu**. Era esse o sinal.
+3. Auto-save no blur: **"Salvo ✓"**, sem "Falha ao salvar".
+4. **Super-Admin, em outra sessão, lê o mesmo texto** ("teste 5f-2a"): foi ao
+   banco de verdade.
+5. Tirando ATUALIZAR do perfil: textarea `readonly` e a tarja nova, com o
+   caminho do direito. As duas pontas provadas.
 
-**Os dois passos pendentes do 5f-1a foram fechados pelo log**, sem F12:
-
-- `edit=1-3` (F1.03, célula **já documentada**) → **HTTP 200**, duas vezes.
-  Passo 5 aprovado.
-- `edit=1-2` (F1.02, **esvaziar** sem DELETE) → **HTTP 403**, sete vezes.
-  Passo 6 aprovado: a recusa é real e o `delete()` nunca roda.
+⚠️ **Não conferido:** o Histórico da ficha do ativo, com `teste.001` como autor.
+Pendência 7 da Parte C — não bloqueia o bloco.
 
 ---
 
@@ -615,15 +635,13 @@ que é o **5f-2**, ainda não tocado.
    sobre portas órfãs, defeito que o 3q resolveu.
 2. **Sem catálogo de tradução**: interface pt-BR fixa.
 3. ⚠️ **Lista integral de lições (1–113)** não incorporada.
-4. **Sem tag nem Release para o 1.3.3 e o 1.3.4** — a `v1.3.2` está publicada.
+4. **Sem tag nem Release para o 1.3.3, o 1.3.4 e o 1.3.5** — a `v1.3.2` está
+   publicada.
 5. **A skill `glpi-plugin-teckcomp` está desatualizada**: host, usuário, porta e
-   agora também o comando de envio (`pscp` → `scp`).
+   o comando de envio (`pscp` → `scp`).
 6. **Texto que fala de ação indisponível.** No painel da porta com vínculo
    confirmado, a dica diz *"Desmontar remove o vínculo dos dois lados"* mesmo
    quando o perfil não tem DELETE e o botão não é renderizado. Candidato ao 5g.
-
-*(As dívidas do v6 — passos 5 e 6 do 5f-1a sem confirmação, `core.pager` não
-configurado — foram **liquidadas** em 27/08.)*
 
 ---
 
@@ -642,9 +660,10 @@ configurado — foram **liquidadas** em 27/08.)*
 
 **27/08 (tarde e noite):**
 - **DGO 01**, em `Outlet Porto Belo`, piso `MALL - PORTO BELO`: grade de **16
-  posições** (F1 e F2 × 8), **4 documentadas** ao fim dos testes.
-- **CTO 01**, mesmo piso, grade de 16 posições, **0 documentadas**; entradas
-  **E1 (← DGO 01 · F1.01)** e **E2 (← DGO 01 · F1.04)**, ambas confirmadas.
+  posições**; **comentário do ativo = "teste 5f-2a"**; F1.03 com nome `1214`.
+- **CTO 01**, mesmo piso, grade de 16 posições; entradas **E1 (← DGO 01 · F1.01)**
+  e **E2 (← DGO 01 · F1.04)**, ambas confirmadas.
+- Cartão "Anexos do elemento" da DGO 01: **0**.
 - Perfil de teste: **Tecnicos N1, ID 12**; usuário `teste.001`.
 - URL externa do GLPI: `http://177.87.230.179:2077/`.
 
@@ -668,19 +687,21 @@ ressuscitar como novidade.
 | Corrigir a acentuação do CSV no plugin | **Descartada** | O relatório é tela do core (lição 127) |
 | Anexo pelo técnico | **Descartada (27/08)** | Exige `datacenter` UPDATE (lição 134), que devolveria o menu de Dispositivos passivos. **Supervisor cobre** |
 | Documentos versionados dentro do repositório | **Descartada (27/08)** | `docs/contexto-dgoplus.md` sem sufixo: o histórico é o Git |
-| **Exigir DELETE para recusar vínculo** | **Descartada (já no 4c)** | Recusar e confirmar são as duas metades da mesma resposta: um perfil capaz de aceitar e incapaz de dizer não é pior que a escalada |
-| **`pscp` como veículo de envio** | **Descartada (27/08)** | Não autentica: o servidor só aceita `publickey` e o `pscp` não lê chave OpenSSH. É `scp` (lição 139) |
+| Exigir DELETE para recusar vínculo | **Descartada (já no 4c)** | Recusar e confirmar são as duas metades da mesma resposta |
+| `pscp` como veículo de envio | **Descartada (27/08)** | Não autentica: o servidor só aceita `publickey` (lição 139) |
+| **Tirar `$dgo` da assinatura de `canWriteComment`** | **Descartada (27/08, no 5f-2a)** | O parâmetro ficou sem uso, mas os dois chamadores já têm o objeto, e o dia em que a regra precisar olhar o ativo (entidade, estado) ele está lá. Mudar assinatura de método público não é escopo de bloco de permissão |
 
 ---
 
 ## 9. Próximo passo imediato
 
-1. **Bloco 5f-2** — comentário e criação de elemento migram para o direito do
-   plugin. `DgoIdentity:216` (comentário: `datacenter` UPDATE →
-   `plugin_dgoplus_port` UPDATE) e `MapController:412` e `:1522` (criar elemento:
-   `datacenter` CREATE → `plugin_dgoplus_port` CREATE). ⚠️ **Números de linha do
-   commit `6efab96` — reconferir em `a690010` antes de escrever.** Efeito visível:
-   some a tarja "Você tem permissão apenas de leitura neste ativo".
+1. **Bloco 5f-2b** — criar elemento pelo mapa migra de `datacenter` CREATE para
+   `plugin_dgoplus_port` CREATE. Dois pontos, **verificados por `grep -n` em
+   `1114077`**: `MapController.php:412` (`Session::checkRight(PassiveDCEquipment::$rightname, CREATE)`
+   em `actionCreateDgo`) e `MapController.php:1522`
+   (`Session::haveRight(PassiveDCEquipment::$rightname, CREATE)` em
+   `displayDgoTabs`, que decide se o botão aparece). ⚠️ **O teste precisa do
+   direito CRIAR ligado no perfil de teste**, que hoje está desmarcado.
 2. **5f-3** → **5g**, nesta ordem. O **5h-2** cabe em qualquer intervalo: é um
    atributo.
-3. **Tag + Release do 1.3.4** quando a Fase 5 tiver um marco.
+3. **Tag + Release do 1.3.5** quando a Fase 5 tiver um marco.
