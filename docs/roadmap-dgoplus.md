@@ -2,12 +2,17 @@
 
 > Companheiro do `contexto-dgoplus.md`. **Substituir**, nunca acumular.
 >
-> **Versão:** v10 — 27/08/2026 (sessão da noite, quarta parte). Sucede o v9.
+> **Versão:** v11 — 27/08/2026 (fim da sessão da noite). Sucede o v10, emitido
+> poucos minutos antes da tag e da Release.
 > A mudança que justifica a versão nova: **o 5f acabou**. Com o 5f-3a e o 5f-3b,
 > o técnico trabalha no mapa inteiro **sem nenhum direito em Data centers**, e o
 > menu "Dispositivos passivos" sumiu — o objetivo que abriu esta frente em
 > 23/08. Sobra o **5g**, que é texto de tela.
-> Números verificados em `0005c90`.
+> Números verificados em `0005c90` (o código; o topo do `master` é `38018e3`,
+> que só traz `docs/`).
+>
+> **O REL-2 saiu junto:** tag `v1.3.8` e Release publicadas, com o zip conferido
+> por sha256 contra o commit.
 
 ---
 
@@ -106,106 +111,6 @@ grep -rn -- '->can($items_id, READ)' src/ ajax/ front/ | wc -l    # 0
 grep -rc 'PassiveDCEquipment::$rightname' src/ | grep -v ':0'     # nada
 ```
 
-**PAGER · `core.pager cat`** — aplicado (27/08).
-
----
-
-### Prioridade 1 — permissões (a dor operacional)
-
-A ordem importa: o **5g só depois dos outros**, senão documenta a regra antiga e
-vira mentira na tela.
-
-**Sobrou o 5g, e só ele.** Todo o resto desta frente está em produção de teste
-desde a 1.3.8.
-
-⚠️ Números de linha citados abaixo valem para `0005c90` — **reconferir por
-`grep -n` antes de escrever** (lição 144).
-
-**5g · Nota explicativa na aba DGO+ do perfil — e as mensagens de erro**
-
-Quadro abaixo da matriz, no `ProfileTab`, dizendo o que cada direito cobre e o
-que depende de permissão fora do DGO+ (Documentos **+ Data centers UPDATE** para
-anexo, Localização, excluir o ativo, configurar papéis). Nasce da lição 119.
-
-⚠️ **Escopo, com três frentes:**
-
-1. **O 403 do auto-save.** Lição 133, confirmada com prova: o `ajax/port.php`
-   responde 403 e o usuário lê "Falha ao salvar. Use o botão Salvar" —
-   indistinguível de erro de rede. O `dgoplus.js` precisa tratar o 403
-   separadamente e nomear o direito faltante.
-2. **A insistência.** Sete 403 seguidos para uma ação só. Depois do primeiro 403
-   naquela célula, **parar de reenviar**.
-3. **Texto que fala de ação indisponível.** O painel diz "Desmontar remove o
-   vínculo dos dois lados" mesmo quando o botão não existe por falta de DELETE.
-4. **Formulário de criar elemento some sem dizer por quê** (achado do 5f-2b).
-5. **Botões "Nova fileira"/"Nova coluna" de remoção** somem por falta de DELETE,
-   com o mesmo silêncio.
-
-*As mensagens do 5f-1b e do 5f-2a já nasceram no padrão que o 5g generaliza:
-"… exige a permissão «Atualizar» em «Portas de DGO» (Administração → Perfis →
-aba DGO+)". Serve de modelo.*
-
-⚠️ **Candidato a divisão:** as frentes 1 e 2 são JS (`dgoplus.js`), as 3 a 5 são
-texto em PHP, e a nota do perfil é `ProfileTab`. Três áreas independentes —
-avaliar `5g-1` (JS do auto-save), `5g-2` (textos das telas) e `5g-3` (nota no
-perfil).
-
----
-
-### Prioridade 2 — refinamento
-
-**5h-2 · Habilitar o filtro por Localização no relatório**
-
-Remover `'nosearch' => true` da opção 8. Um atributo, um teste (filtrar por uma
-localização e conferir a contagem). ⚠️ Vale checar o comportamento com
-`forcegroupby => true`, que joga o critério para `HAVING`.
-
-**5b · Piso lista só os pisos com candidato**
-
-`refreshFloors()` (`public/dgoplus.js`) passa a cruzar cada piso com os
-candidatos, como `refreshDst()` já faz. Só JS; Ctrl+F5.
-
-**5c · Trilha da entrada, não do elemento**
-
-`Link::upstreamLevels()` é chamado com o elemento, então o card da "Entrada E2"
-mostra a cadeia que chega pela E1. **Consumidor único.**
-⚠️ *A linha do consumidor no `MapController` foi deslocada três vezes desde o
-`bd28ffd`. Localizar por `grep -n upstreamLevels`, não por número.*
-
-**5d · Aceite no servidor para salto de degrau**
-
-`propose()` recusa o salto na primeira tentativa e devolve o motivo nomeando o
-degrau pulado; a tela reexibe com aceite explícito. A distância está a uma
-subtração: `$order[$dst] - $order[$src] > 1`.
-
-Mexe no **ponto único de criação** — bloco mais delicado da fase.
-
-**5e · Desambiguar nomes repetidos na lista de destino** ⚠️ *depende de confirmação*
-
-Aparecem dois "PTO 001 (PTO)" na lista. Se forem ativos distintos de mesmo nome,
-escolher o errado cria topologia errada que nenhuma validação pega.
-**Antes de executar: confirmar se são ativos diferentes ou o mesmo duplicado.**
-
----
-
-**5i · Anexo pelo técnico, por formulário próprio** ⚠️ *candidato, sem escopo medido*
-
-Nasceu da **lição 148**: o formulário de anexo é do core e pergunta pelo
-`datacenter` UPDATE (`CommonDBRelation.php:659`), mas `CommonDBTM::add()`
-(`CommonDBTM.php:1286`) **não checa direito nenhum**. Um endpoint do plugin pode
-criar `Document` + `Document_Item` com a checagem do DGO+ — mesmo desenho de
-porta, vínculo e comentário. O perfil de teste já tem o direito `document`.
-
-**Antes de dimensionar:** ler o mecanismo de upload do GLPI (`Document::isValidDoc`,
-`files/_uploads`, `_filename` / `_prefix_filename`) e decidir se excluir anexo
-entra. Enquanto isso não for lido, qualquer estimativa é chute.
-
-### Prioridade 3 — higiene
-
-**REL-2 · Tag `v1.3.8` + Release** — três comandos no `ssh`. **A 1.3.8 É o marco**: é a versão em que o
-técnico trabalha sem direito em Data centers. As versões 1.3.3 a 1.3.7 ficam sem Release, e tudo
-bem: a Release é artefato de instalação, não registro de histórico (isso é o Git).
-
 **SKILL · Atualizar a skill `glpi-plugin-teckcomp`** — host, usuário, porta **e o
 comando de envio** (`pscp` → `scp`). Ela ainda manda para `192.168.1.50`, que está
 morto, e com um cliente que não autentica neste servidor.
@@ -235,7 +140,7 @@ morto, e com um cliente que não autentica neste servidor.
 | 1 | **README desatualizado.** `dgoplus-v1.0.0.zip` (38, 45, 56), três tabelas quando são quatro (111, 142), linha 119 sobre portas órfãs | Bloco pequeno, sem risco |
 | 2 | **Sem catálogo de tradução** | Bloco médio; decisão de produto antes |
 | 3 | **Lista integral de lições (1–113)** não incorporada | Depende de achar o documento antigo |
-| 4 | **Sem tag/Release da 1.3.3 à 1.3.8** | Bloco REL-2 |
+| 4 | ~~Sem tag/Release~~ ✅ **quitada em 27/08** — `v1.3.8` publicada e conferida | — |
 | 5 | **Skill `glpi-plugin-teckcomp` desatualizada** | Bloco SKILL |
 | 6 | **Texto fala de "Desmontar" sem o botão existir** | Cabe no 5g |
 
@@ -268,10 +173,14 @@ Candidatos, **nenhum comprometido**, com a fonte declarada.
 ## Parte F — decisões negativas
 
 Ver a seção 8 do `contexto-dgoplus.md`. Quinze ideias avaliadas e recusadas com
-motivo — piso em lote, splitter como papel, importação CSV, anexo pelo técnico,
-documentos versionados no repositório, DELETE para recusar vínculo, `pscp` como
-veículo de envio, mudar a assinatura de `canWriteComment`. **Não ressuscitar sem
-fato novo.**
+motivo — piso em lote, splitter como papel, importação CSV, documentos
+versionados no repositório, DELETE para recusar vínculo, `pscp` como veículo de
+envio, mudar a assinatura de `canWriteComment`. **Não ressuscitar sem fato novo.**
+
+⚠️ **Uma delas foi ressuscitada com fato novo, e é assim que o mecanismo deve
+funcionar:** "anexo pelo técnico" era decisão negativa até a **lição 148** mostrar
+que a trava é do formulário do core, não do modelo. Virou o candidato **5i**. O
+que a Parte F proíbe é reabrir por esquecimento — não por descoberta.
 
 ---
 
@@ -281,8 +190,7 @@ fato novo.**
    fase que é sobre **o que a tela diz**, não sobre o que ela deixa fazer.
    **Decidir antes se vai partido** em 5g-1 (JS do auto-save), 5g-2 (textos) e
    5g-3 (nota no perfil).
-2. **REL-2** — tag `v1.3.8` + Release. A Fase 5 tem um marco agora.
-3. **Higiene**: pendências 7, 8 e 9 — Histórico do ativo, purgar o
+2. **Higiene**: pendências 7, 8 e 9 — Histórico do ativo, purgar o
    `CTO TESTE 5f2b`, estado do perfil de teste.
-4. Depois, na ordem que fizer sentido: **5h-2** (um atributo), **5b**, **5c**,
+3. Depois, na ordem que fizer sentido: **5h-2** (um atributo), **5b**, **5c**,
    **5d**, **5e**, e o candidato **5i**.

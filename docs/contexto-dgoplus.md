@@ -3,8 +3,9 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v10 — 27/08/2026 (sessão da noite, quarta parte).
-> Substitui o v9 integralmente.
+> **Versão deste documento:** v11 — 27/08/2026 (fim da sessão da noite).
+> Substitui o v10 integralmente. O v10 foi emitido **antes** da tag e da Release
+> e ficou desatualizado em quatro pontos no mesmo dia — este os corrige.
 > Emitido ao fim dos blocos **5f-3a** e **5f-3b**. Com eles **a frente de
 > permissões da Fase 5 termina** (só o 5g, que é texto, fica de fora): o técnico
 > documenta porta, propõe e confirma vínculo, comenta, escreve OBS e cria
@@ -13,6 +14,9 @@
 > **`0005c90`**.
 >
 > **A lição 117 está cumprida e a 118 está morta.**
+>
+> Depois do v10, na mesma sessão: **tag `v1.3.8` e Release publicadas**, com o
+> zip conferido por sha256 pelo assistente. **O bloco REL-2 está feito.**
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
 
@@ -60,7 +64,7 @@ Release**.
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 27/08 (fim da sessão) | commit **`0005c90`**, versão **1.3.8** |
+| `master` em 27/08 (fim da sessão) | commit **`38018e3`** (docs), código em **`0005c90`**, versão **1.3.8** |
 | Versão em homologação | **1.3.8**, confirmada na tela de plug-ins |
 | **Paridade** | ✅ **Estrutural**: a pasta do plugin é a árvore de trabalho do clone. `git status` limpo **é** a prova |
 | Arquivos no repositório | **30** (27 do plugin + 3 em `docs/`) |
@@ -175,19 +179,36 @@ arquivo pelo navegador** — nem o `.git`, nem `files/`, nem `config/`. Testado:
 
 ### Release — o artefato de instalação
 
-**`v1.3.2` publicada em 27/08** com `dgoplus-1.3.2.zip` anexado (168 KB, sha256
+**`v1.3.8` publicada em 27/08** — o marco da Fase 5 — com `dgoplus-1.3.8.zip`
+anexado (177 KB, 30 arquivos, sha256
+`34e1fdd1129792cf4dd500db41ecd674d10580831d07f3f0334527de6ea0ef16`).
+
+✅ **Proveniência fechada pelo assistente**: o zip foi baixado da Release, o
+sha256 bateu com o que o servidor gerou, e o `diff -rq` contra o commit
+`38018e3` não acusou nenhuma diferença. A tag `v1.3.8` aponta para `38018e3`.
+
+A `v1.3.2` continua publicada (168 KB, sha256
 `fd42f3a5eb0adf33a8707a59bd2b32c2495070db8734ce477e1d7eb381518752`).
 
 O zip **nasce do commit**, nunca de pasta montada à mão:
 
 ```bash
 cd /var/www/html/glpi/plugins/dgoplus
-git tag -a v1.3.8 -m "..." && git push origin v1.3.8
-git archive --format=zip --prefix=dgoplus/ -o /tmp/dgoplus-1.3.8.zip v1.3.8
+git tag -a v1.3.X -m "..." && git push origin v1.3.X
+git archive --format=zip --prefix=dgoplus/ -o /tmp/dgoplus-1.3.X.zip v1.3.X
+sha256sum /tmp/dgoplus-1.3.X.zip
 ```
 
-⚠️ **Da `v1.3.3` à `v1.3.8` não há tag nem Release.** Bloco REL-2. **A 1.3.8 é o
-marco natural da Fase 5 — é a versão que vale publicar.**
+Depois: `scp` do zip para o PC e anexar em
+`github.com/teckcomp/glpi-plugin-dgoplus/releases/new`, escolhendo a tag.
+
+**Tags existentes no repositório** (conferidas por `ls-remote --tags` em 27/08):
+`v1.0.0`, `v1.1.0`, `v1.2.0`, `v1.2.1`, `v1.3.0`, `v1.3.1`, `v1.3.2`, `v1.3.8`.
+O histórico de versões é mais antigo do que os contextos anteriores registravam.
+
+As versões **1.3.3 a 1.3.7 não têm tag** — e está decidido que **não vão ter**:
+foram degraus internos da Fase 5, e o histórico delas é o Git. Release é artefato
+de instalação, não registro de história.
 
 ### Outros plugins na mesma base
 
@@ -752,8 +773,8 @@ estacionamento, agora visto duas vezes.
    sobre portas órfãs, defeito que o 3q resolveu.
 2. **Sem catálogo de tradução**: interface pt-BR fixa.
 3. ⚠️ **Lista integral de lições (1–113)** não incorporada.
-4. **Sem tag nem Release para o 1.3.3, o 1.3.4 e o 1.3.5** — a `v1.3.2` está
-   publicada.
+4. ~~Sem tag nem Release~~ ✅ **QUITADA (27/08): `v1.3.8` publicada e conferida
+   por sha256.** As 1.3.3–1.3.7 ficam sem tag por decisão.
 5. **A skill `glpi-plugin-teckcomp` está desatualizada**: host, usuário, porta e
    o comando de envio (`pscp` → `scp`).
 6. **Texto que fala de ação indisponível.** No painel da porta com vínculo
@@ -826,8 +847,7 @@ do reenvio, o texto do "Desmontar" sem botão, o formulário de criar elemento q
 some sem dizer por quê, e os botões de remover fileira/coluna no mesmo silêncio.
 
 1. **5g** — o único bloco que fecha a Fase 5 do lado da permissão.
-2. **REL-2** — tag `v1.3.8` + Release. **A 1.3.8 é o marco natural**: é a versão
-   em que o técnico trabalha sem direito em Data centers.
+2. ~~REL-2~~ ✅ **feito**: tag `v1.3.8` e Release publicadas e conferidas.
 3. **Higiene**: purgar `CTO TESTE 5f2b`, decidir o estado do perfil de teste, e
    a pendência 7 (Histórico do ativo).
 4. Depois: **5h-2** (um atributo), **5b**, **5c**, **5d**, **5e**, e o novo
