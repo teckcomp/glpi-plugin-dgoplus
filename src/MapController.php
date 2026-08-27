@@ -408,8 +408,13 @@ class MapController
      */
     private static function actionCreateDgo(): void
     {
+        // Bloco 5f-2b: so o direito do PLUGIN. Exigir 'datacenter' CREATE aqui
+        // devolvia ao tecnico o menu "Dispositivos passivos" inteiro - e com
+        // ele o poder de criar ativo de qualquer tipo fora do mapa - so para
+        // poder acrescentar uma CTO na localizacao onde ele ja documenta
+        // portas. A trava que importa continua abaixo: o elemento nasce em
+        // Session::getActiveEntity(), nunca em outra entidade.
         Session::checkRight(Port::$rightname, CREATE);
-        Session::checkRight(PassiveDCEquipment::$rightname, CREATE);
 
         $locations_id = (int) ($_POST['locations_id'] ?? 0);
         $floors_id    = (int) ($_POST['floor'] ?? 0);
@@ -1518,8 +1523,10 @@ class MapController
      */
     private static function displayDgoTabs(int $locations_id, array $dgos, int $active_id, int $floors_id = 0): void
     {
-        $can_create = Session::haveRight(Port::$rightname, CREATE)
-            && Session::haveRight(PassiveDCEquipment::$rightname, CREATE);
+        // Bloco 5f-2b: espelha exatamente a trava do POST (actionCreateDgo).
+        // Tela e ponto de gravacao perguntando coisas diferentes e' como se
+        // produz botao que existe e recusa, ou acao possivel sem botao.
+        $can_create = Session::haveRight(Port::$rightname, CREATE);
 
         $filter_on = Setting::isTypeFilterEnabled();
 
