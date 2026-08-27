@@ -672,12 +672,14 @@ class Link extends CommonDBTM
     }
 
     /**
-     * Carrega um ativo que exista e seja visivel para este usuario, ou null.
+     * Carrega um ativo que exista e esteja ao alcance deste usuario, ou null.
      *
-     * Mesmo par de checagens da trava de pai do 3m (Port::applyInput):
-     * can(id, READ) cobre o direito global do itemtype e a entidade da
-     * instancia. Mensagem generica fica a cargo de quem chama - dizer "existe
-     * mas voce nao pode ver" ja e' informacao demais.
+     * Mesma trava de pai do 3m (Port::applyInput), e desde o bloco 5f-3b pelo
+     * MESMO metodo: Port::parentIsReachable. Era can(id, READ), que somava o
+     * direito global do itemtype (datacenter) a' entidade da instancia; o
+     * direito global saiu, a entidade ficou. Mensagem generica fica a cargo de
+     * quem chama - dizer "existe mas voce nao pode ver" ja e' informacao
+     * demais.
      *
      * @param string $itemtype
      * @param int    $items_id
@@ -694,7 +696,7 @@ class Link extends CommonDBTM
         if (
             !($item instanceof CommonDBTM)
             || !$item->getFromDB($items_id)
-            || !$item->can($items_id, READ)
+            || !Port::parentIsReachable($item)
         ) {
             return null;
         }

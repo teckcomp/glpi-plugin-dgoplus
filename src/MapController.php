@@ -928,9 +928,11 @@ class MapController
      * UPDATE e nao CREATE: a OBS descreve o elemento, nao cria porta. Mesmo
      * direito que o seletor de Piso exige, pela mesma razao.
      *
-     * A trava de pai e' a mesma do 3m - existir e ser visivel para este
-     * usuario. Sem ela, um items_id forjado no POST escreveria OBS em elemento
-     * de outra entidade, que e' exatamente o furo que o 3m fechou nas portas.
+     * A trava de pai e' a mesma do 3m - existir e estar ao alcance deste
+     * usuario -, e desde o bloco 5f-3b pelo mesmo metodo que as portas usam,
+     * Port::parentIsReachable. Sem ela, um items_id forjado no POST escreveria
+     * OBS em elemento de outra entidade, que e' exatamente o furo que o 3m
+     * fechou nas portas.
      *
      * @return void
      */
@@ -951,7 +953,7 @@ class MapController
 
         $item = new PassiveDCEquipment();
 
-        if ($items_id <= 0 || !$item->getFromDB($items_id) || !$item->can($items_id, READ)) {
+        if ($items_id <= 0 || !$item->getFromDB($items_id) || !Port::parentIsReachable($item)) {
             Session::addMessageAfterRedirect(
                 __('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'),
                 false,

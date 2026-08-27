@@ -211,7 +211,8 @@ class DgoIdentity
      * para poder escrever uma linha de observacao. Quem tem ATUALIZAR em
      * "Portas de DGO" documenta porta, propoe vinculo e agora tambem comenta,
      * SEMPRE dentro da entidade dele: a trava de entidade continua onde
-     * sempre esteve, no can($items_id, READ) do applyComment (3m).
+     * sempre esteve, no applyComment (3m) - que desde o 5f-3b pergunta por
+     * Port::parentIsReachable, nao mais por can($items_id, READ).
      *
      * O parametro $dgo continua na assinatura de proposito: os dois
      * chamadores ja tem o objeto carregado, e o dia em que a regra precisar
@@ -332,10 +333,11 @@ class DgoIdentity
 
         $dgo = new PassiveDCEquipment();
 
-        // Ativo tem que existir e ser LEGIVEL para este usuario, antes de
+        // Ativo tem que existir e estar ao alcance deste usuario, antes de
         // qualquer coisa: sem isso um items_id forjado no POST viraria
-        // escrita em ativo de outra entidade.
-        if ($items_id <= 0 || !$dgo->getFromDB($items_id) || !$dgo->can($items_id, READ)) {
+        // escrita em ativo de outra entidade. Bloco 5f-3b: a pergunta e' a de
+        // Port::parentIsReachable - entidade sim, direito 'datacenter' nao.
+        if ($items_id <= 0 || !$dgo->getFromDB($items_id) || !Port::parentIsReachable($dgo)) {
             return ['ok' => false, 'error' => __('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus')];
         }
 
