@@ -3089,7 +3089,7 @@ class MapController
      *
      * Tres estados:
      *  - a porta ja alimenta alguem: destino + status + Desmontar;
-     *  - sem vinculo e usuario com CREATE: formulario de proposta
+     *  - sem vinculo e usuario com UPDATE (bloco 5f-1b): formulario de proposta
      *    (elemento -> entrada, decisao aprovada dos dois campos);
      *  - sem direito ou porta sem acoplador: uma linha explicando o porque -
      *    secao que some sem explicacao parece defeito (licao 16).
@@ -3180,9 +3180,15 @@ class MapController
             return;
         }
 
-        if (!Session::haveRight(Port::$rightname, CREATE)) {
+        // Bloco 5f-1b: a trava da tela pergunta a MESMA coisa que o ponto
+        // unico (Link::propose). Divergir aqui deixaria o formulario visivel
+        // com o Salvar em 403, ou escondido para quem pode gravar.
+        //
+        // A mensagem nomeia o direito que falta e onde ele mora (licao 119):
+        // "exige permissao de criacao" nao dizia a quem pedir nem o que pedir.
+        if (!Session::haveRight(Port::$rightname, UPDATE)) {
             echo "<div class='form-hint'>"
-                . htmlescape(__('Sem vínculo. Propor um vínculo exige permissão de criação.', 'dgoplus'))
+                . htmlescape(__('Sem vínculo. Propor um vínculo exige a permissão "Atualizar" em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus'))
                 . "</div>";
             echo "</div>";
             return;

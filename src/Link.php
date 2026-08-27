@@ -426,9 +426,17 @@ class Link extends CommonDBTM
             return $fail($entry['error']);
         }
 
-        // ensureGrid/ensureEntry so' exigem CREATE quando CRIAM linha; com as
-        // duas linhas pre-existentes nenhuma checagem teria rodado ate aqui.
-        Session::checkRight(self::$rightname, CREATE);
+        // Bloco 5f-1b: PROPOR VINCULO EXIGE ATUALIZAR, nao CRIAR.
+        //
+        // ensureGrid/ensureEntry so' checam direito quando MEXEM na linha; com
+        // as duas linhas ja vivas nenhuma checagem teria rodado ate aqui, e e'
+        // por isso que esta linha existe - ela e' a trava do PONTO UNICO de
+        // criacao de vinculo, valida para todo caminho, presente e futuro.
+        //
+        // A trava da tela (MapController, secao "Alimenta") pergunta a MESMA
+        // coisa: regra em dois lugares que diverge falha em silencio de um
+        // lado e com 403 do outro (licoes 47 e 48).
+        Session::checkRight(self::$rightname, UPDATE);
 
         // No 11.0.6, INSERT que falha nao devolve false: DBmysql::doQuery
         // LANCA RuntimeException (DBmysql.php:415-424, mysqli_report OFF na

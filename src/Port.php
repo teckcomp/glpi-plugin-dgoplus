@@ -661,7 +661,9 @@ class Port extends CommonDBChild
             $has_code = trim((string) ($port->fields['code'] ?? '')) !== '';
 
             if ((int) $port->fields['is_deleted'] === 1) {
-                Session::checkRight(self::$rightname, CREATE);
+                // Bloco 5f-1b: ATUALIZAR, nao CRIAR - ver o comentario longo
+                // logo abaixo, no INSERT desta mesma funcao.
+                Session::checkRight(self::$rightname, UPDATE);
                 $port->restore(['id' => $port->getID()]);
             }
 
@@ -682,7 +684,19 @@ class Port extends CommonDBChild
             return ['ok' => true, 'error' => '', 'id' => (int) $port->getID()];
         }
 
-        Session::checkRight(self::$rightname, CREATE);
+        // Bloco 5f-1b: PROPOR VINCULO E' ATUALIZAR, nao criar.
+        //
+        // Par do 5f-1a e pela mesma razao. A linha da entrada nasce aqui
+        // porque alguem pendurou um VINCULO nela, nao porque alguem criou
+        // estrutura: E1-E4 ja aparecem na tela por construcao (MAX_ENTRIES),
+        // exatamente como a grade ja e' desenhada inteira. Exigir CREATE aqui
+        // fazia o tecnico com ATUALIZAR propor vinculo para um elemento cuja
+        // entrada ainda nao tinha sido usada e levar 403 no Salvar - o mesmo
+        // vazamento de detalhe de implementacao da licao 118.
+        //
+        // CRIAR continua sendo criar ESTRUTURA: fileira, coluna, piso,
+        // elemento. Ligar duas posicoes que a tela ja mostra e' ATUALIZAR.
+        Session::checkRight(self::$rightname, UPDATE);
 
         $id = (int) $port->add([
             'itemtype'      => $itemtype,
@@ -768,7 +782,9 @@ class Port extends CommonDBChild
                 // ressuscitar codigo e marca de acoplador que o usuario ja
                 // tinha apagado - e a porta reapareceria vermelha na grade por
                 // causa de uma proposta que ele acabou de fazer.
-                Session::checkRight(self::$rightname, CREATE);
+                // Bloco 5f-1b: ATUALIZAR, nao CRIAR - mesma razao do
+                // ensureEntry, e a posicao ja estava desenhada na grade.
+                Session::checkRight(self::$rightname, UPDATE);
                 $port->restore(['id' => $port->getID()]);
                 $port->update([
                     'id'            => $port->getID(),
@@ -800,7 +816,10 @@ class Port extends CommonDBChild
             ];
         }
 
-        Session::checkRight(self::$rightname, CREATE);
+        // Bloco 5f-1b: ATUALIZAR, nao CRIAR. A celula de grade ja aparecia na
+        // tela (o layout do painel a desenha), e virar linha no banco e' o
+        // mesmo ato do 5f-1a: documentar uma posicao que ja existia.
+        Session::checkRight(self::$rightname, UPDATE);
 
         $id = (int) $port->add([
             'itemtype'      => $itemtype,
