@@ -44,6 +44,16 @@ class MapController
     private const MATCH_COLOR = '#E8B84B';
 
     /**
+     * Laranja do selo de nome duplicado (bloco 5e-2d).
+     *
+     * Constante em vez de classe do tema porque `text-orange` nao e' usada em
+     * lugar nenhum do plugin e o CSS do tema nao e' legivel pelo repositorio
+     * do core (licao 156). A pilula do cabecalho usa `bg-orange-lt`, que JA'
+     * esta em uso no Dashboard e no Pending - essa esta provada em tela.
+     */
+    private const DUP_COLOR = '#D68A3A';
+
+    /**
      * Padrao de 12 cores de fibra (ABNT/EIA), como no prototipo.
      *
      * Fica aqui, e nao em Port::getFiberColor(), de proposito: a tela nao
@@ -1586,6 +1596,136 @@ class MapController
     }
 
     /**
+     * Nomes que se repetem entre os elementos de UMA localizacao. Bloco 5e-2d.
+     *
+     * Consulta PROPRIA, e nao a lista ja carregada pelo getDgosAtLocation().
+     * A diferenca nao e' de gosto: aquela lista tambem esta filtrada por PISO
+     * e por PAPEL quando esses filtros estao ligados, e calcular a colisao a
+     * partir dela faria o selo SUMIR conforme o filtro - dois homonimos em
+     * pisos diferentes nao apareceriam juntos e nenhum receberia marca. Selo
+     * que some conforme o filtro e' a falha silenciosa da licao 14.
+     *
+     * O escopo e' `locations_id` mais a restricao de entidade, e nada alem -
+     * mesmo desenho do countFilteredOut() logo acima. Vale o filtro de TIPOS
+     * (o conjunto dos papeis, nao o filtro da barra): elemento que a tela do
+     * mapa nunca mostra nao deve acender selo em quem ela mostra.
+     *
+     * Memorizado por localizacao: a aba e o cabecalho da grade perguntam na
+     * mesma carga de pagina, e sao UMA consulta, nao duas.
+     *
+     * @param int $locations_id
+     * @return array<string,int[]> nome normalizado => ids que o repetem
+     */
+    private static function duplicateNamesAt(int $locations_id): array
+    {
+        static $cache = [];
+
+        if (isset($cache[$locations_id])) {
+            return $cache[$locations_id];
+        }
+
+        $groups = [];
+
+        if ($locations_id > 0) {
+            $dgo  = new PassiveDCEquipment();
+            $rows = $dgo->find(
+                ['locations_id' => $locations_id, 'is_deleted' => 0]
+                + Setting::typesCriteria()
+                + getEntitiesRestrictCriteria('glpi_passivedcequipments', '', '', true)
+            );
+
+            foreach ($rows as $row) {
+                // Nome vazio nao entra: dois "sem nome" nao sao colisao de
+                // nome, sao ausencia de nome - e acender selo neles marcaria
+                // em massa o que o rotulo ja diz de outro jeito (licao 16).
+                $key = self::normalizeName((string) ($row['name'] ?? ''));
+                if ($key === '') {
+                    continue;
+                }
+
+                $groups[$key][] = (int) $row['id'];
+            }
+        }
+
+        $dups = [];
+        foreach ($groups as $key => $ids) {
+            if (count($ids) > 1) {
+                sort($ids);
+                $dups[$key] = $ids;
+            }
+        }
+
+        $cache[$locations_id] = $dups;
+
+        return $dups;
+    }
+
+    /**
+     * Chave de comparacao de nome. Bloco 5e-2d.
+     *
+     * Sem diferenca de caixa e SEM espaco nenhum, para `DGO 001` casar com
+     * `DGO001`: a colisao que interessa aqui e' a do olho do operador, nao a
+     * do operador `=` do banco. Nao e' chave de gravacao - referencia a ativo
+     * continua sendo `itemtype` + `id` (licao 32).
+     *
+     * @param string $name
+     * @return string
+     */
+    private static function normalizeName(string $name): string
+    {
+        $name = (string) preg_replace('/\s+/u', '', trim($name));
+
+        return function_exists('mb_strtolower') ? mb_strtolower($name, 'UTF-8') : strtolower($name);
+    }
+
+    /**
+     * O selo de nome duplicado, ou string vazia. Bloco 5e-2d.
+     *
+     * Ponto unico da marca: a aba e o cabecalho da grade pedem formas
+     * diferentes do MESMO fato, e escrever a regra duas vezes e' o defeito que
+     * a licao 164 registrou.
+     *
+     * @param array $row          linha do elemento (espera 'name')
+     * @param int   $locations_id localizacao da TELA
+     * @param bool  $compact      true = so o icone (aba); false = pilula
+     * @return string
+     */
+    private static function renderDuplicateMark(array $row, int $locations_id, bool $compact): string
+    {
+        $dups = self::duplicateNamesAt($locations_id);
+        $key  = self::normalizeName((string) ($row['name'] ?? ''));
+
+        if ($key === '' || !isset($dups[$key])) {
+            return '';
+        }
+
+        if ($compact) {
+            $marks = [];
+            foreach ($dups[$key] as $id) {
+                $marks[] = '#' . $id;
+            }
+
+            $tip = sprintf(
+                __('Nome repetido nesta localização: %s. Use o #id para distinguir.', 'dgoplus'),
+                implode(', ', $marks)
+            );
+
+            return "<i class='ti ti-alert-triangle' style='color:" . self::DUP_COLOR . "'"
+                . " title='" . htmlescape($tip) . "'></i>";
+        }
+
+        $tip = sprintf(
+            __('Há outro elemento chamado %s nesta localização.', 'dgoplus'),
+            trim((string) ($row['name'] ?? ''))
+        );
+
+        return "<span class='badge bg-orange-lt' title='" . htmlescape($tip) . "'>"
+            . "<i class='ti ti-alert-triangle'></i> "
+            . __('nome duplicado', 'dgoplus')
+            . "</span>";
+    }
+
+    /**
      * Seletor de elemento da localizacao + criacao de elemento novo.
      *
      * Ate MAX_TABS elementos sao abas de verdade (um clique), agrupadas por
@@ -1687,6 +1827,10 @@ class MapController
                     // localizacao, quatro abas eram indistinguiveis. Rotulo
                     // CURTO: a localizacao ja' esta no seletor do alto.
                     echo htmlescape(ItemLabel::shortForRow($item->fields, (int) $id));
+                    // Bloco 5e-2d: acende em TODAS as abas do par homonimo, por
+                    // decisao do usuario - o par e' a informacao, e marcar so' a
+                    // ativa esconderia metade do fato.
+                    echo self::renderDuplicateMark($item->fields, $locations_id, true);
                     echo "<span class='badge " . $badge . "'>" . $count . "</span>";
                     echo "</a>";
                     echo "</li>";
@@ -2048,6 +2192,10 @@ class MapController
         echo "<div class='card-header d-flex align-items-center justify-content-between flex-wrap gap-2'>";
         echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>"
             . "<i class='ti ti-grid-dots'></i>" . htmlescape(ItemLabel::shortForRow($dgo->fields, $items_id))
+            // Bloco 5e-2d: fora do span dos badges de proposito - aquele span e'
+            // reescrito pelo AJAX do renderBadges a cada porta gravada, e o selo
+            // nao muda quando uma porta muda.
+            . self::renderDuplicateMark($dgo->fields, $locations_id, false)
             // O span de id fixo e' o alvo do AJAX; o conteudo vem do mesmo
             // renderBadges que o endpoint usa.
             . "<span id='dgoplus-badges' class='d-flex align-items-center gap-2'>"
