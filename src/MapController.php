@@ -1688,6 +1688,14 @@ class MapController
             echo "</div>";
             echo "</div>";
             Html::closeForm();
+        } else {
+            // Bloco 5g-2: ate 1.3.9 o formulario simplesmente nao existia para
+            // quem nao tem CREATE, e a tela ficava identica a de uma
+            // localizacao sem elementos. Estado vazio nunca fica mudo
+            // (licao 16).
+            echo "<div class='form-hint align-self-center'>"
+                . htmlescape(__('Criar elemento pelo mapa exige a permissão "Criar" em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus'))
+                . "</div>";
         }
 
         echo "</div>";
@@ -2029,10 +2037,16 @@ class MapController
 
         echo "</div>";
 
+        // Bloco 5g-2: o DIREITO e o LIMITE DE TAMANHO viravam um booleano so, e
+        // por isso a tela nao sabia dizer por que o botao sumiu. Sao coisas
+        // diferentes: sem DELETE e' recusa de permissao, com uma fileira so e'
+        // o piso da grade. Confundir os dois produziria a mentira oposta -
+        // "peca Excluir ao administrador" para quem ja tem Excluir.
         $can_add       = Session::haveRight(Port::$rightname, CREATE);
-        $can_remove    = Session::haveRight(Port::$rightname, DELETE) && $layout['tubes'] > 1;
+        $has_delete    = Session::haveRight(Port::$rightname, DELETE);
+        $can_remove    = $has_delete && $layout['tubes'] > 1;
         $can_add_col   = $can_add && $layout['fibers_per_tube'] < Panel::MAX_FIBERS;
-        $can_rm_col    = Session::haveRight(Port::$rightname, DELETE) && $layout['fibers_per_tube'] > 1;
+        $can_rm_col    = $has_delete && $layout['fibers_per_tube'] > 1;
 
         if ($can_add || $can_remove || $can_add_col || $can_rm_col) {
             echo "<div class='d-flex gap-2 mt-3 flex-wrap'>";
@@ -2088,6 +2102,24 @@ class MapController
             }
 
             echo "</div>";
+        }
+
+        // Bloco 5g-2: a dica sai FORA do if dos botoes - quem nao tem direito
+        // nenhum nao entra naquele bloco, e era justamente esse o caso mudo.
+        // Le o direito bruto, nunca $can_remove/$can_rm_col: esses dois tambem
+        // sao falsos no piso da grade, e ai a culpa nao e' do perfil.
+        $missing = [];
+        if (!$can_add) {
+            $missing[] = __('"Criar" para acrescentar', 'dgoplus');
+        }
+        if (!$has_delete) {
+            $missing[] = __('"Excluir" para remover', 'dgoplus');
+        }
+        if ($missing !== []) {
+            echo "<div class='form-hint mt-2'>" . htmlescape(sprintf(
+                __('Ajustar o tamanho da grade exige %s em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus'),
+                implode(__(' e ', 'dgoplus'), $missing)
+            )) . "</div>";
         }
 
         echo "</div>"; // coluna da grade
@@ -2985,9 +3017,14 @@ class MapController
 
         echo "<div class='card-body'>";
 
+        // Bloco 5g-2: a ultima tarja muda do plugin. Dizer "somente leitura"
+        // sem dizer QUAL direito falta e ONDE pedi-lo custa horas (licao 119),
+        // porque o usuario nao tem como distinguir "meu perfil nao tem" de
+        // "esta porta esta travada". O texto e' o mesmo do auto-save (5g-1)
+        // de proposito: a mesma recusa nao pode ter dois nomes.
         if (!$can_write) {
             echo "<div class='alert alert-info py-2' role='alert'>"
-                . htmlescape(__('Você tem permissão apenas de leitura nesta porta.', 'dgoplus'))
+                . htmlescape(__('Somente leitura: documentar portas exige a permissão "Atualizar" em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus'))
                 . "</div>";
         }
 
@@ -3167,7 +3204,12 @@ class MapController
                 ? "<span class='badge bg-yellow-lt'>" . __('pendente', 'dgoplus') . "</span>"
                 : "<span class='badge bg-green-lt'>" . __('confirmado', 'dgoplus') . "</span>";
 
-            if (Session::haveRight(Port::$rightname, DELETE)) {
+            // Bloco 5g-2: o direito sai para uma variavel porque agora ele
+            // decide DUAS coisas - o botao e o texto da dica. Ate 1.3.9 a dica
+            // falava de "Desmontar" mesmo para quem nao via o botao (divida 6).
+            $can_dismantle = Session::haveRight(Port::$rightname, DELETE);
+
+            if ($can_dismantle) {
                 echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' class='ms-auto'>";
                 echo Html::hidden('action', ['value' => 'dismantle_link']);
                 echo Html::hidden('link_id', ['value' => (int) $link['id']]);
@@ -3180,11 +3222,15 @@ class MapController
             }
 
             echo "</div>";
-            echo "<div class='form-hint mt-1'>"
-                . htmlescape($pending
-                    ? __('Aguardando confirmação no elemento de destino. A porta já conta como ocupada.', 'dgoplus')
-                    : __('Vínculo confirmado. Desmontar remove o vínculo dos dois lados.', 'dgoplus'))
-                . "</div>";
+            if ($pending) {
+                $hint = __('Aguardando confirmação no elemento de destino. A porta já conta como ocupada.', 'dgoplus');
+            } elseif ($can_dismantle) {
+                $hint = __('Vínculo confirmado. Desmontar remove o vínculo dos dois lados.', 'dgoplus');
+            } else {
+                $hint = __('Vínculo confirmado. Desmontar exige a permissão "Excluir" em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus');
+            }
+
+            echo "<div class='form-hint mt-1'>" . htmlescape($hint) . "</div>";
             echo "</div>";
             return;
         }
