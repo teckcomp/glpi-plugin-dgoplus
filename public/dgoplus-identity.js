@@ -21,6 +21,25 @@
     var QUIET = 4;
 
     /**
+     * Bloco 5g-1b: o mesmo desenho do dgoplus.js (5g-1), com um gatilho
+     * diferente. Aqui a recusa de ESCRITA chega como HTTP 200 + denied:true,
+     * porque applyComment devolve erro em vez de lancar; o 403 so aparece se o
+     * direito de LER cair, derrubando o checkRight do proprio endpoint.
+     *
+     * Nos dois casos o direito e' da SESSAO: falhou uma vez, falha sempre.
+     * Sem esta trava, cada blur reenviava o mesmo texto e o log acumulava uma
+     * requisicao por saida de campo (licao 133).
+     */
+    var permissionDenied = false;
+
+    /**
+     * Licao 119: mensagem de permissao que nao nomeia o direito faltante custa
+     * horas. Reserva para o caso de o endpoint recusar sem texto - o normal e'
+     * exibir a frase que vem do PHP, que e' a mesma do POST classico.
+     */
+    var DENIED_MESSAGE = 'Sem permissão para comentar. Exige «Atualizar» em «Portas de DGO» (Administração → Perfis → aba DGO+).';
+
+    /**
      * Token CSRF para AJAX. Mesma leitura do dgoplus.js: o core expoe
      * getAjaxCsrfToken() em js/common.js, e o <meta> fica como reserva.
      *
@@ -212,6 +231,11 @@
         var inFlight = false;
         var lastSaved = field.value;
 
+        // A frase exibida enquanto a permissao estiver negada. Comeca com a
+        // reserva e passa a ser a do PHP assim que o endpoint responder: a
+        // recusa do ponto unico e a da tela nao podem divergir (licao 47).
+        var deniedText = DENIED_MESSAGE;
+
         function setFlag(text, cssClass) {
             flag.textContent = text;
             flag.className = 'small ' + (cssClass || '');
@@ -222,6 +246,13 @@
          *        formulario de verdade em vez de perder a edicao.
          */
         function save(fallbackOnFailure) {
+            if (permissionDenied) {
+                // Nao reenvia - mas tambem nao fica mudo (licao 16): quem
+                // continuar digitando tem que seguir vendo POR QUE nao salva.
+                setFlag(deniedText, 'text-danger');
+                return;
+            }
+
             var current = field.value;
             if (inFlight || current === lastSaved) {
                 return;
@@ -240,7 +271,12 @@
                 body: new FormData(form)
             }).then(function (response) {
                 if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
+                    // O status precisa CHEGAR ao catch: sem ele, 403 de
+                    // permissao e queda de rede sao o mesmo erro generico, e a
+                    // tela mente para o usuario (licao 14).
+                    var httpError = new Error('HTTP ' + response.status);
+                    httpError.status = response.status;
+                    throw httpError;
                 }
 
                 return response.json();
@@ -248,6 +284,15 @@
                 inFlight = false;
 
                 if (!data || data.ok !== true) {
+                    if (data && data.denied === true) {
+                        // Recusa de PERMISSAO: vale para a pagina inteira e
+                        // nao muda se o usuario digitar outra coisa.
+                        permissionDenied = true;
+                        deniedText = data.message ? data.message : DENIED_MESSAGE;
+                        setFlag(deniedText, 'text-danger');
+                        return;
+                    }
+
                     setFlag(
                         data && data.message ? data.message : 'Não foi possível salvar.',
                         'text-danger'
@@ -257,8 +302,19 @@
 
                 lastSaved = current;
                 setFlag('Salvo ✓', 'text-success');
-            }).catch(function () {
+            }).catch(function (error) {
                 inFlight = false;
+
+                if (error && error.status === 403) {
+                    // Aqui o 403 vem do checkRight(READ) do proprio endpoint:
+                    // o direito de LER caiu com a aba aberta. O fallback de
+                    // postar a pagina NAO roda - ele tomaria o mesmo 403,
+                    // agora levando junto o comentario que o usuario digitou.
+                    permissionDenied = true;
+                    deniedText = 'Sem permissão para ver este elemento. Sua permissão mudou: copie o texto e recarregue a página.';
+                    setFlag(deniedText, 'text-danger');
+                    return;
+                }
 
                 if (fallbackOnFailure) {
                     // Ultimo recurso: posta o formulario de verdade. submit()

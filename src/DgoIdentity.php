@@ -342,9 +342,18 @@ class DgoIdentity
         }
 
         if (!self::canWriteComment($dgo)) {
+            // Bloco 5g-1b: 'denied' classifica a recusa sem tirar a regra
+            // daqui. O endpoint AJAX repassa a chave e o JS para de reenviar a
+            // cada blur; o POST classico le so 'ok' e 'error' e nao percebe a
+            // diferenca. A regra continua morando num lugar so.
+            //
+            // Marcado APENAS neste ramo: o direito e' da SESSAO, entao negar
+            // aqui vale para a pagina inteira. As demais recusas dependem do
+            // input e nao autorizam travar nada.
             return [
-                'ok'    => false,
-                'error' => __('Comentar exige a permissão "Atualizar" em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus'),
+                'ok'     => false,
+                'denied' => true,
+                'error'  => __('Comentar exige a permissão "Atualizar" em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus'),
             ];
         }
 

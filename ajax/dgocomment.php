@@ -39,7 +39,14 @@ $result = DgoIdentity::applyComment([
 
 // Recusa de regra ou de permissao NAO vira erro de HTTP: o navegador precisa
 // da frase para mostrar ao lado do campo, e a tela continua utilizavel.
+//
+// Bloco 5g-1b: 'denied' distingue as duas. Recusa de REGRA depende do que foi
+// digitado e pode passar na tentativa seguinte; recusa de PERMISSAO e' da
+// sessao e vai falhar sempre, entao o JS trava o auto-save em vez de reenviar
+// a cada saida de campo. A decisao vem do ponto unico (applyComment), nao
+// daqui - checar o direito neste arquivo criaria uma segunda sede da regra.
 echo json_encode([
     'ok'      => $result['ok'],
+    'denied'  => (bool) ($result['denied'] ?? false),
     'message' => $result['error'],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
