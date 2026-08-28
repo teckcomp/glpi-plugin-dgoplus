@@ -1250,7 +1250,11 @@ class MapController
 
         // Nivel 2, condicional: so aparece se a localizacao tiver piso
         // cadastrado em Configurar -> Listas suspensas -> Pisos.
-        $floors = Floor::getForLocation($locations_id);
+        //
+        // Bloco 5b: e so' os pisos que TEM elemento no escopo corrente. Piso
+        // vazio na lista e' uma promessa falsa - escolher um deles esvaziava a
+        // tela sem dizer por que.
+        $floors = self::floorsWithItems($locations_id, $floors_id);
 
         if ($floors !== []) {
             echo "<form method='get' action='" . htmlescape(self::getPageUrl()) . "' id='dgoplus-floor-form'>";
@@ -1424,6 +1428,75 @@ class MapController
         }
 
         echo "</div>";
+    }
+
+    /**
+     * Pisos da localizacao que TEM pelo menos um elemento visivel no escopo
+     * corrente. Bloco 5b.
+     *
+     * O criterio nao e' "piso existe", e sim "filtrar por este piso devolve
+     * alguma coisa" - e por isso ele reusa getDgosAtLocation(), que ja e' quem
+     * decide o que a tela mostra (Tipos configurados, filtro de papel,
+     * entidade, lixeira). Reimplementar a regra aqui produziria duas respostas
+     * para a mesma pergunta, que e' a classe de defeito que os pontos unicos
+     * do projeto existem para evitar.
+     *
+     * ⚠️ DUAS guardas, e as duas importam mais que a poda em si:
+     *
+     * 1. O piso ATUALMENTE selecionado nunca e' removido, mesmo que tenha
+     *    ficado sem elemento (trocar o filtro de papel faz isso). Sumir com a
+     *    opcao escolhida faria o Dropdown perder o valor e a tela passaria a
+     *    mentir sobre o que esta filtrando (licao 104: o estado vem da
+     *    renderizacao).
+     * 2. Isto NAO toca o seletor de piso de DENTRO da grade, o que ATRIBUI
+     *    piso ao elemento. Aquele precisa oferecer piso vazio - e' justamente
+     *    assim que um piso deixa de ser vazio.
+     *
+     * Quando a poda nao deixa nenhum piso, o seletor nao e' impresso - mesmo
+     * comportamento de quando a localizacao nao tem piso cadastrado. Nao ha
+     * informacao perdida: filtrar por qualquer um daria zero elementos.
+     *
+     * @param int $locations_id
+     * @param int $keep_floor piso selecionado, que fica na lista de todo jeito
+     * @return array<int,string>
+     */
+    private static function floorsWithItems(int $locations_id, int $keep_floor = 0): array
+    {
+        $floors = Floor::getForLocation($locations_id);
+
+        if ($floors === []) {
+            return [];
+        }
+
+        // Sem filtro de piso: o conjunto inteiro que a tela mostraria hoje.
+        $items = self::getDgosAtLocation($locations_id, 0);
+
+        if ($items === []) {
+            // Nenhum elemento na localizacao: nenhum piso tem candidato. O
+            // piso selecionado ainda assim fica, pela guarda 1.
+            return isset($floors[$keep_floor])
+                ? [$keep_floor => $floors[$keep_floor]]
+                : [];
+        }
+
+        $used = Panel::getFloorsForItems(PassiveDCEquipment::class, array_keys($items));
+
+        $with_items = [];
+        foreach ($used as $fid) {
+            $fid = (int) $fid;
+            if ($fid > 0) {
+                $with_items[$fid] = true;
+            }
+        }
+
+        $result = [];
+        foreach ($floors as $fid => $fname) {
+            if (isset($with_items[(int) $fid]) || (int) $fid === $keep_floor) {
+                $result[(int) $fid] = $fname;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -3375,12 +3448,37 @@ class MapController
         echo "<div class='col-12 col-md-5'>";
         echo "<label class='form-label mb-1'>" . __('Elemento de destino', 'dgoplus') . "</label>";
         echo "<select name='dst_items_id' class='form-select form-select-sm' data-dgoplus-link-dst='1'>";
+
+        // Bloco 5e: dois elementos com o MESMO nome e o mesmo papel produziam
+        // duas opcoes identicas, e escolher entre elas era sorteio. O escopo do
+        // 5a separa quando estao em localizacoes ou pisos diferentes; quando
+        // estao no mesmo, nada os distinguia.
+        //
+        // A desambiguacao e' POR COLISAO: quem tem nome unico continua com o
+        // rotulo limpo, e so' o par ambiguo ganha o sufixo. Sufixo em todo
+        // mundo seria ruido em 159 elementos para resolver um caso.
+        //
+        // O sufixo e' o id do ativo porque e' o unico campo garantidamente
+        // presente e unico - nome pode repetir (e' o defeito), piso quase
+        // nunca esta preenchido, e localizacao ja e' o recorte do 5a.
+        $label_count = [];
+        $cand_labels = [];
         foreach ($candidates as $cid => $cand) {
-            $cand_role  = Setting::getRoleForType((int) ($cand[Setting::getTypeField()] ?? 0));
-            $cand_label = ($cand['name'] ?: ('#' . $cid))
+            $cand_role = Setting::getRoleForType((int) ($cand[Setting::getTypeField()] ?? 0));
+            $label     = ($cand['name'] ?: ('#' . $cid))
                 . ($cand_role !== null ? ' (' . Setting::getRoleLabel($cand_role) . ')' : '');
-            echo "<option value='" . (int) $cid . "'>" . htmlescape($cand_label) . "</option>";
+
+            $cand_labels[(int) $cid] = $label;
+            $label_count[$label]     = ($label_count[$label] ?? 0) + 1;
         }
+
+        foreach ($cand_labels as $cid => $label) {
+            if (($label_count[$label] ?? 0) > 1) {
+                $label .= ' #' . $cid;
+            }
+            echo "<option value='" . (int) $cid . "'>" . htmlescape($label) . "</option>";
+        }
+
         echo "</select>";
         echo "</div>";
 
