@@ -738,11 +738,29 @@ class Link extends CommonDBTM
      * nao enxerga nao entra no nivel - a trilha para nele, em vez de vazar
      * nome de ativo de outra entidade.
      *
-     * @param string $itemtype
-     * @param int    $items_id
+     * Bloco 5c: $from_entry_id restringe o NIVEL 0 a uma entrada especifica.
+     *
+     * A trilha e' desenhada dentro do card de UMA entrada (displayEntryCard),
+     * mas ate' aqui ela subia a partir do ELEMENTO - entao um elemento com E1
+     * vindo de A e E2 vindo de B mostrava "A + B" nos dois cards, como se os
+     * dois alimentassem aquele ponto. O "+" do nivel 0 significa "dois pais da
+     * MESMA entrada", e essa leitura so' e' verdadeira com o recorte.
+     *
+     * Do nivel 1 para cima nada muda: ali a pergunta volta a ser "de onde vem
+     * o sinal deste pai", e ele pode legitimamente ter varias entradas - a
+     * decisao do 4e de mostrar todos os pais lado a lado continua valendo.
+     *
+     * Entrada invalida (inexistente, de outro elemento, de grade ou na
+     * lixeira) devolve trilha VAZIA, nunca a do elemento inteiro: falhar
+     * fechado aqui e' preferivel a desenhar uma cadeia que nao corresponde ao
+     * card aberto (licao 14).
+     *
+     * @param string   $itemtype
+     * @param int      $items_id
+     * @param int|null $from_entry_id id da porta de ENTRADA de partida
      * @return array<int, array<int, array{row: array, role: string|null}>>
      */
-    public static function upstreamLevels(string $itemtype, int $items_id): array
+    public static function upstreamLevels(string $itemtype, int $items_id, ?int $from_entry_id = null): array
     {
         if ($itemtype !== PassiveDCEquipment::class || $items_id <= 0) {
             return [];
@@ -756,17 +774,38 @@ class Link extends CommonDBTM
         $current = [$items_id];
 
         for ($depth = 0; $depth < $max_levels && $current !== []; $depth++) {
-            // --- Entradas dos elementos deste nivel, numa consulta ---
-            $port_model = new Port();
-            $entries    = $port_model->find([
-                'itemtype'   => PassiveDCEquipment::class,
-                'items_id'   => $current,
-                'is_deleted' => 0,
-            ] + Port::entryCriteria());
-
             $entry_ids = [];
-            foreach ($entries as $row) {
-                $entry_ids[] = (int) $row['id'];
+
+            if ($depth === 0 && $from_entry_id !== null) {
+                // Bloco 5c: o card e' de UMA entrada, entao o nivel 0 e' so'
+                // ela. A validacao e' feita aqui, e nao no chamador, porque
+                // este metodo e' publico e o id pode chegar de qualquer lugar.
+                $probe = new Port();
+
+                if (
+                    $from_entry_id <= 0
+                    || !$probe->getFromDB($from_entry_id)
+                    || (int) ($probe->fields['is_deleted'] ?? 1) !== 0
+                    || (string) ($probe->fields['itemtype'] ?? '') !== PassiveDCEquipment::class
+                    || (int) ($probe->fields['items_id'] ?? 0) !== $items_id
+                    || (string) ($probe->fields['kind'] ?? '') !== Port::KIND_ENTRY
+                ) {
+                    return [];
+                }
+
+                $entry_ids[] = $from_entry_id;
+            } else {
+                // --- Entradas dos elementos deste nivel, numa consulta ---
+                $port_model = new Port();
+                $entries    = $port_model->find([
+                    'itemtype'   => PassiveDCEquipment::class,
+                    'items_id'   => $current,
+                    'is_deleted' => 0,
+                ] + Port::entryCriteria());
+
+                foreach ($entries as $row) {
+                    $entry_ids[] = (int) $row['id'];
+                }
             }
 
             if ($entry_ids === []) {

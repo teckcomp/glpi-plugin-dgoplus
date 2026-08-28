@@ -2576,7 +2576,11 @@ class MapController
         // "Proposto por" - posicao literal do desenho aprovado. So' vinculo
         // CONFIRMADO sobe (decisao do 4e); sem nenhum nivel confirmado acima,
         // a linha nem aparece - trilha de um elemento so' nao informa nada.
-        $levels = Link::upstreamLevels(PassiveDCEquipment::class, $items_id);
+        //
+        // Bloco 5c: a partir da ENTRADA deste card, nao do elemento. Sem o
+        // terceiro argumento, um elemento com duas entradas de origens
+        // diferentes desenhava as duas em cada card.
+        $levels = Link::upstreamLevels(PassiveDCEquipment::class, $items_id, (int) $entry['id']);
 
         if ($levels !== []) {
             echo "<div class='py-2 my-1 border-top border-bottom'>";
