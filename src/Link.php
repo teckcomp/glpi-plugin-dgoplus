@@ -206,19 +206,11 @@ class Link extends CommonDBTM
             Panel::getWidthForItemId($itemtype, $items_id)
         );
 
-        $item_name = '';
-        if ($itemtype !== '' && $items_id > 0 && class_exists($itemtype)) {
-            $item = new $itemtype();
-            if ($item instanceof CommonDBTM && $item->getFromDB($items_id)) {
-                $item_name = (string) ($item->fields['name'] ?? '');
-            }
-        }
-
-        if ($item_name === '') {
-            $item_name = sprintf(__('elemento #%d', 'dgoplus'), $items_id);
-        }
-
-        return ['ok' => true, 'label' => $label, 'item' => $item_name];
+        // Bloco 5e-2a: este trecho era uma COPIA do antigo itemNameOf(), que
+        // vivia vinte linhas abaixo e nao era chamado daqui. Duas copias da
+        // mesma regra divergem na primeira manutencao - agora o rotulo tem um
+        // dono so' (ItemLabel), compartilhado com o describeDestination.
+        return ['ok' => true, 'label' => $label, 'item' => ItemLabel::forItem($itemtype, $items_id)];
     }
 
     /**
@@ -244,10 +236,12 @@ class Link extends CommonDBTM
             return $empty;
         }
 
+        // Bloco 5e-2a: o nome cru saiu daqui. Ver ItemLabel - com dois `CTO 01`
+        // no parque, "E2 de CTO 01" nao dizia de qual.
         return [
             'ok'    => true,
             'label' => Port::formatEntryLabel((int) ($port->fields['fiber_num'] ?? 0)),
-            'item'  => self::itemNameOf(
+            'item'  => ItemLabel::forItem(
                 (string) ($port->fields['itemtype'] ?? ''),
                 (int) ($port->fields['items_id'] ?? 0)
             ),
@@ -1034,20 +1028,8 @@ class Link extends CommonDBTM
         return array_values($groups);
     }
 
-    private static function itemNameOf(string $itemtype, int $items_id): string
-    {
-        if ($itemtype !== '' && $items_id > 0 && class_exists($itemtype)) {
-            $item = new $itemtype();
-            if ($item instanceof CommonDBTM && $item->getFromDB($items_id)) {
-                $name = (string) ($item->fields['name'] ?? '');
-                if ($name !== '') {
-                    return $name;
-                }
-            }
-        }
-
-        return sprintf(__('elemento #%d', 'dgoplus'), $items_id);
-    }
+    // Bloco 5e-2a: itemNameOf() foi removido daqui. A regra do rotulo mudou de
+    // dono para ItemLabel::forItem(), que os dois describe* usam.
 
     /**
      * As propostas em aberto, prontas para desenhar. Bloco 4d.
@@ -1210,9 +1192,15 @@ class Link extends CommonDBTM
     /**
      * Nome de exibicao de uma linha de elemento ja carregada.
      *
-     * Nao usa itemNameOf(): aquele faz getFromDB, e aqui a linha ja esta em
-     * maos - seria uma consulta por pendencia so para reler o que o find() ja
-     * trouxe.
+     * Nao usa ItemLabel::forItem(): aquele faz getFromDB, e aqui a linha ja
+     * esta em maos - seria uma consulta por pendencia so para reler o que o
+     * find() ja trouxe.
+     *
+     * Bloco 5e-2a: este ponto NAO entra neste bloco. A troca certa aqui e'
+     * ItemLabel::forRow(), que consome a linha carregada sem consultar - e o
+     * `locations_id` ja vem nela, porque o find() sem lista de campos traz a
+     * linha inteira (a propria pendingRows le row['locations_id'] adiante).
+     * Fica para o 5e-2b, com teste proprio na pagina de pendentes.
      *
      * @param array $row
      * @param int   $items_id
