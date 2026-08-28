@@ -931,6 +931,31 @@ class Dashboard
                 echo "</tr>";
             }
             echo "</tbody></table></div>";
+
+            // Bloco PAINEL-1a: o cartao mostra 5; o relatorio nativo mostra
+            // todas, na MESMA ordem (opcao de busca 19 = date_mod, DESC) e com
+            // o MESMO recorte (opcao 10 = kind, so' a grade). Sem o filtro de
+            // kind a listagem incluiria as entradas E1-E4, que o cartao nunca
+            // conta - seria o defeito do 4d parte C de novo, agora entre o
+            // cartao e o seu proprio "ver todos".
+            echo "<div class='card-footer text-center py-2'>";
+            echo "<a href='" . htmlescape(Port::getReportUrl([
+                'sort'     => [19],
+                'order'    => ['DESC'],
+                'criteria' => [
+                    ['field' => 10, 'searchtype' => 'equals', 'value' => Port::KIND_GRID, 'link' => 'AND'],
+                ],
+            ])) . "'>" . __('Ver todas as portas por atualização', 'dgoplus') . "</a>";
+
+            // O painel filtra por papel; o relatorio nao tem opcao de busca de
+            // papel. Dizer isso e' mais barato que deixar o usuario descobrir
+            // que a lista veio maior do que ele esperava (licao 14).
+            if ($d['role'] !== null) {
+                echo "<div class='text-muted small'>"
+                    . __('O relatório não filtra por papel.', 'dgoplus') . "</div>";
+            }
+
+            echo "</div>";
         }
         echo "</div></div>";
 

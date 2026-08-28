@@ -1307,9 +1307,9 @@ class MapController
         echo "</div>";
         echo "</form>";
 
-        /** @var array $CFG_GLPI */
-        global $CFG_GLPI;
-        $report_url = ($CFG_GLPI['root_doc'] ?? '') . '/plugins/dgoplus/front/port.php';
+        // Bloco PAINEL-1a: a URL sai de Port::getReportUrl, ponto unico desde
+        // que o painel ganhou um link para a mesma tela (licao 13).
+        $report_url = Port::getReportUrl();
         echo "<a class='btn btn-outline-secondary btn-sm ms-auto' href='" . htmlescape($report_url) . "'>"
             . "<i class='ti ti-report'></i>&nbsp;" . __('Relatório de portas', 'dgoplus') . "</a>";
 

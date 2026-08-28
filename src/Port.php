@@ -113,6 +113,40 @@ class Port extends CommonDBChild
     }
 
     /**
+     * URL do relatorio de portas (front/port.php, que e' um Search::show).
+     *
+     * Existe para a montagem da URL ficar num lugar so' (licao 13): ate' o
+     * bloco PAINEL-1a ela estava escrita a mao dentro do MapController, e o
+     * link novo do painel seria a segunda copia da mesma string.
+     *
+     * Mesmo padrao do getPageUrl do MapController: root_doc + caminho
+     * literal. PHP_SELF esta morto no GLPI 11 (licao 12) e
+     * Plugin::getWebDir() esta deprecado no 11.0.6.
+     *
+     * Os parametros aceitos sao os do motor de busca do core - 'sort',
+     * 'order' e 'criteria' como ARRAY. O escalar (sort=19) tambem funciona,
+     * mas o proprio core o marca como compatibilidade com links anteriores ao
+     * 10.0 (SearchEngine::prepareDataForSearch, 11.0.6:346-367), entao aqui
+     * se usa a forma corrente.
+     *
+     * @param array $params
+     * @return string
+     */
+    public static function getReportUrl(array $params = []): string
+    {
+        /** @var array $CFG_GLPI */
+        global $CFG_GLPI;
+
+        $url = ($CFG_GLPI['root_doc'] ?? '') . '/plugins/dgoplus/front/port.php';
+
+        if ($params !== []) {
+            $url .= '?' . http_build_query($params);
+        }
+
+        return $url;
+    }
+
+    /**
      * Opcoes de busca nativas - alimentam a lista/relatorio em
      * front/port.php (Search::show), com filtro, ordenacao e exportacao
      * (CSV/PDF/Excel) iguais aos da guia de Ativos.
