@@ -61,12 +61,51 @@ final class ItemLabel
      */
     public static function forRow(array $row, int $items_id): string
     {
+        return self::compose($row, $items_id, true);
+    }
+
+    /**
+     * Rotulo CURTO: `nome · #id`, sem a localizacao.
+     *
+     * Bloco 5e-2b
+     * -----------
+     * Existe porque a tela do mapa ja' e' recortada por Localizacao -> Piso.
+     * Repetir "Outlet Porto Belo" em cada aba, em cada cabecalho e em cada
+     * chip da trilha seria ruido: a informacao ja' esta no seletor no alto da
+     * pagina, e o que falta ali e' distinguir homonimos entre si.
+     *
+     * A trilha usa esta variante por decisao do usuario (28/08, opcao B):
+     * ela pode atravessar localizacoes, mas o rotulo completo em tres niveis
+     * ficaria longo demais para o beneficio - quem quiser a localizacao clica
+     * no chip.
+     *
+     * @param array $row
+     * @param int   $items_id
+     * @return string
+     */
+    public static function shortForRow(array $row, int $items_id): string
+    {
+        return self::compose($row, $items_id, false);
+    }
+
+    /**
+     * @param array $row
+     * @param int   $items_id
+     * @param bool  $with_location
+     * @return string
+     */
+    private static function compose(array $row, int $items_id, bool $with_location): string
+    {
         $name = trim((string) ($row['name'] ?? ''));
 
         // Licao 16: estado vazio nao fica mudo. Nome vazio dizendo apenas o id
         // esconderia que o campo esta em branco - o que e' informacao.
         if ($name === '') {
             $name = __('sem nome', 'dgoplus');
+        }
+
+        if (!$with_location) {
+            return $name . ' · #' . $items_id;
         }
 
         return $name

@@ -1680,7 +1680,10 @@ class MapController
                     echo "<li class='nav-item'>";
                     echo "<a class='" . $class . "' href='" . htmlescape($url) . "'>";
                     echo "<i class='ti ti-server'></i>";
-                    echo htmlescape($item->fields['name'] ?: ('#' . $id));
+                    // Bloco 5e-2b: com dois `DGO 01` e dois `CTO 01` na mesma
+                    // localizacao, quatro abas eram indistinguiveis. Rotulo
+                    // CURTO: a localizacao ja' esta no seletor do alto.
+                    echo htmlescape(ItemLabel::shortForRow($item->fields, (int) $id));
                     echo "<span class='badge " . $badge . "'>" . $count . "</span>";
                     echo "</a>";
                     echo "</li>";
@@ -1705,7 +1708,10 @@ class MapController
                 $elements[$id] = sprintf(
                     '%s%s — %d %s',
                     $prefix,
-                    $item->fields['name'] ?: ('#' . $id),
+                    // Bloco 5e-2b: mesma regra da aba - este e' o mesmo
+                    // conteudo em outra forma, e divergir aqui faria a lista
+                    // desambiguar so' abaixo de MAX_TABS.
+                    ItemLabel::shortForRow($item->fields, (int) $id),
                     $count,
                     __('documentadas', 'dgoplus')
                 );
@@ -2038,7 +2044,7 @@ class MapController
 
         echo "<div class='card-header d-flex align-items-center justify-content-between flex-wrap gap-2'>";
         echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>"
-            . "<i class='ti ti-grid-dots'></i>" . htmlescape($dgo->fields['name'] ?: ('#' . $items_id))
+            . "<i class='ti ti-grid-dots'></i>" . htmlescape(ItemLabel::shortForRow($dgo->fields, $items_id))
             // O span de id fixo e' o alvo do AJAX; o conteudo vem do mesmo
             // renderBadges que o endpoint usa.
             . "<span id='dgoplus-badges' class='d-flex align-items-center gap-2'>"
@@ -2765,12 +2771,12 @@ class MapController
         $el         = new PassiveDCEquipment();
         $el->fields = $row;
 
-        $name = (string) ($row['name'] ?? '');
-        if ($name === '') {
-            $name = '#' . (int) ($row['id'] ?? 0);
-        }
-
-        $text = ($role !== null ? Setting::getRoleLabel($role) . ' · ' : '') . $name;
+        // Bloco 5e-2b: rotulo CURTO no chip (decisao B do usuario, 28/08). A
+        // trilha PODE atravessar localizacoes, entao o rotulo completo seria
+        // defensavel - mas em tres niveis ficaria longo demais para o ganho.
+        // Quem quiser a localizacao clica no chip, que ja e' link.
+        $text = ($role !== null ? Setting::getRoleLabel($role) . ' · ' : '')
+            . ItemLabel::shortForRow($row, (int) ($row['id'] ?? 0));
 
         return "<a href='" . htmlescape(self::getUrlForDgo($el)) . "'"
             . " class='badge bg-secondary-lt text-decoration-none'>"
@@ -2974,7 +2980,7 @@ class MapController
         echo "<div class='card-header d-flex align-items-center justify-content-between flex-wrap gap-2'>";
         echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>"
             . "<i class='ti ti-files'></i>"
-            . htmlescape($dgo->fields['name'] ?: ('#' . $items_id))
+            . htmlescape(ItemLabel::shortForRow($dgo->fields, $items_id))
             . "<span class='text-muted'>" . __('Anexos', 'dgoplus') . "</span></h3>";
         echo "<a class='btn btn-sm btn-outline-secondary' href='"
             . htmlescape(self::getPageUrl($back)) . "'>" . __('Fechar anexos', 'dgoplus') . "</a>";
@@ -3049,7 +3055,7 @@ class MapController
         echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>";
         echo "<span style='display:inline-block;width:8px;height:8px;border-radius:50%;"
             . "background:" . self::fiberColor($fiber_num) . "'></span>";
-        echo htmlescape($dgo->fields['name'] ?: ('#' . $items_id));
+        echo htmlescape(ItemLabel::shortForRow($dgo->fields, $items_id));
         echo "<span class='text-muted'>"
             . sprintf(__('Fileira %d, coluna %d', 'dgoplus'), $tube_num, $fiber_num)
             . "</span></h3>";
