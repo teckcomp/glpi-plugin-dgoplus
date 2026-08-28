@@ -3,20 +3,21 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v16 — 28/08/2026. Substitui o v15 integralmente.
-> Emitido ao fim de uma sessão de **três blocos entregues e validados em tela**.
-> Versão **1.3.19**, `master` em **`770ce71`**.
+> **Versão deste documento:** v17 — 28/08/2026. Substitui o v16 integralmente.
+> Versão **1.3.20**, `master` em **`fbf1952`**.
 >
-> **O que o v16 traz de novo em relação ao v15:**
+> **O que o v17 traz de novo em relação ao v16:**
 >
-> 1. **O 5e-2 foi inteiro ao ar**, em três blocos: **5e-2a**, **5e-2b** e
->    **5e-2c**. Nasceu o `src/ItemLabel.php`, ponto único do rótulo de elemento.
-> 2. **A trava de duplicados foi CANCELADA** por decisão do usuário. O princípio
->    vira regra operacional; o software só sinalizará.
-> 3. **Nasceu o 5e-2d**, o selo de fora de conformidade — com escopo medido.
-> 4. **As pendências 12 e 14 estão respondidas**, e a 8 tem alvo nomeado.
-> 5. **Frente nova, fora do DGO+:** o `shopmap` ganha trabalho próprio.
-> 6. **Três lições novas: 162, 163, 164.**
+> 1. **O 5g-1b foi EXERCITADO e aprovado.** O projeto ficou, pela primeira vez
+>    desde o 1.3.12, **sem nenhum bloco entregue e não exercitado**.
+> 2. **O 5e-2d nasceu e foi ao ar pela metade:** o **5e-2d-1** (aba + cabeçalho)
+>    está no ar e validado; o **5e-2d-2** (seletor único) está **bloqueado por
+>    cenário**, não por decisão.
+> 3. **Bloco de reparo 5e-2d-1b:** bump de versão que eu havia esquecido.
+> 4. **A decisão do rótulo fechou: `completename` FICA.** Decisão do usuário.
+> 5. **Duas lições novas: 165 e 166.** As duas são erro meu, pego dentro da
+>    própria sessão.
+> 6. **Retrato de dados corrigido** em pontos que o v16 tinha errado.
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
 
@@ -39,9 +40,6 @@ Convive com a regra de precisão do projeto porque são perguntas diferentes:
 | **O que o código É?** (registro durável, base de bloco novo) | **O GitHub — sempre** |
 | **Como estão os DADOS da homologação?** | **Só a tela, lida na sessão** (lição 160) |
 
-O contexto guarda o retrato dos dados, e o retrato envelhece mais rápido que o
-código.
-
 ### A ordem de entrega
 
 1. O assistente prepara os arquivos a partir do **tarball do commit atual** e
@@ -57,6 +55,10 @@ código.
 **O passo 2 não é opcional** — foi ele que pegou três arquivos antigos sendo
 enviados no lugar dos novos (lição 140).
 
+⚠️ **O bump de versão no `setup.php` faz parte do bloco** — lição 165, nascida
+nesta sessão. Sem ele, dois commits diferentes carregam o mesmo número e a
+pergunta "que versão está rodando" deixa de distinguir código.
+
 O zip deixou de ser o veículo do bloco. Ele sobrevive só como **artefato de
 Release**.
 
@@ -68,10 +70,10 @@ Release**.
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 28/08 (fim da sessão) | commit **`770ce71`**, versão **1.3.19** |
-| Versão em homologação | **1.3.19** — ✅ conferida em tela (Configuração → Plugins) |
-| **Paridade** | ✅ Provada: o tarball do `770ce71` é byte a byte igual ao preparado |
-| Arquivos no repositório | **31** (28 do plugin + 3 em `docs/`) |
+| `master` em 28/08 (fim da sessão) | commit **`fbf1952`**, versão **1.3.20** |
+| Versão em homologação | **1.3.20** — ✅ conferida em tela (Configuração → Plugins) |
+| **Paridade** | ✅ Provada nesta sessão: o tarball do `bb0a591` é byte a byte igual ao preparado |
+| Arquivos no repositório | **31** (28 do plugin + 3 em `docs/`) — medido no `fbf1952` |
 | GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data` |
 | **Homologação** | **`177.87.230.179`, porta SSH `2078`, usuário `resolutto`** |
 | URL externa do GLPI | `http://177.87.230.179:2077/` |
@@ -103,18 +105,14 @@ Autenticação por **token fine-grained** (Contents: Read and write).
 **Enviar do PC para o servidor (cmd do Windows):**
 
 ```cmd
+dir "%USERPROFILE%\Downloads\*<bloco>*"
 scp -P 2078 "%USERPROFILE%\Downloads\<arquivo>" resolutto@177.87.230.179:/tmp/
 ```
 
 `-P` maiúsculo é a porta. Aceita vários arquivos numa linha.
 
 ⚠️ **Arquivo `.js` não baixa** pelo navegador do usuário (lição 149). Todo JS de
-bloco sai com `.txt` no fim e o `cp` no servidor renomeia. **Antes do `scp`,
-conferir o nome real:**
-
-```cmd
-dir "%USERPROFILE%\Downloads\*<bloco>*"
-```
+bloco sai com `.txt` no fim e o `cp` no servidor renomeia.
 
 **Aplicar um bloco (`ssh -p 2078 resolutto@177.87.230.179`):**
 
@@ -130,6 +128,17 @@ git add -A && git commit -m "..." && git push
 sudo -u www-data php /var/www/html/glpi/bin/console cache:clear
 systemctl restart apache2
 ```
+
+**Reinstalar, quando o `setup.php` mudou de versão** — provado nesta sessão, com
+esta sintaxe exata:
+
+```bash
+sudo -u www-data php /var/www/html/glpi/bin/console plugin:install --force -u glpi dgoplus
+sudo -u www-data php /var/www/html/glpi/bin/console plugin:activate dgoplus
+```
+
+Saída esperada: `Plug-in "dgoplus" foi instalado e já pode ser ativado.` seguido
+de `Plug-in "dgoplus" ativado.`
 
 **Conferência de estado, no começo de toda sessão:**
 
@@ -159,13 +168,13 @@ tail -n 30 /var/www/html/glpi/files/_log/php-errors.log
 **Status HTTP — e este substitui o F12** (lição 142):
 
 ```bash
-grep -h "port.php" /var/log/apache2/other_vhosts_access.log | tail -n 20
+grep -h "dgocomment.php" /var/log/apache2/other_vhosts_access.log | tail -n 10
 ```
 
-⚠️ **Nem toda recusa vira 403.** Ver a lição 154: o `ajax/port.php` responde 403
-porque `applyInput` lança; o `ajax/dgocomment.php` responde **200 com
-`denied:true`** porque `applyComment` devolve erro. **Antes de escrever roteiro
-que espera um status, ler o endpoint.**
+⚠️ **Nem toda recusa vira 403 — CONFIRMADO EM CAMPO em 28/08.** O
+`ajax/dgocomment.php` responde **200 com `denied:true`**, porque só exige READ
+(linha 32) e a recusa de UPDATE volta no corpo. O `ajax/port.php` responde 403
+porque `applyInput` lança. Lição 154, agora com prova.
 
 **Ruído conhecido no `php-errors.log`, sem relação com defeito:**
 
@@ -180,15 +189,13 @@ que espera um status, ler o endpoint.**
 Apache nas portas 80/443 internamente; acesso externo por
 **`177.87.230.179:2077`**. `DocumentRoot /var/www/html/glpi/public` vem de
 `conf-enabled/glpi.conf`. **Nada dentro de `plugins/` é alcançável como arquivo
-pelo navegador** — 404 com `Set-Cookie: glpi_` é o front controller respondendo.
+pelo navegador**.
 
 ### Release
 
 **`v1.3.8` publicada em 27/08** com `dgoplus-1.3.8.zip` (177 KB, sha256
 `34e1fdd1129792cf4dd500db41ecd674d10580831d07f3f0334527de6ea0ef16`). A `v1.3.2`
 continua publicada.
-
-O zip **nasce do commit**:
 
 ```bash
 cd /var/www/html/glpi/plugins/dgoplus
@@ -198,47 +205,34 @@ sha256sum /tmp/dgoplus-1.3.X.zip
 ```
 
 **Tags existentes:** `v1.0.0`, `v1.1.0`, `v1.2.0`, `v1.2.1`, `v1.3.0`, `v1.3.1`,
-`v1.3.2`, `v1.3.8`. As versões **1.3.3 a 1.3.19 não têm tag**: são degraus
+`v1.3.2`, `v1.3.8`. As versões **1.3.3 a 1.3.20 não têm tag**: são degraus
 internos da Fase 5. A próxima tag sai quando a Fase 5 fechar.
 
 ### Outros plugins na mesma base
 
 `fields`, `news`, `behaviors`, **`codexplus` 0.5.2-alpha**, `datainjection`,
-`archimap`, `gantt`, `moreticket`, **`projectplus` 1.1.0-beta**, **`shopmap`
-0.1.0**, `stab`, `tag`, **`taskplus` 0.2.1-beta**, `tasklists`, `Diagrams` 3.3.14,
-`Additional fields` 1.24.4, `Alerts` 1.14.1, `Tag Management` 2.14.6, `Tasks list`
-2.1.12.
+`archimap`, `gantt` 1.3.4, `moreticket`, **`projectplus` 1.1.0-beta**,
+**`shopmap` 0.1.0**, `stab`, `tag`, **`taskplus`/Tarefas 0.2.1-beta**,
+`tasklists`, `Diagrams` 3.3.14, `Additional fields` 1.24.4, `Alerts` 1.14.1,
+`Tag Management` 2.14.6, `Tasks list` 2.1.12.
 
 ### O shopmap — frente irmã, fora deste repositório
 
 ⚠️ **`github.com/teckcomp/glpi-plugin-shopmap` está PRIVADO** — conferido em
-28/08: `git ls-remote` e `codeload` devolvem **404 anônimo**, enquanto o dgoplus
-responde 200 pelo mesmo caminho. **O assistente não lê o código do shopmap.**
+28/08: 404 anônimo. **O assistente não lê o código do shopmap.**
 
-O problema lá é o mesmo do 5e: o campo **"Vincular ativo (nome)"** lista os
-candidatos com **nome + itemtype apenas** — sem localização, sem id. Com nomes
-repetidos entre unidades, escolher vira sorteio. O print de 28/08 mostra ainda
-`DGO 001` e `DGO001` na mesma lista: colisão para o olho, não para o `=`.
-
-**A regra fechada nesta sessão, e que vale para os dois plugins:**
+O problema lá é o mesmo do 5e: **"Vincular ativo (nome)"** lista os candidatos
+com **nome + itemtype apenas**. O print de 28/08 mostra `DGO 001` e `DGO001` na
+mesma lista: colisão para o olho, não para o `=`.
 
 > **Referência a ativo é `itemtype` + `id`. Nome é rótulo, nunca chave.**
-> Nome muda, colide entre unidades e não distingue tipos. O `id` sozinho também
-> não serve: ele é único dentro da **sua** tabela. É a lição 32 aplicada a
-> vínculo entre plugins.
 
-Para o trabalho no shopmap começar, falta responder — e **só a base do shopmap
-responde**: *o vínculo é guardado hoje pelo NOME ou por `itemtype`+`id`?*
+Falta responder — e **só a base do shopmap responde**: *o vínculo é guardado hoje
+pelo NOME ou por `itemtype`+`id`?* Por chave → só tela. Por nome → tela **mais
+migração**, com três baldes (resolve para 1 / para 2+ / para 0).
 
-- Por **chave** → o trabalho é só de tela (enriquecer o rótulo da lista).
-- Por **nome** → é tela **mais migração** dos vínculos existentes, com três
-  baldes: nome resolve para 1 ativo (migra), para 2+ (fica para decisão humana),
-  para 0 (o vínculo já estava quebrado).
-
-Sugestões registradas para essa frente: tratar ativo removido com rótulo
-explícito (`ativo removido (Dispositivo passivo #35)`, nunca em branco);
-respeitar entidade na busca; normalizar espaços na comparação para `DGO001`
-casar com `DGO 001`; e aceitar `#id` digitado na busca.
+⚠️ **O `normalizeName()` do 5e-2d-1 é a peça reaproveitável dessa frente:** ele
+já faz `DGO 001` casar com `DGO001`.
 
 ### Quando reinstalar
 
@@ -247,7 +241,7 @@ casar com `DGO 001`; e aceitar `#id` digitado na busca.
 | `src/`, `front/`, `ajax/` (PHP) | `cache:clear` + `systemctl restart apache2` |
 | `public/` (JS/SVG) | **Ctrl+F5** no navegador |
 | `src/Install.php` (schema, direitos) | `plugin:install --force` **e depois** `plugin:activate` |
-| **Número de versão no `setup.php`** | Idem (lição 116) |
+| **Número de versão no `setup.php`** | Idem (lições 116 e 165) |
 | Só `docs/` | **Nada.** Commit e pronto |
 
 ---
@@ -265,17 +259,25 @@ o log e como reverter.
 ⚠️ **Sessão de VALIDAÇÃO não é entrega de bloco.** Não tem seções 1 a 3 — não há
 arquivo, não há `scp`, não há reinstalação. Tem só o roteiro.
 
+⚠️ **Bloco cujo cenário de teste não existe na homologação NÃO é entregue.**
+Nasceu no 5e-2d: em vez de entregar os três pontos de impressão juntos, o bloco
+foi partido em **5e-2d-1** (testável hoje) e **5e-2d-2** (bloqueado). Entregar o
+terceiro ponto teria recriado a dívida "entregue e não exercitado" que a mesma
+sessão acabara de zerar.
+
 ### Roteiro de teste — as exigências acumuladas
 
 - O roteiro **se confere contra o código** antes de sair (lição 158).
 - **Todo passo que troca de tela diz COMO chegar lá** (lição 159).
 - **Toda pré-condição de dados é lida em tela antes de virar passo** (lição 160).
-- **Passo que prevê "não muda" também é passo.** Provado no 5e-2c: o passo 7
-  mandava conferir que o seletor de destino continuava no formato antigo.
+- **Passo que prevê "não muda" também é passo.**
+- **Passo que prova a decisão de projeto vem nomeado como tal.** No 5e-2d-1 foi
+  o passo 5 (filtrar por piso e ver os selos continuarem): era exatamente ali
+  que a implementação barata teria falhado em silêncio.
 
 ### Nome de arquivo entregue leva o bloco
 
-`MapController-5e2c.php`, `Link-5e2a.php`, `dgoplus-5g1b.js.txt`. O `cp` no
+`MapController-5e2d1.php`, `setup-5e2d1b.php`, `dgoplus-5g1b.js.txt`. O `cp` no
 servidor renomeia. Sem isso o download colide na pasta Downloads e o `scp` manda
 o **antigo** com sucesso aparente (lição 140).
 
@@ -284,34 +286,32 @@ o **antigo** com sucesso aparente (lição 140).
 ```
 git ls-remote https://github.com/teckcomp/glpi-plugin-dgoplus.git refs/heads/master
 https://codeload.github.com/teckcomp/glpi-plugin-dgoplus/tar.gz/<sha>
-https://raw.githubusercontent.com/teckcomp/glpi-plugin-dgoplus/master/<arquivo>
 ```
 
-(`api.github.com` bate no limite anônimo — 403.)
-
-⚠️ **Preferir o `codeload` com o SHA ao `raw`** (lição 132).
+(`api.github.com` bate no limite anônimo — 403.) ⚠️ **Preferir o `codeload` com
+o SHA ao `raw`** (lição 132).
 
 **Padrão de trabalho ao preparar um bloco:** baixar o tarball do commit atual,
 editar a cópia, validar sintaxe, e **provar por `diff -rq` que só os arquivos do
 escopo mudaram**. Depois do push, **baixar o commit publicado e provar paridade
-com a cópia de trabalho**. Rodado três vezes em 28/08, sempre limpo.
+com a cópia de trabalho**. Rodado de novo em 28/08 no `bb0a591`, limpo.
 
 **Número previsto sai de comando, não de olho** (lições 141, 150, 155, 163).
 
-**Documento é entrega, e entrega tem quatro seções** (lição 145).
-
-**Número de linha citado em documento é ponteiro, não fato** (lição 144).
-
-**Inventário de duplicação usa padrão LARGO, não o padrão da primeira forma
-encontrada** (lição 164).
+**Inventário de duplicação usa padrão LARGO** (lição 164). Aplicado no 5e-2d: o
+padrão estreito (`shortForRow`) devolveu 7 pontos e o largo (`ti-server`,
+`nav-link`, `Dropdown::showFromArray`) confirmou que eram os mesmos 7.
 
 ### O core do GLPI também é legível
 
 `github.com/glpi-project/glpi` na tag `11.0.6`. Classes com namespace `Glpi\`
 ficam em **`src/Glpi/...`**. O schema está em `install/mysql/glpi-empty.sql`.
 
-⚠️ **O CSS do tema NÃO é legível por esse caminho** — três tentativas em 28/08
-deram 404. **Classe CSS não confirmada não entra** (lição 156).
+⚠️ **O CSS do tema NÃO é legível por esse caminho.** **Classe CSS não confirmada
+não entra** (lição 156). O caminho barato para contornar: **usar classe que o
+próprio plugin já usa em tela**. Foi assim que o `bg-orange-lt` entrou no 5e-2d-1
+(já estava no `Dashboard` e no `Pending`), enquanto `text-orange`, que não
+aparecia em lugar nenhum, virou constante `DUP_COLOR`.
 
 ### O sandbox do assistente TEM PHP e Node
 
@@ -346,6 +346,9 @@ classe-pai.
 - **Contar linhas de diff com `^-[^-]`** (lição 163).
 - **Declarar inventário completo a partir de um `grep` de padrão estreito**
   (lição 164).
+- **Entregar bloco de código sem bump de versão** (lição 165).
+- **Afirmar consequência de uma alternativa sem simular o formato inteiro**
+  (lição 166).
 
 ---
 
@@ -369,10 +372,6 @@ E1–E4 registram mais de uma fibra alimentando o mesmo elemento, e a proporçã
 Mapeamento em produção: **um Tipo por papel** — `DIO+`, `DGO+`, `CTO+`, `PTO+`.
 Gravado em `glpi_configs`, contexto `plugin:dgoplus`.
 
-`Setting::getRoleOfItem()` devolve o papel de um ativo;
-`Setting::roleReceivesFeed()` diz se o papel pode receber entrada (um DIO não
-recebe).
-
 ⚠️ O painel de produção mostra **1 elemento fora dos papéis configurados**.
 
 ### Portas
@@ -387,16 +386,24 @@ Uma tabela, dois tipos de linha, separados por `kind`:
 único de gravação**, e é ele que faz `Session::checkRight(UPDATE)`, que **lança**
 e produz o 403.
 
-`Port::gridCriteria()` e `Port::entryCriteria()` são os dois recortes.
-`Port::statsForDgo()` conta **só a grade** — relevante para o BADGE-C.
-
 **Grade padrão:** `Panel::DEFAULT_TUBES` = 4 e `DEFAULT_FIBERS` = 16 — todo
 elemento novo nasce com **64 posições** e encolher exige DELETE (lição 146).
 
 **Porta sem acoplador** não pode ser usada e **não conta como documentada**.
 
-⚠️ **Porta de grade com vínculo conta como documentada mesmo sem nome.** Visto em
-tela em 28/08. Não conferi qual ramo de `statsForDgo()` produz isso — pendência 15.
+✅ **PENDÊNCIA 15 RESPONDIDA (28/08, por leitura de código no `cf3cc55`):**
+**porta de grade com vínculo e sem nome CONTA como documentada**, e o mecanismo
+tem duas partes:
+
+1. `Port::applyInput()` linha 512 — a condição que apaga a linha vazia é
+   `$code === '' && $comment === '' && !$no_coupler && $link_row === null`. O
+   `$link_row === null` **impede o apagamento** de porta com vínculo.
+2. `Port::statsForDgo()` linhas 947–967 — faz `find()` por
+   `itemtype/items_id/is_deleted=0` + `gridCriteria()` e devolve
+   `count($rows) - $no_coupler`. **Não olha `code` nem `comment`.**
+
+Documentada = **a linha existe e não é sem-acoplador**. É coerente com o modelo
+(a porta está de fato ocupada). **O BADGE-C está destravado para leitura.**
 
 ### Vínculos
 
@@ -406,113 +413,132 @@ tela em 28/08. Não conferi qual ramo de `statsForDgo()` produz isso — pendên
 - **Pendente já ocupa a porta**, nas duas pontas.
 - **Uma porta alimenta um destino só.**
 - **Hierarquia permissiva**: pode pular nível, nunca subir nem empatar.
-  `Link::hierarchyAllows()` compara posição, então sabe que desceu, **não sabe
-  quanto** — lacuna do 5d.
+  `Link::hierarchyAllows()` sabe que desceu, **não sabe quanto** — lacuna do 5d.
 - **Só vínculo confirmado sobe na trilha** (4e).
 - `Link::propose()` é o **ponto único de criação**.
 - **Recusar e confirmar pedem o mesmo direito (UPDATE)**, de propósito.
   Desmontar pede DELETE.
 
 **`Link::upstreamLevels($itemtype, $items_id, ?$from_entry_id)`** — desde o 5c o
-terceiro parâmetro restringe o **nível 0** a uma entrada. Entrada inválida
-devolve trilha **vazia**. Chamador único: `MapController::displayEntryCard()`.
+terceiro parâmetro restringe o **nível 0** a uma entrada. Chamador único:
+`MapController::displayEntryCard()`.
 
 ⚠️ **Pendente que envelhece não avisa ninguém.**
 
-### O rótulo de elemento — `src/ItemLabel.php` (5e-2)
+### O rótulo de elemento — `src/ItemLabel.php`
 
-**Ponto único do nome de elemento na tela.** Nasceu no 5e-2a e concentra o que
-antes estava espalhado em **oito** cópias.
-
-Duas saídas públicas, e a escolha entre elas é por **recorte de tela**:
+**Ponto único do nome de elemento na tela.** Nasceu no 5e-2a. Duas saídas
+públicas, e a escolha entre elas é por **recorte de tela**:
 
 | Método | Formato | Onde |
 |---|---|---|
 | `forRow($row, $id)` / `forItem($type, $id)` | `nome · localização · #id` | Telas que **atravessam** localizações |
 | `shortForRow($row, $id)` | `nome · #id` | Telas **recortadas** por localização |
 
-As duas dividem o privado `compose($row, $id, $with_location)` — a regra tem um
-dono só. O nome da localização é memorizado num cache estático por `locations_id`,
-com o mesmo tratamento do `Dashboard::locationLabel()` (inclusive o `&nbsp;` que
-o `getDropdownName` devolve para id inexistente).
+As duas dividem o privado `compose($row, $id, $with_location)`. O nome da
+localização sai de `Dropdown::getDropdownName('glpi_locations', $id)`
+(`ItemLabel.php:159`), memorizado em cache estático por `locations_id`.
 
-**Regras internas:**
+✅ **DECISÃO FECHADA (28/08): a localização continua saindo como `completename`**
+— o caminho inteiro da árvore, com `>`:
+`PTO 4 · Shopping Ventura > DGO Cristian · #27`. **Decisão do usuário**, depois
+de ver as três alternativas lado a lado (completename, folha, completename com
+`/`). **Não reabrir sem fato novo.** A dívida 7 passa a ser **só** sobre o
+seletor de destino.
 
-- nome vazio imprime `sem nome` — lição 16, some seria pior;
-- elemento ausente devolve `elemento #%d`, **sem** alegar remoção;
-- `forRow` não consulta nada além da localização: consome linha já carregada.
+**Regras internas:** nome vazio imprime `sem nome` (lição 16); elemento ausente
+devolve `elemento #%d` sem alegar remoção; `forRow` não consulta nada além da
+localização.
 
-**A regra do 5e (seletor de destino) NÃO é a mesma, e é de propósito.** Lá a
-desambiguação é **por colisão** — conta rótulos repetidos na lista e só o par
-ambíguo ganha `#id`. Isso só funciona **onde existe uma lista**. Nos cards há um
-elemento só; não há com quem colidir, então a regra é **fixa**.
+**Consumidores, medidos por `grep -c` no `fbf1952`:** `MapController.php` **8**,
+`Link.php` **6**, `Dashboard.php` **1**.
 
-**Consumidores do `ItemLabel`, medidos em `770ce71`:**
+⚠️ **O seletor de destino continua fora do `ItemLabel`**, no formato do 5e —
+`CTO 01 (CTO) #35`, com parêntese e sem ponto médio. É a dívida 7.
 
-| Ponto | Arquivo | Variante |
-|---|---|---|
-| `describeOrigin()` | `Link.php` | completa |
-| `describeDestination()` | `Link.php` | completa |
-| `displayNameOf()` (pendentes) | `Link.php` | completa |
-| `displaySearchResults()` | `MapController.php` | completa |
-| Aba do mapa | `MapController.php` | curta |
-| Seletor único (acima de `MAX_TABS`) | `MapController.php` | curta |
-| Cabeçalho do card da grade | `MapController.php` | curta |
-| Cabeçalho do card de anexos | `MapController.php` | curta |
-| Cabeçalho do painel da porta | `MapController.php` | curta |
-| `renderTrailChip()` | `MapController.php` | curta |
-| `displayFeedsCard()` | `MapController.php` | curta |
-| `$item_names` (painel) | `Dashboard.php` | completa |
+### O selo de nome duplicado — 5e-2d-1
 
-O ponto do `Dashboard` é **um só** e alimenta os cards "Equipamentos mais
-ocupados" **e** "Atividade recente".
+**Nasceu em 28/08, no `MapController`.** Três peças:
 
-⚠️ **Duas coisas ficaram de fora, de propósito:**
+| Peça | O que faz |
+|---|---|
+| `duplicateNamesAt(int $locations_id)` | **Uma consulta por carga de tela**, memorizada em `static`. Devolve `nome normalizado => [ids]`, só para nomes com 2+ ocorrências |
+| `normalizeName(string)` | Chave de comparação: sem caixa e **sem espaço nenhum**, para `DGO 001` casar com `DGO001` |
+| `renderDuplicateMark($row, $locations_id, bool $compact)` | **Ponto único da marca.** `true` = ícone só (aba); `false` = pílula `bg-orange-lt` (cabeçalho) |
 
-1. **O seletor de destino** continua no formato do 5e — `CTO 01 (CTO) #35`, com
-   parêntese e sem ponto médio. Uniformizar é decisão de produto, não correção.
-2. **O nome da localização sai como `completename`** (caminho da árvore):
-   `PTO 4 · Shopping Ventura > DGO Cristian · #27`. Informativo, mas comprido, e
-   o `>` compete com o `·`. A alternativa é usar só a folha. **Decisão pendente**,
-   a ser tomada olhando a produção, que tem árvore de verdade.
+⚠️ **A consulta é PRÓPRIA, e isso é a decisão central do bloco.** A lista do
+`getDgosAtLocation()` está filtrada **por piso e por papel** quando esses filtros
+estão ligados; calcular o selo a partir dela faria a marca **sumir conforme o
+filtro** — dois homônimos em pisos diferentes não apareceriam juntos e nenhum
+receberia selo. Selo que some conforme o filtro é a falha silenciosa da lição 14.
+**Provado em tela no passo 5 do roteiro.**
+
+O escopo é `locations_id` + restrição de entidade + `Setting::typesCriteria()` —
+mesmo desenho do `countFilteredOut()`. **Nome vazio nunca acende:** dois "sem
+nome" são ausência, não colisão.
+
+**Cor:** `bg-orange-lt` na pílula (classe já em uso no `Dashboard` e no
+`Pending`, portanto provada em tela) e a constante `DUP_COLOR = '#D68A3A'` no
+ícone, porque `text-orange` não aparece em lugar nenhum do plugin (lição 156).
+
+**Fora do selo, de propósito:** `renderTrailChip()`, `displayFeedsCard()`,
+`displayDocumentsManager()` e `displayEditPanel()`. Os dois primeiros atravessam
+localização (o selo mediria a coisa errada); os dois últimos imprimem o nome de
+um elemento **já escolhido**, na mesma página que já tem a pílula no cabeçalho.
+
+⚠️ **O card Alimenta continua sem selo**, mesmo sendo onde aparecem
+`CTO 01 · #35` e `CTO 01 · #36` lado a lado. Ali o `#id` já distingue.
 
 ### Comentário do elemento
 
 `DgoIdentity::applyComment()` é o **ponto único**, usado pelo POST clássico e
 pelo `ajax/dgocomment.php` (lição 47). Grava o campo `comment` **nativo** do
-`PassiveDCEquipment`, então aparece no Histórico do ativo.
+`PassiveDCEquipment`.
 
-**Desde o 5g-1b** ele devolve **`denied => true`** quando a recusa é de
-permissão de sessão — só nesse ramo. O endpoint repassa a chave; o JS a usa.
-**A regra continua num lugar só** — o endpoint não checa direito, de propósito.
+Devolve **`denied => true`** quando a recusa é de permissão de sessão — só nesse
+ramo (`DgoIdentity.php:344-358`). O endpoint repassa a chave; o JS a usa. **A
+regra continua num lugar só** — o endpoint não checa direito, de propósito.
 
-### Auto-save — os dois JS, ambos corrigidos
+A frase que a tela mostra vem do **PHP**, não da constante do JS, porque
+`data.message` está preenchido:
+
+> Comentar exige a permissão "Atualizar" em "Portas de DGO" (Administração →
+> Perfis → aba DGO+).
+
+### Auto-save — os dois JS, ambos corrigidos e ambos EXERCITADOS
 
 **`public/dgoplus.js`** (440 linhas) — o painel da porta. Desde o 5g-1 o
-`.catch()` distingue 403 de queda de rede; `permissionDenied` é estado do módulo.
+`.catch()` distingue 403 de queda de rede.
 
-**`public/dgoplus-identity.js`** (362 linhas) — o comentário do ativo. **Desde o
-5g-1b:** o `Error` carrega `status`; `data.denied === true` liga
-`permissionDenied` e guarda a frase do PHP em `deniedText`; o 403 é tratado
-**antes** do `fallbackOnFailure`.
+**`public/dgoplus-identity.js`** (362 linhas) — o comentário do ativo. Desde o
+5g-1b o `Error` carrega `status`; `data.denied === true` liga `permissionDenied`
+e guarda a frase do PHP em `deniedText`; o 403 é tratado **antes** do
+`fallbackOnFailure`.
 
-⚠️ **Lido no código:** depois de `permissionDenied` ficar verdadeiro, o `save()`
-**sai antes do `fetch`**. Logo, **uma única linha `POST … dgocomment.php`** é o
-resultado esperado, e o status dela é **200**, não 403 (lição 154).
+✅ **PROVADO EM CAMPO (28/08).** Com o direito retirado no meio da sessão e três
+blur com **textos diferentes**, saiu **uma única linha** `POST … dgocomment.php`
+com status **200**. Sem a trava seriam três.
 
-**Princípio, do bloco 4a:** o formulário continua sendo um POST completo e
-válido; se o JS não carregar, o botão Salvar recarrega a página.
+⚠️ **`save()` sai cedo em `current === lastSaved`** (linha 256). **Roteiro que
+testa reenvio precisa de textos DIFERENTES a cada tentativa** — repetir o mesmo
+texto faz o teste passar por engano.
 
 `mount()` e `mountComment()` **saem na entrada** se não acharem o
 `[data-...-flag]`, e esse elemento só é impresso para quem tem escrita — **sem o
-direito, o JS nem se instala** (lição 151).
+direito, o JS nem se instala** (lição 151), então a aba tem que ser aberta
+**antes** de o direito cair.
 
-### Permissão na tela — a regra do 5g-2b
+### Abas e seletor único
 
-**O painel da porta nomeia o direito; a moldura do mapa fica calada.**
+`MapController::MAX_TABS = 8` (linha 59). Até 8 elementos na localização, abas de
+verdade agrupadas por papel; **a partir do nono**, um `<select>` com select2, no
+formato `DGO · CTO 01 · #35 — 3 documentadas`.
 
-Mensagem de permissão só aparece para quem **esbarrou na recusa**. O lugar de
-explicar direito ao administrador é a **aba DGO+ do perfil** — feito no 5g-3.
+✅ **Confirmado pelo usuário em 28/08 como comportamento CORRETO**, não como algo
+a ajustar.
+
+⚠️ **`<option>` não aceita HTML**, então o seletor único só pode receber marca
+**textual**. É o 5e-2d-2.
 
 ### Busca e relatório — tabela polimórfica
 
@@ -528,15 +554,10 @@ explicar direito ao administrador é a **aba DGO+ do perfil** — feito no 5g-3.
 10 `kind`, 11 documentado por, 12 `date_documented`, **19 `date_mod`**,
 121 `date_creation`.
 
-**`Port::getReportUrl(array $params)`** é o **ponto único da URL do relatório**
-desde o PAINEL-1a.
+**`Port::getReportUrl(array $params)`** é o **ponto único da URL do relatório**.
 
-⚠️ **Observado em tela (28/08):** passando `searchtype=equals` num campo
-`datatype string`, a tela renderiza **"contém"**.
-
-⚠️ **A busca do mapa é GLOBAL**, medida em tela em 28/08: com `Outlet Porto Belo`
-selecionado, ela trouxe `CLM 001 / CTO 02 · shopping estação · #4`. Não é defeito
-— é o desenho, e é o que justifica o rótulo completo ali.
+⚠️ **A busca do mapa é GLOBAL**, medida em tela em 28/08 — é o desenho, e é o que
+justifica o rótulo completo ali.
 
 ### Schema e direitos
 
@@ -558,24 +579,16 @@ DELETE**.
 | **Anexos** | `document` READ+UPDATE+CREATE **e `datacenter` UPDATE** |
 | Configurar papéis | `config` UPDATE |
 
-**O acoplamento a `datacenter` acabou.** Os dois greps que provam isso:
+**O acoplamento a `datacenter` acabou.** Os dois greps que guardam isso:
 
 ```bash
 grep -rn -- '->can($items_id, READ)' src/ ajax/ front/ | wc -l    # 0
 grep -rc 'PassiveDCEquipment::$rightname' src/ | grep -v ':0'     # nada
 ```
 
-**`Port::parentIsReachable()` é o ponto único da visibilidade do pai**, chamado
-em seis lugares:
-
-```php
-Session::haveAccessToEntity($parent->getEntityID(), $parent->isRecursive())
-```
-
+**`Port::parentIsReachable()` é o ponto único da visibilidade do pai.**
 `getEntityID()` devolve **-1** quando o itemtype não é entity-assign, então a
 regra **falha fechado**.
-
-`front/map.php` exige **apenas** `Port::$rightname READ`.
 
 ⚠️ **A Fase 5 ainda não chegou à produção.** Quando chegar, os perfis de quem
 documenta hoje (Claudio Morett, Kayan Lucas, Pedro s, cristian.b) mudam de
@@ -585,14 +598,13 @@ permissão de verdade. **Bloco próprio de deploy, com plano de rollback.**
 
 O cartão usa o formulário do **core** (`Document_Item::showForItem`), e ele
 pergunta se o usuário pode **atualizar o ativo** — daí o `datacenter` UPDATE
-(lição 134).
-
-⚠️ **Mas essa não é a única porta (lição 148):** `CommonDBTM::add()` não faz
-checagem de direito. **O que falta não é permissão, é tela** — candidato **5i**.
+(lição 134). ⚠️ **Mas essa não é a única porta (lição 148):**
+`CommonDBTM::add()` não faz checagem de direito. **O que falta não é permissão,
+é tela** — candidato **5i**.
 
 ### Arquivos
 
-**31 no repositório** — 28 do plugin + 3 em `docs/`.
+**31 no repositório** — 28 do plugin + 3 em `docs/`. Medido no `fbf1952`.
 
 ```
 dgoplus/
@@ -607,12 +619,12 @@ dgoplus/
 └── src/                   14 arquivos
     ├── Install.php        schema, direitos, migrações
     ├── Setting.php        papéis e Tipos de cada papel
-    ├── ItemLabel.php      **NOVO (5e-2a)** — ponto único do rótulo — 166 linhas
-    ├── Port.php           porta; applyInput, parentIsReachable, getReportUrl — 1120
-    ├── Link.php           vínculo; propose, upstreamLevels, hierarchyAllows — 1235
+    ├── ItemLabel.php      ponto único do rótulo — 166 linhas
+    ├── Port.php           applyInput, parentIsReachable, getReportUrl — 1120
+    ├── Link.php           propose, upstreamLevels, hierarchyAllows — 1235
     ├── Panel.php          dimensões da grade e vínculo com o piso
     ├── Floor.php          o piso (rightname = plugin_dgoplus_port)
-    ├── MapController.php  a tela do mapa — 3531 linhas
+    ├── MapController.php  a tela do mapa — **3679 linhas** (era 3531)
     ├── Dashboard.php      o painel — 1282 linhas
     ├── Pending.php        página de vínculos pendentes (4d)
     ├── DgoIdentity.php    identidade, QR e comentário — 381 linhas
@@ -621,17 +633,16 @@ dgoplus/
     └── MapPage.php        entrada de menu
 ```
 
-**Impressões digitais do 1.3.19**, medidas pelo assistente nesta sessão no
-commit `770ce71`:
+**Impressões digitais do 1.3.20**, medidas no commit `fbf1952` nesta sessão:
 
 ```
-7f16625e63466e506f0bca1f6b11f6e0  setup.php                    (269 linhas)
+44dd58df4a9b7aa3117d454856891ae9  setup.php                    (269 linhas)
 63421003891b3524bc9a96b1ab7dcb99  public/dgoplus.js            (440 linhas)
 d58fdb6b783801190a79eb1ace005fca  public/dgoplus-identity.js   (362 linhas)
 f8d60d99db81dc8958e67424a844351f  src/ItemLabel.php            (166 linhas)
 52ab95366b20809e952972c1c1a9b823  src/Port.php                 (1120 linhas)
 9a7634edb132423b73bd9357e36b9230  src/Link.php                 (1235 linhas)
-44894d0bfdf8c8b08c729cbbf00048bb  src/MapController.php        (3531 linhas)
+161c1d730bc9e89a6997a1fca02e3a3d  src/MapController.php        (3679 linhas)
 36ecd197f374c180a42ef7bbccc47b8c  src/DgoIdentity.php          (381 linhas)
 d2baa8fdfdfe4d54cfdd784f59b0443a  src/Dashboard.php            (1282 linhas)
 f4d2f1d2773e81bfb6486e15371ef816  src/ProfileTab.php           (184 linhas)
@@ -645,10 +656,12 @@ dae5e817600bfdb6db3345cfa0383ea0  ajax/dgocomment.php           (52 linhas)
 
 ## 4. Lições aprendidas
 
-⚠️ **Lacuna.** O código cita lições numeradas até a **113**; a lista integral vive
-no documento original, não recuperado. **Medido em 28/08:** o `grep` no código
-devolve **30 lições distintas**, e **todas já estão listadas abaixo**. **O caminho
-barato da dívida 3 está esgotado.**
+⚠️ **Lacuna.** O código cita lições numeradas até a **164**; a lista integral de
+1 a 113 vive no documento original, não recuperado. **Medido em 28/08 no
+`fbf1952`:** o `grep` no código devolve **33 lições distintas** — 3, 5, 12, 13,
+14, 16, 20, 21, 23, 27, 31, 32, 34, 35, 39, 44, 45, 47, 48, 49, 63, 104, 105,
+112, 113, 117, 118, 119, 121, 133, 153, 156, 164 — e **todas já estão listadas
+abaixo**. **O caminho barato da dívida 3 está esgotado.**
 
 | # | Lição |
 |---|---|
@@ -663,7 +676,7 @@ barato da dívida 3 está esgotado.**
 | 23 | Vermelho do projeto em alfa para o fundo da célula sem acoplador |
 | 27 | `outline` seria cortado pelo `overflow` |
 | 31 | `ALTER` repetido sem guarda devolve erro 1060 |
-| 32 | **União de Tipos sempre por id, nunca por nome.** ⚠️ **Generalizada em 28/08:** referência a ativo é `itemtype` + `id`; nome é rótulo |
+| 32 | **União de Tipos sempre por id, nunca por nome.** Referência a ativo é `itemtype` + `id`; nome é rótulo |
 | 34 | Piso como intitulado próprio do plugin |
 | 35 | O gancho tem que disparar **sempre**, inclusive no purge forçado |
 | 39 | O que a `executeMigration` não cobre sai por `doQuery` |
@@ -677,10 +690,10 @@ barato da dívida 3 está esgotado.**
 | 105 | Divergência de versão entre disco e repositório |
 | 112 | `kind` **fora** da chave única |
 | 113 | Cuidado com `DEFAULT_TUBES`/`DEFAULT_FIBERS` como constantes |
-| 114 | **Homologação pode estar atrás do `master` sem ninguém ter errado.** Aviso antigo no log também não é estado atual — a fonte é a tela Configuração → Plugins |
+| 114 | **Homologação pode estar atrás do `master` sem ninguém ter errado.** A fonte é a tela Configuração → Plugins |
 | 115 | `-P` maiúsculo para a porta, no `scp` |
 | 116 | **Bump de versão no `setup.php` conta como mudança de instalação.** `--force` + `activate` |
-| 117 | ~~`can($items_id, READ)` acopla o plugin ao direito do pai~~ ✅ cumprida pelos 5f-3a/b |
+| 117 | ~~`can($items_id, READ)` acopla o plugin ao direito do pai~~ ✅ cumprida |
 | 118 | ~~`$can_write` com CREATE~~ ✅ corrigida pelo 5f-1a |
 | 119 | **Mensagem de permissão que não nomeia o direito custa horas.** Delimitada pela 153 |
 | 120 | Anexar documento a um ativo exige `datacenter` UPDATE. Ver 134 |
@@ -694,7 +707,7 @@ barato da dívida 3 está esgotado.**
 | 128 | `pscp` pode falhar com `Remote side unexpectedly closed network connection` |
 | 129 | **Arquivo remontado a partir do `master` + descrição NÃO é verificação** |
 | 130 | **O GitHub é canônico** |
-| 131 | Upload pela web do GitHub cria arquivo novo em silêncio. *Aposentada pelo `git push`* |
+| 131 | Upload pela web do GitHub cria arquivo novo em silêncio. *Aposentada* |
 | 132 | **`raw.githubusercontent.com` tem cache de CDN** |
 | 133 | ✅ Corrigida pelo 5g-1 e pelo 5g-1b |
 | 134 | **Anexo a ativo exige UPDATE no ativo.** O formulário é do core |
@@ -717,17 +730,19 @@ barato da dívida 3 está esgotado.**
 | 151 | **Tirar o direito e RECARREGAR não produz 403: produz tela somente-leitura** |
 | 152 | **Item de escopo escrito no roadmap NÃO é decisão de produto tomada** |
 | 153 | **Mensagem de permissão permanente na moldura é ruído; contextual é ajuda** |
-| 154 | **Defeito descrito por analogia com outro arquivo é dedução, não leitura** |
+| 154 | **Defeito descrito por analogia com outro arquivo é dedução, não leitura.** ✅ Confirmada em campo: `dgocomment.php` responde **200**, não 403 |
 | 155 | **Todo número que vai para a entrega sai de comando, sem exceção** |
-| 156 | **Classe CSS não confirmada não entra** |
+| 156 | **Classe CSS não confirmada não entra.** Atalho barato: usar classe que o próprio plugin já imprime em tela |
 | 157 | **Caminho de arquivo em comando nunca vai abreviado** |
 | 158 | **Roteiro de teste também se confere contra o código** |
 | 159 | **Passo de roteiro que troca de elemento tem que dizer COMO chegar lá** |
-| 160 | **Dado de DADOS da homologação não é pré-condição de teste até ser relido em tela.** Código dura; dado de teste, não |
+| 160 | **Dado de DADOS da homologação não é pré-condição de teste até ser relido em tela** |
 | 161 | **Antes de purgar elemento "de teste", ler as quatro entradas** |
-| **162** | **Função se identifica pelo CHAMADOR, não pelo comentário ao lado.** O assistente leu o comentário vizinho da `displayNameOf()` ("uma consulta por pendência") e a descreveu como servindo à *trilha*; ela serve à **página de pendentes**. O comentário explica *por que* o código é assim; só o `grep` do chamador diz *para quem* ele serve. **Custo: uma pergunta desnecessária ao usuário** |
-| **163** | **Contar linhas removidas de diff com `^-[^-]` descarta as linhas EM BRANCO removidas** — o `-` fica sozinho e o padrão não casa. Previsto 28, saiu 31. O certo é `grep -c "^-"` menos 1 (o cabeçalho `---`), ou rodar `git diff --stat` na própria cópia |
-| **164** | **Inventário feito por `grep` só encontra a forma que o padrão descreve.** O 5e-2b foi entregue como "seis pontos, tela do mapa encerrada" a partir do padrão `fields['name'] ?: ('#'`. Havia uma **sétima** família, o `displayFeedsCard()`, que escreve a mesma regra com `$row['name']` e um `if` — e apareceu na tela do usuário, duplicada, logo depois do bloco. **Regra duplicada raramente é duplicada literalmente.** Antes de declarar "são N pontos", rodar também o padrão largo (aqui, `\['name'\]` puro) e triar o resultado à mão |
+| 162 | **Função se identifica pelo CHAMADOR, não pelo comentário ao lado** |
+| 163 | **Contar linhas removidas de diff com `^-[^-]` descarta as linhas EM BRANCO removidas** |
+| 164 | **Inventário feito por `grep` só encontra a forma que o padrão descreve.** Rodar também o padrão largo |
+| **165** | **O bump de versão no `setup.php` faz PARTE do bloco de código, não é etapa opcional.** O 5e-2d-1 subiu sem bump: passaram a existir dois commits (`cf3cc55` e `bb0a591`) com o mesmo número **1.3.19**, e a pergunta "que versão está rodando" deixou de distinguir código. Custou um bloco de reparo inteiro (5e-2d-1b) com reinstalação. **Todo bloco que muda `src/`, `ajax/`, `front/` ou `public/` sobe o número no mesmo commit** |
+| **166** | **Afirmar a consequência de uma alternativa sem simular o formato INTEIRO produz argumento falso.** Ao comparar `completename` com folha, o assistente afirmou que a folha faria "dois elementos distintos exibirem rótulo idêntico" — falso, porque o rótulo **termina em `· #id`** e o id sempre distingue. O custo real da folha era outro (ela apaga a unidade, que fica no PAI da árvore). **Antes de dizer o que uma alternativa quebra, escrever o resultado dela por extenso, com todos os pedaços do formato.** Pego pelo próprio assistente, mas só depois de já ter dado a recomendação errada |
 
 **Armadilhas do GLPI 11 que valem como regra permanente:**
 
@@ -738,7 +753,8 @@ barato da dívida 3 está esgotado.**
 - JSON em `<script type="application/json">` exige as flags HEX.
 - Endpoint `ajax/` **não se testa pela URL direta**.
 - `php -l` não pega incompatibilidade de assinatura com a classe-pai.
-- `Dropdown::showFromArray` renderiza **select2**, que esconde o `<select>` real.
+- `Dropdown::showFromArray` renderiza **select2**, que esconde o `<select>` real,
+  e **`<option>` não aceita HTML** — marca em seletor só pode ser textual.
 - **`Dropdown::getDropdownName('glpi_locations', $id)` devolve o `completename`**
   (caminho da árvore, com `>`), não a folha. Devolve `&nbsp;` para id inexistente.
 - Classes com namespace `Glpi\` moram em `src/Glpi/...` no repositório do core.
@@ -768,7 +784,7 @@ barato da dívida 3 está esgotado.**
 | 5f-1a … 5f-3b | A frente de permissões inteira | Fechados e validados, até 1.3.8 |
 | 5g-1 | Auto-save da porta distingue 403 de falha de rede | Fechado e validado, 1.3.9 |
 | 5g-2 / 5g-2b | Telas nomeiam o direito; dicas saem da moldura | Fechados e validados, 1.3.11 |
-| 5g-1b | Auto-save do comentário não reenvia recusa | **Entregue, 1.3.12.** ⚠️ **A recusa continua NÃO exercitada** |
+| **5g-1b** | **Auto-save do comentário não reenvia recusa** | ✅ **FECHADO E EXERCITADO EM CAMPO (28/08).** Uma linha `POST … 200`, três blur |
 | 5g-3 | Nota de permissões na aba DGO+ do perfil | Fechado e validado, 1.3.13 |
 | PAINEL-1a | "Ver todos" em Atividade recente | Fechado e validado, 1.3.13 |
 | README | Reescrito | Fechado, 1.3.13 |
@@ -776,9 +792,12 @@ barato da dívida 3 está esgotado.**
 | 5b | Seletor de piso lista só pisos com elemento | Fechado e validado, 1.3.15 |
 | 5e | Desambiguação por colisão no seletor de destino | Fechado e validado, 1.3.15 |
 | 5c | Trilha parte da entrada, não do elemento | Fechado e validado, 1.3.16 |
-| **5e-2a** | **`ItemLabel`; `describeOrigin`/`describeDestination`** | ✅ **FECHADO E VALIDADO EM TELA (28/08), 1.3.17, `e48d7a4`** |
-| **5e-2b** | **Abas, cabeçalhos, seletor único e chip da trilha** | ✅ **FECHADO E VALIDADO EM TELA (28/08), 1.3.18, `67248dd`.** ⚠️ Entregue como completo e não era — ver lição 164 |
-| **5e-2c** | **Card Alimenta, busca, pendentes e painel** | ✅ **FECHADO E VALIDADO EM TELA (28/08), 1.3.19, `770ce71`.** Fecha de fato o 5e-2 |
+| 5e-2a / 5e-2b / 5e-2c | O `ItemLabel` e seus 12 consumidores | Fechados e validados, até 1.3.19 |
+| **5e-2d-1** | **Selo de nome duplicado na aba e no cabeçalho da grade** | ✅ **FECHADO E VALIDADO EM TELA (28/08), 1.3.19 → commit `bb0a591`.** ⚠️ Só o tooltip da aba (passo 2) não foi conferido |
+| **5e-2d-1b** | **Bump de versão para 1.3.20** | ✅ **FECHADO E VALIDADO EM TELA (28/08), `fbf1952`.** Bloco de reparo — ver lição 165 |
+| **5e-2d-2** | **Marca textual no seletor único (acima de 8)** | ⚠️ **NÃO ENTREGUE — bloqueado por CENÁRIO.** Ver seção 7 |
+
+**Nenhum bloco está no estado "entregue e não exercitado".**
 
 ---
 
@@ -791,10 +810,16 @@ barato da dívida 3 está esgotado.**
    está esgotado.** Resta buscar o documento original nas conversas antigas.
 4. ~~Sem tag nem Release~~ ✅ **QUITADA (27/08).**
 5. **A skill `glpi-plugin-teckcomp` está desatualizada**: host, usuário, porta,
-   `pscp` → `scp`, e a ordem de entrega com `git diff`. **Aprovada** — bloco SKILL.
+   `pscp` → `scp`, a ordem de entrega com `git diff` e agora o bump obrigatório.
+   **Aprovada** — bloco SKILL.
 6. ~~Texto fala de "Desmontar" sem o botão existir~~ ✅ **QUITADA.**
-7. **NOVA — inconsistência de formato entre o seletor de destino e o resto.**
-   `CTO 01 (CTO) #35` versus `CTO 01 · #35`. Deliberada, não urgente.
+7. **Inconsistência de formato entre o seletor de destino e o resto.**
+   `CTO 01 (CTO) #35` versus `CTO 01 · #35`. ⚠️ **Reduzida em 28/08:** com o
+   `completename` confirmado, a dívida é **só** sobre o seletor de destino.
+8. **NOVA — o seletor único não tem marca de nome duplicado.** É o 5e-2d-2,
+   bloqueado por cenário. Enquanto durar, uma localização com 9+ elementos
+   **não sinaliza colisão nenhuma** — e a produção tem 159 elementos em 9
+   localizações, então é lá que a lacuna pesa.
 
 ---
 
@@ -803,7 +828,7 @@ barato da dívida 3 está esgotado.**
 ⚠️ **Existem DUAS bases, e confundi-las é o erro mais caro desta seção.**
 ⚠️ **Tudo aqui é retrato datado, não estado atual** (lição 160).
 
-### Produção — o parque real (28/08, não relido nesta sessão)
+### Produção — o parque real (28/08, NÃO relido nesta sessão)
 
 | | |
 |---|---|
@@ -820,38 +845,44 @@ Por localização: `Palladium Umuarama` 91,0% · `Jockey Plaza` 81,1% · `Gravat
 
 Documentadores ativos: Claudio Morett, Kayan Lucas, Pedro s, cristian.b.
 
-### Homologação — lido em tela em 28/08, ao fim da sessão
+⚠️ **Não se sabe se as 9 localizações da produção têm localização-pai.** A
+pergunta ficou sem resposta nesta sessão e deixou de ser urgente quando o
+`completename` foi confirmado.
 
-**Painel, cards de topo (imagem da sessão):**
+### Homologação — LIDO EM TELA em 28/08, ao fim desta sessão
 
-- Equipamentos mais ocupados: `CINELASER · Plaza Campos Gerais · #25` (3/3),
-  `TESTE01 · shopping palladium · #6` (4/6), `DGO 01 · Outlet Porto Belo · #34`
-  (5/16), `CLM 001 · shopping estação · #2` (2/32),
-  `CTO02 · Plaza Campos Gerais · #21` (1/16).
-- **Vínculos pendentes: 2.**
-  `CTO01 · Plaza Campos Gerais · #20` F1.01 → `PTO 4 · Shopping Ventura > DGO
-  Cristian · #27` E3, por cristian.b, 8 dias.
-  `DIO 001 · shopping palladium · #7` F1.02 → `CTO 001 · shopping palladium ·
-  #8` E2, por Claudio Morett, 5 dias.
+**`Outlet Porto Belo` — 5 elementos, todos com id lidos em tela:**
 
-### `Outlet Porto Belo`, piso `MALL - PORTO BELO` — o cenário de teste
+| Elemento | id | Papel | Piso | Estado |
+|---|---|---|---|---|
+| `DGO 01 - PORTO BELO` | **33** | DGO | **não atribuído** | ⚠️ **1 de 64 documentadas** — o v16 dizia "1 de 16", estava errado. F1.01 → E2 |
+| `DGO 01` | **34** | DGO | MALL - PORTO BELO | **5 de 16.** F1.01 → `CTO 01 #35` E1; F1.02 `1202`; F1.03 `1214`; F1.05 `2153-01…`; **F1.06 `2153` → `CTO 01 #36` E3** |
+| `CTO 01` | **35** | CTO | MALL - PORTO BELO | 16 portas. **1 de 16** (F1.01 `2153-12…`, documentada no teste do 5e-2d-1). E1 ← `#34` F1.01; E2 ← `#33` F1.01 |
+| `CTO 01` | **36** | CTO | MALL - PORTO BELO | **a ex-`CTO TESTE 5f2b`.** 0 documentadas. **E3 ← `DGO 01 #34` F1.06** |
+| `DGO 01` | **37** | DGO | MALL - PORTO BELO | criado em 28/08. 64 portas, 0 documentadas |
 
-**Estado ao FIM de 28/08, com todos os ids agora LIDOS em tela:**
+O piso `MALL - PORTO BELO` tem **4** desses 5 (o `#33` está sem piso).
 
-| Elemento | id | Papel | Estado |
-|---|---|---|---|
-| `DGO 01 - PORTO BELO` | **33** | DGO | badge **1 de 16**. F1.01 → `CTO 01 #35` E2 (confirmado, Claudio Morett) |
-| `DGO 01` | **34** | DGO | badge **5 de 16**. F1.01 → `CTO 01 #35` E1 (confirmado, cristian.b). F1.02 `1202`, F1.03 `1214`, F1.05 `2153-01…`, **F1.06 `2153` → `CTO 01 #36` E3 (confirmado)** |
-| `CTO 01` | **35** | CTO | 16 portas. E1 ← `DGO 01 #34` F1.01; E2 ← `DGO 01 - PORTO BELO #33` F1.01 |
-| `CTO 01` | **36** | CTO | **a ex-`CTO TESTE 5f2b`.** 64 portas. **E3 ← `DGO 01 #34` F1.06** |
-| `DGO 01` | **37** | DGO | **criado em 28/08** ao testar a trava inexistente. 64 portas, 0 documentadas |
-| `PISO VAZIO TESTE` | — | — | piso sem elementos, criado para o 5b. **Pode ser removido** |
+**`shopping palladium` (nome completo `shopping palladium - shopping_palladium`)
+— 4 elementos, nenhum homônimo:** `DIO 001 · #7` (3 documentadas),
+`TESTE01 · #6` (4), `CTO 001 · #8` (1), `PTO 001 · #9` (0).
 
-✅ **As pendências 12 e 14 do v15 estão RESPONDIDAS:** a F1.06 "sem acoplador" da
-`DGO 01 #34` alimenta a **E3 da `CTO 01 #36`**. A pendência 8 (purgar a `#36`)
-tem, portanto, alvo e pré-condição nomeados: **desmontar essa E3 primeiro**.
+⚠️ **Nenhuma localização conhecida da homologação passa de 8 elementos** — daí o
+bloqueio do 5e-2d-2.
 
-Perfil de teste: **Tecnicos N1, ID 12**; usuário `teste.001`.
+⚠️ **O `PISO VAZIO TESTE` não foi visto nesta sessão** e continua pendente de
+remoção.
+
+**Painel (retrato do v16, NÃO relido em 28/08 nesta sessão):** pendentes 2 —
+`CTO01 · Plaza Campos Gerais · #20` F1.01 → `PTO 4 · Shopping Ventura > DGO
+Cristian · #27` E3 (cristian.b); `DIO 001 · shopping palladium · #7` F1.02 →
+`CTO 001 · shopping palladium · #8` E2 (Claudio Morett).
+
+Perfil de teste: **Tecnicos N1, ID 12** — LER e ATUALIZAR marcados, CRIAR e
+DELETE em branco, **conferido em tela e devolvido ao estado original** ao fim do
+5g-1b. Usuário `teste.001`.
+
+O comentário do `DGO 01 #34` **foi limpo** ao fim do teste.
 
 ---
 
@@ -873,28 +904,30 @@ Perfil de teste: **Tecnicos N1, ID 12**; usuário `teste.001`.
 | Documentos versionados dentro do repositório | **Descartada** | O histórico é o Git |
 | Exigir DELETE para recusar vínculo | **Descartada (4c)** | Recusar e confirmar são a mesma resposta |
 | `pscp` como veículo de envio | **Descartada** | Não autentica (lição 139) |
-| Tirar `$dgo` da assinatura de `canWriteComment` | **Descartada** | Fora do escopo |
 | Grade padrão por papel | **Descartada** | A solução é operacional |
 | Entradas na conta da ocupação geral | **Descartada** | Mudaria o significado dos 44,9% |
-| Item de roadmap para o estado do perfil de teste | **Descartada** | É do administrador |
 | "Ver todos" no cartão de pendentes | **Descartada** | Já existe |
 | Dica de permissão abaixo da grade / na faixa de busca | **Descartadas (5g-2b)** | Lição 153 |
-| Commit único para "fechar tudo de uma vez" | **Descartada** | `git revert` jogaria fora dez mudanças |
+| Commit único para "fechar tudo de uma vez" | **Descartada** | `git revert` jogaria fora dez mudanças. ⚠️ **Reafirmada em 28/08** diante do pedido de "fazer tudo de uma vez": vários blocos numa sessão, sim; num commit, não |
 | `checkRight(UPDATE)` dentro do `ajax/dgocomment.php` | **Descartada (5g-1b)** | Criaria uma segunda sede da regra |
-| Igualar os Tipos dos dois `CTO 01` | **Descartada** | Dado desatualizado. Lição 160 |
-| **Trava de duplicados no DGO+ (o antigo 5e-2c)** | **CANCELADA (28/08)** | ⚠️ **Decisão do usuário.** O princípio *"não deve existir itens duplicados na mesma localização"* passa a valer como **regra operacional**; a limpeza dos duplicados existentes é feita direto na produção. Pesou também que a trava nunca pegaria a ficha nativa, o `datainjection` nem o SQL. **O software apenas sinaliza — ver 5e-2d** |
-| **Desambiguação por colisão nos cards de vínculo** | **Impossível, não descartada** | Colisão só se detecta onde há LISTA; no card há um destino só. Por isso a regra ali é fixa |
-| **Rótulo do 5e-2 no seletor de destino** | **Fora do escopo (28/08)** | O seletor tem regra própria (por colisão, com papel). Uniformizar é decisão de produto — dívida 7 |
+| Trava de duplicados no DGO+ | **CANCELADA (28/08)** | Decisão do usuário. Vira regra operacional; o software só sinaliza, pelo 5e-2d |
+| Desambiguação por colisão nos cards de vínculo | **Impossível, não descartada** | Colisão só se detecta onde há LISTA |
 | Trava de duplicados que barre também na ficha nativa | **Impossível** | A ficha, o `datainjection` e o SQL não passam pelo plugin |
-| **Purgar a `CTO 01 #36` como estava planejado** | **Suspensa** | ⚠️ Pré-condição: desmontar a E3 antes. Lição 161 |
+| **Localização do rótulo como FOLHA** | **DESCARTADA (28/08)** | ⚠️ **Decisão do usuário: fica `completename`.** No único caso real conhecido (`Shopping Ventura > DGO Cristian`) a folha é o nome do DGO e **apaga a unidade**, que é justamente o que o operador usa para se situar |
+| **Localização do rótulo como RAIZ** | **Descartada (28/08)** | Mesma decisão. Recomendada pelo assistente, recusada pelo usuário |
+| **Trocar o separador da árvore (`>` por `/`)** | **Descartada (28/08)** | Idem. O `completename` fica exatamente como o core devolve |
+| **Selo nos cards de trilha, Alimenta, anexos e painel da porta** | **Fora do escopo (5e-2d-1)** | Trilha e Alimenta atravessam localização; anexos e painel repetem a marca do cabeçalho na mesma página |
+| **Selo só na aba ativa** | **Descartada (28/08)** | Decisão do usuário: acende em todas as abas do par, porque **o par é a informação** |
+| **Mexer no `MAX_TABS = 8`** | **Descartada (28/08)** | ✅ **Confirmado pelo usuário como comportamento correto:** o dropdown deve aparecer a partir do nono elemento |
+| Purgar a `CTO 01 #36` como estava planejado | **Suspensa** | ⚠️ Pré-condição: desmontar a E3 antes. Lição 161 |
 
 ### Decisões de produto vigentes
 
 **BADGE-C · variante C** — a badge do elemento mostra **dois contadores lado a
 lado**: `0/16 grade` e `2/4 entradas`. Não mistura os números e **não mexe na
-ocupação geral**. A linha de entradas só aparece para papéis que podem receber.
-⚠️ Escopo medido: toca `Port::statsForDgo()`, `MapController::renderBadges()` e
-`ajax/port.php`.
+ocupação geral**. ⚠️ Escopo medido: toca `Port::statsForDgo()`,
+`MapController::renderBadges()` e `ajax/port.php`. ✅ **A pendência 15, que era
+pré-requisito de leitura, está respondida** — ver a seção 3.
 
 **Contador de entradas nos cards do painel · SEPARADO** — mesma contagem do
 BADGE-C, em outro lugar; por isso os dois andam no mesmo bloco.
@@ -904,74 +937,75 @@ primeira tentativa. ⚠️ **O trabalho real é fazer destino e entrada sobreviv
 ao redirect.** ⚠️ Duas limitações aceitas: o marcador viaja no POST e pode ser
 forjado; e nada fica registrado depois.
 
-**5e-2d · selo de fora de conformidade** — ⚠️ **NOVO, aprovado em 28/08.**
-Elementos que **colidem em nome dentro da mesma localização** ganham marca
-visual (amarelo ou vermelho). Não impede nada: sinaliza o que já existe.
+**5e-2d · selo de fora de conformidade** — ✅ **Metade no ar.** Decisões visuais
+fechadas pelo usuário em 28/08: **laranja**; **ícone sozinho na aba**, acendendo
+em todas as abas do par; **pílula com texto no cabeçalho** do card da grade;
+**sufixo textual no seletor único**. Textos:
 
-⚠️ **Escopo medido nesta sessão, e o detalhe importa:** a `getDgosAtLocation()`
-filtra por `locations_id` **e também por piso e por papel** quando esses filtros
-estão ativos. Calcular o selo a partir da lista já carregada sairia de graça, mas
-**mentiria por omissão** — dois homônimos em pisos diferentes não apareceriam
-juntos e nenhum receberia selo. Um selo que some conforme o filtro é a falha
-silenciosa da lição 14. **A implementação faz UMA consulta própria por carga de
-tela, escopada só por `locations_id`.**
-
-Falta decidir: a cor, onde a marca aparece (aba? cabeçalho? os dois?), e o texto
-do `title`.
+- aba — `Nome repetido nesta localização: #35, #36. Use o #id para distinguir.`
+- cabeçalho — `Há outro elemento chamado CTO 01 nesta localização.`
+- seletor único (5e-2d-2) — `⚠ nome duplicado` no texto da `<option>`, sem
+  tooltip, porque `<option>` não tem.
 
 ---
 
 ## 9. Próximo passo imediato
 
-1. **5g-1b — o último bloco entregue e não exercitado.** Sentada própria, porque
-   mexe em permissão de perfil no meio da sessão:
-   - abrir o mapa com o usuário de teste e **deixar a aba aberta**;
-   - tirar **ATUALIZAR** de "Portas de DGO" do perfil **Tecnicos N1 (ID 12)**
-     — sem recarregar a aba (lição 151);
-   - digitar no comentário do elemento e sair do campo **3×**;
-   - **esperado:** a frase de recusa se repete e sai **uma única linha**
-     `POST … 200 … dgocomment.php` em
-     `/var/log/apache2/other_vhosts_access.log`. **O status é 200, não 403**;
-   - **devolver o direito ao perfil ao fim.**
-2. **5e-2d — o selo**, com o escopo já medido na seção 8. Falta só a decisão
-   visual.
-3. **Higiene, com pré-condição:** desmontar a **E3 da `CTO 01 #36`** (alimentada
-   pela F1.06 da `DGO 01 #34`) e só então purgá-la; remover o piso
-   `PISO VAZIO TESTE`; decidir o destino do `DGO 01 #37`, criado no teste.
-4. **Decisão pendente:** a localização no rótulo sai como `completename`
-   (`Shopping Ventura > DGO Cristian`). Manter, ou usar só a folha?
-5. **Commit — bloco 5d**, confirmação em dois tempos.
-6. **Commit — BADGE-C + contador de entradas separado.** ⚠️ **A pendência 15 é
-   pré-requisito de leitura**: antes de mexer no contador, saber por que porta
-   com vínculo e sem nome já conta como documentada.
-7. **SKILL**, **5h-2**, **5i**, e o **bloco de deploy em produção** (com rollback).
+1. **Conferir o tooltip da aba** — o único passo do roteiro do 5e-2d-1 que não
+   foi exercitado. Abrir o mapa em `Outlet Porto Belo`, passar o mouse no ícone
+   laranja de `CTO 01 · #35` e confirmar o texto. Custa trinta segundos.
+2. **5e-2d-2 — bloqueado por cenário.** Nenhuma localização conhecida da
+   homologação passa de 8 elementos (`Outlet Porto Belo` tem 5,
+   `shopping palladium` tem 4), e o seletor único só aparece a partir do nono.
+   **Duas saídas, e é decisão do usuário:** (a) varrer a homologação atrás de
+   uma localização com 9+; (b) entregar o bloco e validar **na produção**, que
+   com 159 elementos certamente tem. Enquanto não sair, é a dívida 8.
+3. **Higiene — LIBERADA.** O cenário de colisão já cumpriu seu papel no teste do
+   5e-2d-1, então não há mais motivo para preservá-lo:
+   - **desmontar a E3 da `CTO 01 #36`** (alimentada pela F1.06 da `DGO 01 #34`)
+     e só então purgar a `#36` — lição 161;
+   - remover o piso `PISO VAZIO TESTE`;
+   - decidir o destino do `DGO 01 #37`.
+   ⚠️ **Depois da higiene, o par homônimo de CTO deixa de existir** e o selo do
+   5e-2d-1 fica sem cenário de reteste em `Outlet Porto Belo` — sobra o par de
+   `DGO 01` (`#34` e `#37`), a menos que o `#37` também seja purgado. **Purgar
+   os dois deixaria a homologação sem nenhum caso de colisão.**
+4. **SKILL** — barato, não toca o servidor, e para de custar em toda sessão.
+   Agora com um item novo: o bump obrigatório (lição 165).
+5. **Commit — 5d**, confirmação em dois tempos. ⚠️ Mexe no `Link::propose()`.
+6. **Commit — BADGE-C + contador de entradas separado.** ✅ Pré-requisito de
+   leitura resolvido.
+7. **5h-2**, **5i**, e o **bloco de deploy em produção** (com rollback).
 8. **Frente shopmap** — bloqueada até o repositório abrir ou o arquivo da busca
-   chegar. Ver a seção 1.
+   chegar. O `normalizeName()` do 5e-2d-1 é reaproveitável lá.
 9. **REV** — revisão competitiva, ao fim de tudo.
 
 ---
 
 ## 10. O que correu mal do lado do assistente
 
-**O padrão se manteve: erro em texto e em inventário, nunca em código gravado.**
+**O padrão se manteve: erro em texto, em inventário e em processo — nunca em
+código gravado.**
 
-**Sessão de 28/08 (três blocos), três erros:**
+**Sessão de 28/08 (tarde/noite): dois erros, os dois pegos dentro da sessão.**
 
 | # | Erro | Quem pegou | Vira |
 |---|---|---|---|
-| 1 | Descrever a `displayNameOf()` como servindo à trilha, lendo o comentário vizinho em vez do chamador | O próprio assistente, ao medir | **Lição 162** |
-| 2 | Prever 28 remoções no `git diff --stat`; saíram 31, por causa de `^-[^-]` não casar linha em branco | O `git diff --stat` real | **Lição 163** |
-| 3 | **O mais caro:** declarar a tela do mapa encerrada com "seis pontos" quando havia sete. O `displayFeedsCard()` escapou do padrão de `grep` | **A tela do usuário**, com `CTO · CTO 01` duplicado | **Lição 164** |
+| 1 | Afirmar que o rótulo com folha faria dois elementos exibirem rótulo idêntico — falso, o `· #id` sempre distingue. A recomendação foi dada antes de simular o formato inteiro | O próprio assistente, ao ler o `ItemLabel` | **Lição 166** |
+| 2 | Entregar o 5e-2d-1 sem bump de versão, criando dois commits com o número 1.3.19 | O próprio assistente, ao ver o print da tela de Plugins | **Lição 165** |
 
-**Sessão de validação anterior:** passo de roteiro sem dizer como trocar de tela
-(159); passo construído sobre dado desatualizado (160).
+**Erros de sessões anteriores, mantidos como memória:** descrever função pelo
+comentário vizinho (162); prever remoções com `^-[^-]` (163); declarar inventário
+completo a partir de `grep` estreito (164); roteiro sem dizer como trocar de tela
+(159); passo sobre dado desatualizado (160).
 
-**Por que os erros ficam no texto e no inventário:** o código passa por `php -l`,
+**Por que os erros ficam no texto e no processo:** o código passa por `php -l`,
 `node --check`, `md5`, `diff -rq` e `git diff` — cinco validadores. O texto ao
-redor e a *conta* dos pontos não passam por nenhum. As lições 158 a 164 são a
-tentativa de dar a essas duas coisas o mesmo tipo de conferência que o código já
-tem.
+redor, a *conta* dos pontos e as *etapas do ritual* não passam por nenhum. As
+lições 158 a 166 são a tentativa de dar a essas coisas o mesmo tipo de
+conferência que o código já tem.
 
-**O que o processo provou de novo:** nenhum dos três erros gravou dado errado,
-nenhum quebrou a homologação, e o terceiro custou **um bloco extra**, não uma
-correção de emergência — porque o roteiro pediu a tela que o revelou.
+**O que o processo provou de novo nesta sessão:** o `git diff --stat` previsto
+bateu exatamente nos dois blocos (148/0 e 1/1); a paridade com o commit publicado
+foi provada por md5; e o erro do bump foi pego pela tela de Plugins — o mesmo
+lugar que a lição 114 já mandava olhar.
