@@ -1688,14 +1688,6 @@ class MapController
             echo "</div>";
             echo "</div>";
             Html::closeForm();
-        } else {
-            // Bloco 5g-2: ate 1.3.9 o formulario simplesmente nao existia para
-            // quem nao tem CREATE, e a tela ficava identica a de uma
-            // localizacao sem elementos. Estado vazio nunca fica mudo
-            // (licao 16).
-            echo "<div class='form-hint align-self-center'>"
-                . htmlescape(__('Criar elemento pelo mapa exige a permissão "Criar" em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus'))
-                . "</div>";
         }
 
         echo "</div>";
@@ -2037,16 +2029,10 @@ class MapController
 
         echo "</div>";
 
-        // Bloco 5g-2: o DIREITO e o LIMITE DE TAMANHO viravam um booleano so, e
-        // por isso a tela nao sabia dizer por que o botao sumiu. Sao coisas
-        // diferentes: sem DELETE e' recusa de permissao, com uma fileira so e'
-        // o piso da grade. Confundir os dois produziria a mentira oposta -
-        // "peca Excluir ao administrador" para quem ja tem Excluir.
         $can_add       = Session::haveRight(Port::$rightname, CREATE);
-        $has_delete    = Session::haveRight(Port::$rightname, DELETE);
-        $can_remove    = $has_delete && $layout['tubes'] > 1;
+        $can_remove    = Session::haveRight(Port::$rightname, DELETE) && $layout['tubes'] > 1;
         $can_add_col   = $can_add && $layout['fibers_per_tube'] < Panel::MAX_FIBERS;
-        $can_rm_col    = $has_delete && $layout['fibers_per_tube'] > 1;
+        $can_rm_col    = Session::haveRight(Port::$rightname, DELETE) && $layout['fibers_per_tube'] > 1;
 
         if ($can_add || $can_remove || $can_add_col || $can_rm_col) {
             echo "<div class='d-flex gap-2 mt-3 flex-wrap'>";
@@ -2102,24 +2088,6 @@ class MapController
             }
 
             echo "</div>";
-        }
-
-        // Bloco 5g-2: a dica sai FORA do if dos botoes - quem nao tem direito
-        // nenhum nao entra naquele bloco, e era justamente esse o caso mudo.
-        // Le o direito bruto, nunca $can_remove/$can_rm_col: esses dois tambem
-        // sao falsos no piso da grade, e ai a culpa nao e' do perfil.
-        $missing = [];
-        if (!$can_add) {
-            $missing[] = __('"Criar" para acrescentar', 'dgoplus');
-        }
-        if (!$has_delete) {
-            $missing[] = __('"Excluir" para remover', 'dgoplus');
-        }
-        if ($missing !== []) {
-            echo "<div class='form-hint mt-2'>" . htmlescape(sprintf(
-                __('Ajustar o tamanho da grade exige %s em "Portas de DGO" (Administração → Perfis → aba DGO+).', 'dgoplus'),
-                implode(__(' e ', 'dgoplus'), $missing)
-            )) . "</div>";
         }
 
         echo "</div>"; // coluna da grade
