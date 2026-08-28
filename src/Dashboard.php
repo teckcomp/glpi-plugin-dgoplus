@@ -268,9 +268,11 @@ class Dashboard
         $item_role     = [];
         foreach ($items as $row) {
             $id                 = (int) $row['id'];
-            $name               = (string) ($row['name'] ?? '');
             $item_ids[]         = $id;
-            $item_names[$id]    = $name !== '' ? $name : ('#' . $id);
+            // Bloco 5e-2c: rotulo COMPLETO, e num ponto so' - este array
+            // alimenta "Equipamentos mais ocupados" E "Atividade recente". O
+            // painel e' global, sem recorte de localizacao.
+            $item_names[$id]    = ItemLabel::forRow($row, $id);
             $item_location[$id] = (int) ($row['locations_id'] ?? 0);
             $item_role[$id]     = $role_of_type[(int) ($row[$type_field] ?? 0)] ?? null;
         }

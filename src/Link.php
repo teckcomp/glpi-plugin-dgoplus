@@ -1208,9 +1208,11 @@ class Link extends CommonDBTM
      */
     private static function displayNameOf(array $row, int $items_id): string
     {
-        $name = trim((string) ($row['name'] ?? ''));
-
-        return $name !== '' ? $name : sprintf(__('elemento #%d', 'dgoplus'), $items_id);
+        // Bloco 5e-2c: a fila de pendentes atravessa localizacoes, entao vai o
+        // rotulo COMPLETO - e sai do forRow(), que consome a linha ja
+        // carregada sem consultar. O `locations_id` vem nela porque o find()
+        // sem lista de campos traz a linha inteira.
+        return ItemLabel::forRow($row, $items_id);
     }
 
     /**

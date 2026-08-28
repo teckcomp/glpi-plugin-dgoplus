@@ -1337,7 +1337,10 @@ class MapController
         $dgo_info = [];
         foreach ($dgos as $row) {
             $dgo_info[(int) $row['id']] = [
-                'name'         => $row['name'] !== '' ? $row['name'] : ('#' . $row['id']),
+                // Bloco 5e-2c: rotulo COMPLETO. A busca varre a base inteira,
+                // sem recorte de localizacao, e a tabela nao tem coluna de
+                // localizacao - sem ela, dois homonimos dao a mesma linha.
+                'name'         => ItemLabel::forRow($row, (int) $row['id']),
                 'locations_id' => (int) $row['locations_id'],
             ];
         }
@@ -2838,13 +2841,12 @@ class MapController
             $el         = new PassiveDCEquipment();
             $el->fields = $group['row'];
 
-            $name = (string) ($group['row']['name'] ?? '');
-            if ($name === '') {
-                $name = '#' . (int) ($group['row']['id'] ?? 0);
-            }
-
+            // Bloco 5e-2c: era a SETIMA familia da tela do mapa, e escapou do
+            // inventario do 5e-2b porque escreve a regra em outra forma (nao
+            // no padrao `fields['name'] ?: '#id'`). Ver licao 164. Rotulo
+            // curto, igual ao chip da trilha - a tela ja e' de uma localizacao.
             $text = ($group['role'] !== null ? Setting::getRoleLabel((string) $group['role']) . ' · ' : '')
-                . $name;
+                . ItemLabel::shortForRow($group['row'], (int) ($group['row']['id'] ?? 0));
 
             echo "<div class='text-nowrap' style='overflow:hidden;text-overflow:ellipsis'>";
             echo "<a href='" . htmlescape(self::getUrlForDgo($el)) . "'>" . htmlescape($text) . "</a>";
