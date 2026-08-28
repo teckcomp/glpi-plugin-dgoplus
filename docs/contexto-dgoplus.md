@@ -3,21 +3,23 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v12 — 28/08/2026. Substitui o v11 integralmente.
-> Emitido ao fim do bloco **5g-1**. Versão **1.3.9**, commit **`f94dbe5`**.
+> **Versão deste documento:** v13 — 28/08/2026. Substitui o v12 integralmente.
+> Emitido ao fim dos blocos **5g-2** e **5g-2b**. Versão **1.3.11**, commit
+> **`560fb64`**.
 >
-> **O que o v12 traz de novo em relação ao v11:**
+> **O que o v13 traz de novo em relação ao v12:**
 >
-> 1. **O 5g-1 está fechado e validado em tela + log.** O auto-save deixou de
->    mentir: 403 de permissão não é mais tratado como queda de rede, a mensagem
->    nomeia o direito, e o reenvio acabou.
-> 2. **Existe uma base de PRODUÇÃO, e ela não estava neste documento.** A seção 7
->    passou a separar produção de homologação. Confundir as duas seria o pior
->    tipo de erro: decidir prioridade com o número errado.
-> 3. **Três lições novas: 149, 150 e 151.** A 151 é a mais importante — ela
->    conserta um roteiro de teste que estava errado por construção.
-> 4. **Decisão de produto tomada:** a badge do elemento vai para a **variante C**
->    (grade e entradas como dois contadores separados).
+> 1. **O 5g-2 fechou e o 5g-2b desfez metade dele — de propósito.** A última
+>    tarja muda do plugin nomeia o direito, e a dívida 6 está quitada. Mas as
+>    duas dicas que o 5g-2 pôs na **moldura do mapa** foram recusadas ao serem
+>    vistas em tela e removidas no mesmo dia. Isso virou regra de produto.
+> 2. **A pendência 10 está respondida, e a resposta é SIM.** O
+>    `public/dgoplus-identity.js` tem exatamente o mesmo defeito que o 5g-1
+>    corrigiu no `dgoplus.js`. **O bloco 5g-1b existe e é o próximo.**
+> 3. **Duas lições novas: 152 e 153.** A 153 é a regra que evita repetir o
+>    erro do 5g-2.
+> 4. **O estado da DGO 01 na homologação mudou sem explicação registrada** —
+>    ver a seção 7.
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
 
@@ -65,10 +67,10 @@ Release**.
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 28/08 | commit **`f94dbe5`**, versão **1.3.9** |
-| Versão em homologação | **1.3.9**, confirmada na tela de plug-ins |
+| `master` em 28/08 | commit **`560fb64`**, versão **1.3.11** |
+| Versão em homologação | **1.3.11** |
 | **Paridade** | ✅ **Estrutural**: a pasta do plugin é a árvore de trabalho do clone. `git status` limpo **é** a prova |
-| Arquivos no repositório | **30** (27 do plugin + 3 em `docs/`) — conferido em `f94dbe5` |
+| Arquivos no repositório | **30** (27 do plugin + 3 em `docs/`) — conferido em `560fb64` |
 | GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data` |
 | **Homologação** | **`177.87.230.179`, porta SSH `2078`, usuário `resolutto`** |
 | URL externa do GLPI | `http://177.87.230.179:2077/` |
@@ -85,7 +87,7 @@ recusa root puro, então todo comando de console vai com `sudo -u www-data`.
 
 ### Git no servidor
 
-O clone foi criado em 27/08. Configuração aplicada:
+Clone criado em 27/08. Configuração aplicada:
 
 ```bash
 git config --global user.name "Claudio Morett"
@@ -107,9 +109,10 @@ como root.
 ⚠️ **O `master` avança sem o código mudar.** Com `docs/` versionado, um commit só
 de documentação move o HEAD. **O HEAD do `ls-remote` não é necessariamente o
 último commit de código** — conferir o delta antes de assumir que a base do
-bloco anterior ainda é o topo (lição 143). *Aconteceu de novo em 28/08: o v11
-apontava `38018e3`, o HEAD real era `1361dd3`, e o delta eram só os dois
-documentos. O assistente conferiu por `diff -rq` antes de usar a base.*
+bloco anterior ainda é o topo (lição 143). *Aconteceu de novo em 28/08: o v12
+apontava `f94dbe5`, o HEAD real era `f6a1c78`, e o delta eram só os dois
+documentos. O assistente conferiu por `diff -rq` antes de usar a base — a
+terceira vez que essa conferência se paga.*
 
 ### Comandos do dia a dia
 
@@ -123,7 +126,7 @@ scp -P 2078 "%USERPROFILE%\Downloads\<arquivo>" resolutto@177.87.230.179:/tmp/
 quebra de linha** — md5 idêntico dos dois lados, verificado.
 
 ⚠️ **Arquivo `.js` não baixa** pelo navegador do usuário (lição 149). Todo JS de
-bloco sai com `.txt` no fim (`dgoplus-5g1.js.txt`) e o `cp` no servidor
+bloco sai com `.txt` no fim (`dgoplus-5g1b.js.txt`) e o `cp` no servidor
 renomeia. O `.php` baixa normalmente. **Antes do `scp`, conferir o nome real:**
 
 ```cmd
@@ -178,7 +181,7 @@ grep -h "port.php" /var/log/apache2/other_vhosts_access.log | tail -n 20
 O `Referer` traz a URL do mapa com `edit=<tubo>-<fibra>`, então dá para saber
 **qual célula** gerou cada requisição sem perguntar ao usuário. **Foi este log
 que validou o 5g-1**: uma única linha `POST … 403 … edit=1-7` para três
-disparos de auto-save.
+disparos de auto-save. **Para o 5g-1b, o alvo é `dgocomment.php`.**
 
 ### Topologia web
 
@@ -220,9 +223,9 @@ Depois: `scp` do zip para o PC e anexar em
 **Tags existentes** (conferidas por `ls-remote --tags` em 27/08): `v1.0.0`,
 `v1.1.0`, `v1.2.0`, `v1.2.1`, `v1.3.0`, `v1.3.1`, `v1.3.2`, `v1.3.8`.
 
-As versões **1.3.3 a 1.3.7 não têm tag**, e **a 1.3.9 também não terá**: são
-degraus internos da Fase 5, e o histórico delas é o Git. Release é artefato de
-instalação, não registro de história. A próxima tag sai quando a Fase 5 fechar.
+As versões **1.3.3 a 1.3.11 não têm tag**: são degraus internos da Fase 5, e o
+histórico delas é o Git. Release é artefato de instalação, não registro de
+história. A próxima tag sai quando a Fase 5 fechar.
 
 ### Outros plugins na mesma base
 
@@ -252,7 +255,8 @@ de desambiguação**, não um remendo local.
 
 Método **entrega-em-blocos**: um bloco = uma mudança testável de uma sentada. Se
 o teste passa de ~8 passos ou toca duas áreas independentes, divide-se — foi o
-que aconteceu com o 5f-1, o 5f-2 e agora o **5g** (5g-1, 5g-2, 5g-3).
+que aconteceu com o 5f-1, o 5f-2 e o **5g** (5g-1, **5g-1b**, 5g-2, **5g-2b**,
+5g-3).
 
 Toda entrega tem quatro seções fixas: **(1)** o que muda, com a decisão de
 reinstalar em negrito na primeira linha; **(2)** o comando `scp` literal **com os
@@ -262,7 +266,7 @@ o log e como reverter.
 
 ### Nome de arquivo entregue leva o bloco
 
-**Todo arquivo de bloco sai com o bloco no nome** — `DgoIdentity-5f2a.php`,
+**Todo arquivo de bloco sai com o bloco no nome** — `MapController-5g2b.php`,
 `dgoplus-5g1.js.txt` — e o `cp` no servidor é que renomeia. Sem isso o download
 colide com o do bloco anterior na pasta Downloads, o navegador salva como
 `Port_1.php`, e o `scp` manda o **antigo** com sucesso aparente (lição 140).
@@ -290,13 +294,13 @@ SHA completo no `cd`.
 **Padrão de trabalho do assistente ao preparar um bloco:** baixar o tarball do
 commit atual, editar a cópia, validar sintaxe, e **provar por md5 que só os
 arquivos do escopo mudaram** antes de entregar. Depois do push, **baixar o commit
-publicado e conferir os md5 de novo** — feito no 5f-1b, 5f-2a e **5g-1**, e é o
-que fecha a proveniência.
+publicado e conferir os md5 de novo** — feito no 5f-1b, 5f-2a, 5g-1, **5g-2 e
+5g-2b**, e é o que fecha a proveniência.
 
 **Número previsto sai de comando, não de olho** (lições 141 e 150): `git init`
 sobre o tarball do commit, copiar os arquivos do bloco por cima, rodar o `stat`
-**e os `grep -c`** de verdade. No 5g-1 o `git diff --stat` foi medido e acertou
-(`+39 −3`); o `grep -c` foi previsto de cabeça (4) e o certo era **3**.
+**e os `grep -c`** de verdade. No 5g-2 (`+56 −10`) e no 5g-2b (`+3 −35`) os dois
+foram medidos e os dois acertaram.
 
 **Documento é entrega, e entrega tem quatro seções** (lição 145): o contexto e o
 roadmap também saem com o comando `scp` literal, nunca só com os comandos do
@@ -339,6 +343,9 @@ Não há `sudo` no sandbox (já é root) e a homologação é inalcançável de 
 - **Pedir F12 ao usuário para saber status HTTP** — o `other_vhosts_access.log` diz.
 - **Reaproveitar número de linha de documento antigo** (lição 144).
 - **Prever `grep -c` de cabeça** (lição 150).
+- **Tratar item de escopo escrito no roadmap como decisão de produto tomada**
+  (lição 152).
+- **Dica de permissão permanente na moldura da tela** (lição 153).
 
 ---
 
@@ -384,6 +391,9 @@ elemento novo nasce com **64 posições** e encolher exige DELETE (lição 146).
 **Decisão de produto de 28/08: fica como está** — o administrador do ambiente
 resolve concedendo DELETE a quem cria. Ver seção 8.
 
+**Porta sem acoplador** não pode ser usada e **não conta como documentada** — a
+tela diz isso explicitamente no painel da porta.
+
 ### Vínculos
 
 `glpi_plugin_dgoplus_links`: **uma linha, dois lados**. Regras fechadas:
@@ -416,9 +426,11 @@ Quem decide o direito é `DgoIdentity::canWriteComment()`, **um método com dois
 chamadores** (tela e ponto único). Desde o 5f-2a ele pergunta pelo direito do
 plugin.
 
-### Auto-save — o JS do painel da porta
+⚠️ **O auto-save deste cartão ainda mente** — ver a próxima subseção.
 
-`public/dgoplus.js` (440 linhas em `f94dbe5`) intercepta o formulário do painel.
+### Auto-save — dois JS, e só um foi corrigido
+
+**`public/dgoplus.js`** (440 linhas em `560fb64`) — o painel da porta.
 **Princípio, do bloco 4a:** o formulário continua sendo um POST completo e
 válido; se o JS não carregar, o botão Salvar recarrega a página como antes.
 
@@ -434,6 +446,34 @@ lição 151: **sem o direito, o JS nem se instala.**
 - `permissionDenied` é **estado do módulo, não da célula**: negado numa porta,
   negado em todas as da página, porque o direito é da sessão;
 - com ele ligado, `save()` **não reenvia — mas repete a mensagem** (lição 16).
+
+⚠️ **`public/dgoplus-identity.js`** (306 linhas em `560fb64`) — o comentário do
+ativo. **Tem exatamente o defeito que o 5g-1 corrigiu no outro arquivo**, lido e
+confirmado em 28/08:
+
+| Onde | O que faz hoje |
+|---|---|
+| `mountComment()` | mesma convenção: sai na entrada se não achar `[data-dgoplus-dgo-flag]` (impresso em `DgoIdentity.php:288`) |
+| `.then(response)` | `throw new Error('HTTP ' + response.status)` — **o status é perdido na string** |
+| `.catch()` | não distingue nada; com `fallbackOnFailure` chama `form.submit()` |
+| mensagem | *"Falha ao salvar. Use o botão Salvar."* — a mesma mentira do 1.3.8 |
+
+**Isso é o bloco 5g-1b**, e é o próximo. O endpoint é `ajax/dgocomment.php`
+(45 linhas).
+
+### Permissão na tela — a regra que o 5g-2b instaurou
+
+**O painel da porta nomeia o direito; a moldura do mapa fica calada.**
+
+Mensagem de permissão só aparece para quem **esbarrou na recusa** — clicou numa
+porta e encontrou campo bloqueado, ou abriu um vínculo confirmado sem ter o botão
+Desmontar. Banner permanente na moldura da tela (abaixo da grade, na faixa de
+busca) é **ruído carregado em toda abertura**, para um estado que não é erro.
+
+O 5g-2 pôs quatro mensagens; o 5g-2b removeu as duas da moldura no mesmo dia,
+por decisão de produto tomada com a tela na frente. **As duas que ficaram estão
+ambas dentro do painel da porta.** O lugar de explicar direito ao administrador é
+a **aba DGO+ do perfil** — bloco 5g-3.
 
 ### Busca e relatório — tabela polimórfica
 
@@ -454,30 +494,32 @@ no `glpi-empty.sql` do core, não por `DESCRIBE`).
 
 Quatro tabelas: `_ports`, `_panels`, `_floors`, `_links`. Direito próprio
 `plugin_dgoplus_port`, matriz de 4 níveis = **15**. Na tela do perfil a aba
-chama-se **DGO+** e a linha, **"Portas de DGO"** (conferido em tela, 28/08).
+chama-se **DGO+** e a linha, **"Portas de DGO"**, com as colunas **LER,
+ATUALIZAR, CRIAR, DELETE** (conferido em tela, 28/08).
 
-**Como o direito se comporta em 1.3.9** — números verificados por `grep -n` no
-commit `f94dbe5`:
+**Como o direito se comporta em 1.3.11** — os números de linha abaixo vêm do
+commit `f94dbe5` e **envelheceram no `MapController.php`**, que perdeu 32 linhas
+entre o 5g-2 e o 5g-2b. **Reconferir por `grep -n` antes de usar** (lição 144).
 
 | Ação | Exige hoje | Onde |
 |---|---|---|
 | Ver mapa, painel, relatório | `plugin_dgoplus_port` READ | `front/map.php` |
 | Documentar porta (existente ou não) | `plugin_dgoplus_port` UPDATE ✅ 5f-1a | `Port.php:542` e `:550` |
 | Esvaziar porta (volta a livre) | `plugin_dgoplus_port` DELETE | `Port.php:480` |
-| Propor vínculo | `plugin_dgoplus_port` UPDATE ✅ 5f-1b | `Link.php:439`; tela em `MapController:3198` |
+| Propor vínculo | `plugin_dgoplus_port` UPDATE ✅ 5f-1b | `Link.php:439` |
 | Confirmar / recusar vínculo | `plugin_dgoplus_port` UPDATE | `Link.php:484`, `:526` |
-| Desmontar vínculo | `plugin_dgoplus_port` DELETE | `Link.php:565` |
+| Desmontar vínculo | `plugin_dgoplus_port` DELETE | `Link.php:565`; tela em `$can_dismantle` |
 | Comentário do elemento | `plugin_dgoplus_port` UPDATE ✅ 5f-2a | `DgoIdentity.php:227` |
-| OBS do elemento (faixa das entradas) | `plugin_dgoplus_port` UPDATE | `MapController:941` |
-| Criar elemento pelo mapa | `plugin_dgoplus_port` CREATE ✅ 5f-2b | `MapController:417` (POST) e `:1531` (tela) |
-| Fileira / coluna / piso | `plugin_dgoplus_port` CREATE | `MapController:534`, `:740`, `Floor::$rightname` |
-| Esvaziar fileira / coluna | `plugin_dgoplus_port` DELETE | `MapController:571`, `:780` |
+| OBS do elemento (faixa das entradas) | `plugin_dgoplus_port` UPDATE | `MapController::actionSaveEntryObs` |
+| Criar elemento pelo mapa | `plugin_dgoplus_port` CREATE ✅ 5f-2b | POST e `displayDgoTabs` |
+| Fileira / coluna / piso | `plugin_dgoplus_port` CREATE | `Floor::$rightname` |
+| Esvaziar fileira / coluna | `plugin_dgoplus_port` DELETE | `MapController` |
 | **Qualquer gravação — a trava de entidade** | **`Session::haveAccessToEntity()`** ✅ 5f-3a/b | `Port::parentIsReachable`, `Port.php:359` |
 | **Anexos** | `document` READ+UPDATE+CREATE **e `datacenter` UPDATE** | Formulário do core — ver "Anexos" |
-| Configurar papéis | `config` UPDATE | `MapController:1553` |
+| Configurar papéis | `config` UPDATE | `MapController` |
 
 **O acoplamento a `datacenter` acabou.** Os dois greps que provam isso, e que
-valem como conferência de qualquer bloco futuro — **rodados em `f94dbe5`**:
+valem como conferência de qualquer bloco futuro — **rodados em `560fb64`**:
 
 ```bash
 grep -rn -- '->can($items_id, READ)' src/ ajax/ front/ | wc -l    # 0
@@ -485,9 +527,9 @@ grep -rc 'PassiveDCEquipment::$rightname' src/ | grep -v ':0'     # nada
 ```
 
 **`Port::parentIsReachable()` é o ponto único da visibilidade do pai** — nasceu no
-5f-3a e é chamado em **seis** lugares: `Port.php:419`, `:683`, `:803`,
-`ajax/port.php:49`, `Link.php:699` (`loadVisibleItem`), `DgoIdentity.php:340`
-(`applyComment`) e `MapController.php:956` (`actionSaveEntryObs`).
+5f-3a e é chamado em **seis** lugares: `Port.php` (três), `ajax/port.php`,
+`Link.php` (`loadVisibleItem`), `DgoIdentity.php` (`applyComment`) e
+`MapController.php` (`actionSaveEntryObs`).
 
 ```php
 Session::haveAccessToEntity($parent->getEntityID(), $parent->isRecursive())
@@ -546,9 +588,12 @@ o DGO+ decidir. O perfil de teste **já tem** o direito `document`.
 O que falta não é permissão, é **tela**. Candidato **5i**, ainda **sem leitura do
 mecanismo de upload** — o tamanho estimado é expectativa, não medição.
 
+**Este é o primeiro item que o 5g-3 deve explicar na aba do perfil** — foi o
+exemplo que o usuário deu ao pedir a nota: *"Para usar anexos é necessário…"*.
+
 ### Arquivos
 
-**30 no repositório** — 27 do plugin + 3 em `docs/` (contado em `f94dbe5`).
+**30 no repositório** — 27 do plugin + 3 em `docs/` (contado em `560fb64`).
 
 ```
 dgoplus/
@@ -557,8 +602,8 @@ dgoplus/
 ├── README.md              desatualizado — dívida 1
 ├── logo.png
 ├── docs/                  README.md, contexto-dgoplus.md, roadmap-dgoplus.md
-├── ajax/                  port.php (auto-save, 4a — 123 linhas), dgocomment.php (3t)
-├── public/                dgoplus.js (440), dgoplus-identity.js, qrcode.js, dgoplus-mark.svg
+├── ajax/                  port.php (auto-save, 4a — 123), dgocomment.php (3t — 45)
+├── public/                dgoplus.js (440), dgoplus-identity.js (306), qrcode.js, dgoplus-mark.svg
 ├── front/                 map.php, port.php, pending.php, config.form.php
 └── src/                   13 arquivos
     ├── Install.php        schema, direitos, migrações
@@ -567,26 +612,28 @@ dgoplus/
     ├── Link.php           vínculo; propose é o ponto único — 1206 linhas
     ├── Panel.php          dimensões da grade e vínculo com o piso
     ├── Floor.php          o piso (rightname = plugin_dgoplus_port)
-    ├── MapController.php  a tela do mapa — 3407 linhas
+    ├── MapController.php  a tela do mapa — 3421 linhas
     ├── Dashboard.php      o painel
     ├── Pending.php        página de vínculos pendentes (4d)
     ├── DgoIdentity.php    identidade, QR e comentário (3t) — 372 linhas
     ├── PurgeCleaner.php   limpeza na purga do ativo (3q)
-    ├── ProfileTab.php     aba de direitos no Perfil
+    ├── ProfileTab.php     aba de direitos no Perfil — alvo do 5g-3
     └── MapPage.php        entrada de menu
 ```
 
-**Impressões digitais do 1.3.9** (commit `f94dbe5`, baixado do GitHub e conferido
-pelo assistente em 28/08):
+**Impressões digitais do 1.3.11** (commit `560fb64`, baixado do GitHub e
+conferido pelo assistente em 28/08):
 
 ```
-b819bc937419f2a6be313031cb452747  setup.php             (269 linhas)
-63421003891b3524bc9a96b1ab7dcb99  public/dgoplus.js     (440 linhas)
-cbc5e6c2dbce9f694a0e3351880d791c  src/Port.php          (1086 linhas)
-743b74c1f490ef4fb99bfd9ccdf43916  src/Link.php          (1206 linhas)
-481b4df6473b6a076762883a0aeff6a1  src/MapController.php (3407 linhas)
-42e24072fd23666602f8b3f2fe63cd3d  src/DgoIdentity.php   (372 linhas)
-b0e4f1837feab5a54d42868e8d88a4b7  ajax/port.php         (123 linhas)
+e7499016c3cf10f11c5c69cc62742645  setup.php                    (269 linhas)
+63421003891b3524bc9a96b1ab7dcb99  public/dgoplus.js            (440 linhas)
+19ab841cbbf95b888577e3eb6115ea9b  public/dgoplus-identity.js   (306 linhas)
+cbc5e6c2dbce9f694a0e3351880d791c  src/Port.php                 (1086 linhas)
+743b74c1f490ef4fb99bfd9ccdf43916  src/Link.php                 (1206 linhas)
+622f3f31704566d3c6f637df30adf038  src/MapController.php        (3421 linhas)
+42e24072fd23666602f8b3f2fe63cd3d  src/DgoIdentity.php          (372 linhas)
+b0e4f1837feab5a54d42868e8d88a4b7  ajax/port.php                (123 linhas)
+1406df3db888f5b10846b6ab37fad0da  ajax/dgocomment.php           (45 linhas)
 ```
 
 ---
@@ -630,7 +677,7 @@ fato**.
 | 116 | **Bump de versão no `setup.php` conta como mudança de instalação.** `--force` + `activate` mesmo com `Install.php` idêntico |
 | 117 | ~~`$parent->can($items_id, READ)` acopla o plugin ao direito do itemtype pai~~ ✅ **CUMPRIDA pelos blocos 5f-3a e 5f-3b** |
 | 118 | ~~`$can_write = haveRight($rightname, $found ? UPDATE : CREATE)`~~ ✅ *Corrigida pelo 5f-1a* |
-| 119 | **Mensagem de permissão que não nomeia o direito faltante custa horas** |
+| 119 | **Mensagem de permissão que não nomeia o direito faltante custa horas.** ⚠️ **Delimitada pela lição 153**: nomear onde a pessoa esbarra, não em banner permanente |
 | 120 | ✅ Anexar documento a um ativo exige **`datacenter` UPDATE**. Ver lição 134 |
 | 121 | **`joinparams.beforejoin` apontando para a própria tabela gera 1054** |
 | 122 | **Não existe `sql-errors.log` no GLPI 11.0.6.** Erro de SQL vai para `php-errors.log` como `glpi.CRITICAL` |
@@ -644,7 +691,7 @@ fato**.
 | 130 | **O GitHub é canônico.** Qualquer ordem que deixe código existindo só no servidor já custou perda de trabalho uma vez |
 | 131 | Upload pela web do GitHub cria arquivo novo em silêncio quando o nome não bate. *Aposentada pelo `git push`* |
 | 132 | **`raw.githubusercontent.com` tem cache de CDN.** Para commit recém-feito: `ls-remote` para o HEAD, tarball do `codeload` para o conteúdo |
-| 133 | ✅ **CONFIRMADA e depois CORRIGIDA pelo 5g-1:** falha de permissão no auto-save chegava ao usuário como erro de rede, e o auto-save **reenviava**. Ver lição 151 para a condição em que o 403 ainda acontece |
+| 133 | ✅ **CONFIRMADA e CORRIGIDA pelo 5g-1 no `dgoplus.js`.** ⚠️ **Mas vale IGUAL para o `dgoplus-identity.js`** — lido e confirmado em 28/08. É o bloco 5g-1b |
 | 134 | **Anexo a ativo exige UPDATE no ativo.** O formulário é do core (`Document_Item`) |
 | 135 | **O direito "Data centers" também fica na aba Gerência do perfil** |
 | 136 | **A raiz web efetiva vem de `conf-enabled/glpi.conf`.** **404 com `Set-Cookie: glpi_` é o GLPI respondendo** |
@@ -654,15 +701,17 @@ fato**.
 | 140 | **Arquivo de bloco com o nome final colide na pasta Downloads e o `scp` manda o ANTIGO em silêncio.** O nome leva o bloco, e o `md5sum` de `/tmp` ANTES do `cp` não é opcional |
 | 141 | **Número previsto de `git diff --stat` sai de comando, não de contagem a olho** |
 | 142 | **As requisições do GLPI caem no `other_vhosts_access.log`, não no `access.log`.** E o `Referer` traz `edit=<tubo>-<fibra>` |
-| 143 | **Com `docs/` versionado, o HEAD do `master` avança sem o código mudar.** `ls-remote` para o HEAD, `diff -rq` contra o último commit de código conhecido, e **só então** decidir a base do bloco. *Aconteceu duas vezes: `4144a5c` e `1361dd3`* |
-| 144 | **Número de linha em documento é ponteiro, não fato — e envelhece a cada bloco.** Todo bloco reconfere os seus alvos por `grep -n` no commit do dia |
+| 143 | **Com `docs/` versionado, o HEAD do `master` avança sem o código mudar.** `ls-remote` para o HEAD, `diff -rq` contra o último commit de código conhecido, e **só então** decidir a base do bloco. *Aconteceu três vezes: `4144a5c`, `1361dd3` e `f6a1c78`* |
+| 144 | **Número de linha em documento é ponteiro, não fato — e envelhece a cada bloco.** Todo bloco reconfere os seus alvos por `grep -n` no commit do dia. *O 5g-2b encurtou o `MapController.php` em 32 linhas: toda referência de linha a ele no v12 está morta* |
 | 145 | **Documento também é entrega — e entrega sem a seção de envio não chega.** O formato de quatro seções vale para QUALQUER arquivo entregue, inclusive `.md` |
-| 146 | **Elemento novo nasce com 4 × 16 = 64 posições** (`Panel.php:24` e `:27`) **e encolher a grade exige DELETE** (`MapController:571` e `:780`). Um perfil com CRIAR e sem DELETE cria uma CTO de 64 e não consegue ajustá-la. **Decisão de 28/08: fica como está** |
+| 146 | **Elemento novo nasce com 4 × 16 = 64 posições e encolher a grade exige DELETE.** Um perfil com CRIAR e sem DELETE cria uma CTO de 64 e não consegue ajustá-la. **Decisão de 28/08: fica como está** |
 | 147 | **`actionSaveEntryObs` NÃO grava OBS de entrada: grava a OBS do ELEMENTO**, por `Panel::setCommentForItem`. **Nome de método não é especificação: ler o corpo antes de descrever um passo de teste** |
 | 148 | **O formulário de anexo do core exige UPDATE no ativo, mas a API não.** `CommonDBTM::add()` não checa direito nenhum. Reabre a decisão negativa como candidato **5i** |
-| **149** | **O navegador do usuário barra download de `.js`; o `.php` passa.** O `scp` falhou com `stat local ... No such file or directory` porque o arquivo nunca chegou à pasta Downloads. **Todo JS de bloco sai com `.txt` no fim** (`dgoplus-5g1.js.txt`) e o `cp` no servidor renomeia — o md5 é idêntico, então a conferência da lição 140 continua valendo. E **conferir o nome real com `dir` antes do `scp`** |
-| **150** | **`grep -c` conta LINHAS que contêm, não ocorrências — e previsão de `grep` também sai de comando.** No 5g-1 o assistente rodou o `git diff --stat` no sandbox (acertou `+39 −3`) mas previu `grep -c permissionDenied` = 4 de cabeça; o certo era **3**, porque a declaração, a guarda e a atribuição são três linhas e não há duas ocorrências na mesma. **Rodar os dois, sempre** |
-| **151** | **Depois do 5f-1a, tirar o direito e RECARREGAR não produz 403: produz tela somente-leitura.** `mount()` do `dgoplus.js` sai na entrada quando não acha `[data-dgoplus-flag]`, e esse elemento só é impresso para quem tem escrita — sem o direito, **o JS nem se instala e nenhum `fetch` acontece**. O 403 do auto-save só é alcançável com **aba já aberta cujo direito foi retirado depois da renderização**. O primeiro roteiro do 5g-1 mandava desmarcar o direito e recarregar, e por isso não tinha como passar. **Roteiro de teste de permissão tem que dizer QUANDO o direito é retirado, não só qual** |
+| 149 | **O navegador do usuário barra download de `.js`; o `.php` passa.** Todo JS de bloco sai com `.txt` no fim e o `cp` no servidor renomeia — o md5 é idêntico, então a conferência da lição 140 continua valendo. **Conferir o nome real com `dir` antes do `scp`** |
+| 150 | **`grep -c` conta LINHAS que contêm, não ocorrências — e previsão de `grep` também sai de comando.** Rodar os dois, sempre |
+| 151 | **Depois do 5f-1a, tirar o direito e RECARREGAR não produz 403: produz tela somente-leitura.** `mount()` sai na entrada quando não acha `[data-dgoplus-flag]`, e esse elemento só é impresso para quem tem escrita — sem o direito, **o JS nem se instala e nenhum `fetch` acontece**. O 403 do auto-save só é alcançável com **aba já aberta cujo direito foi retirado depois da renderização**. **Roteiro de teste de permissão tem que dizer QUANDO o direito é retirado, não só qual.** ⚠️ **A mesma convenção vale para o `mountComment()`** — vale para o roteiro do 5g-1b |
+| **152** | **Item de escopo escrito no roadmap NÃO é decisão de produto tomada.** O 5g-2 entregou quatro mensagens porque as quatro estavam listadas no "próximo passo" do contexto v12; duas foram recusadas pelo usuário **assim que apareceram na tela**, e removidas no mesmo dia pelo 5g-2b. Ninguém errou: planejar em texto e ver renderizado são evidências de qualidade diferente. **Bloco que muda texto visível deve tratar a lista do roadmap como candidatos, não como aprovação** — e vale descrever a aparência esperada na seção 1 da entrega, para a recusa vir antes do commit |
+| **153** | **Mensagem de permissão permanente na moldura da tela é ruído; contextual é ajuda.** A dica abaixo da grade e a da faixa de busca eram carregadas em toda abertura do mapa, por todo perfil somente-leitura, para um estado que **não é erro**. Já a tarja do painel da porta e a dica do vínculo só aparecem para quem **clicou e esbarrou na recusa**. **Regra: o painel da porta nomeia o direito; a moldura do mapa fica calada.** O lugar de explicar direito ao administrador é a aba DGO+ do perfil (5g-3). Delimita a lição 119 sem revogá-la |
 
 **Armadilhas do GLPI 11 que valem como regra permanente:**
 
@@ -693,7 +742,7 @@ fato**.
 | 3q | `PurgeCleaner` | Fechado |
 | 3r | Posição exibida contínua | Fechado |
 | 3s | Carimbo de documentação | Fechado |
-| 3t | Identidade, QR e comentário | Fechado — direito revisto pelo 5f-2a |
+| 3t | Identidade, QR e comentário | Fechado — direito revisto pelo 5f-2a; ⚠️ auto-save pendente no 5g-1b |
 | 4a-1/2/3 | Auto-save; papel no painel; abas e filtro por papel | Fechado — mensagem de erro revista pelo 5g-1 |
 | 4b-1/2 | `kind` na porta; tabela de vínculos + entradas E1–E4 | Fechado |
 | 4c/4c-2 | Propor, confirmar, recusar, desmontar | Fechado |
@@ -705,96 +754,77 @@ fato**.
 | 5a | Escopo Localização → Piso no seletor de destino | Fechado e validado (23/08), 1.3.1 |
 | 5h | JOIN da coluna Localização no relatório | Fechado (27/08), 1.3.2, `bd28ffd` |
 | DOC | `docs/` no repositório | Fechado (27/08), `1ded500` |
-| GIT-1 | Clone Git na pasta do plugin | Fechado (27/08) |
-| GIT-2 | Primeiro `push` do servidor, com token | Fechado (27/08) |
-| REL | Tag `v1.3.2` + Release com zip | Fechado e conferido por md5 (27/08) |
-| REL-2 | Tag `v1.3.8` + Release com zip | Fechado e conferido por sha256 (27/08) |
+| GIT-1 / GIT-2 | Clone Git e primeiro `push` do servidor | Fechados (27/08) |
+| REL / REL-2 | Tags `v1.3.2` e `v1.3.8` + Releases | Fechados e conferidos por sha256 (27/08) |
 | 5f-1a | Documentar porta exige UPDATE, não CREATE | Fechado (27/08), 1.3.3, `6efab96` |
-| 5f-1b | Propor vínculo exige UPDATE, não CREATE | Fechado e validado em tela + log (27/08), 1.3.4, `a690010` |
-| 5f-2a | Comentário do elemento exige o direito do plugin | Fechado e validado em tela (27/08), 1.3.5, `1114077` |
-| 5f-2b | Criar elemento pelo mapa exige só o direito do plugin | Fechado e validado em tela (27/08), 1.3.6, `04ac8fd` |
-| 5f-3a | Caminho da porta larga o `datacenter` READ | Fechado e validado em tela + log (27/08), 1.3.7, `72d4e55` |
-| 5f-3b | OBS, vínculo e comentário largam o `datacenter` READ | Fechado e validado em tela (27/08), 1.3.8, `0005c90` |
-| **5g-1** | **Auto-save distingue 403 de falha de rede, nomeia o direito e para de reenviar** | **Fechado e validado em tela + log (28/08), 1.3.9, `f94dbe5`** |
+| 5f-1b | Propor vínculo exige UPDATE, não CREATE | Fechado e validado (27/08), 1.3.4, `a690010` |
+| 5f-2a | Comentário do elemento exige o direito do plugin | Fechado e validado (27/08), 1.3.5, `1114077` |
+| 5f-2b | Criar elemento pelo mapa exige só o direito do plugin | Fechado e validado (27/08), 1.3.6, `04ac8fd` |
+| 5f-3a | Caminho da porta larga o `datacenter` READ | Fechado e validado (27/08), 1.3.7, `72d4e55` |
+| 5f-3b | OBS, vínculo e comentário largam o `datacenter` READ | Fechado e validado (27/08), 1.3.8, `0005c90` |
+| 5g-1 | Auto-save da porta distingue 403 de falha de rede | Fechado e validado em tela + log (28/08), 1.3.9, `f94dbe5` |
+| **5g-2** | **Telas nomeiam o direito que falta** | **Fechado e validado em tela (28/08), 1.3.10, `8da0634`** |
+| **5g-2b** | **Dicas de permissão saem da moldura do mapa** | **Fechado e validado em tela (28/08), 1.3.11, `560fb64`** |
 
-### O que o 5g-1 fez, em detalhe
+### O que o 5g-2 e o 5g-2b fizeram, em detalhe
 
-Dois arquivos, **`+39 −3`** (previsto por `git diff --stat` no sandbox e
-confirmado no servidor):
+O 5g-2 mexeu em quatro pontos, todos do `MapController.php` (`+56 −10`, medido no
+sandbox e confirmado no servidor). O 5g-2b removeu dois deles (`+3 −35`), por
+decisão de produto tomada com a tela na frente.
 
-| Onde | O quê |
-|---|---|
-| `public/dgoplus.js`, topo do IIFE | `permissionDenied` (estado do módulo, não da célula) e `DENIED_MESSAGE` |
-| `public/dgoplus.js`, `.then(response)` | o `Error` do `!response.ok` passa a **carregar `status`** — sem isso 403 e queda de rede são o mesmo erro |
-| `public/dgoplus.js`, `.catch(error)` | 403 tratado **antes** do `fallbackOnFailure`; o `form.submit()` não roda |
-| `public/dgoplus.js`, topo de `save()` | com `permissionDenied`, não reenvia — mas repete a mensagem (lição 16) |
-| `setup.php` | 1.3.8 → **1.3.9** |
+| Ponto | 5g-2 (1.3.10) | 5g-2b (1.3.11) |
+|---|---|---|
+| Tarja do painel da porta | *"Você tem permissão apenas de leitura nesta porta."* → nomeia **Atualizar** em **Portas de DGO** | **Mantido** |
+| Dica do vínculo confirmado | Sem DELETE, deixa de mandar "Desmontar" e diz que exige **Excluir** | **Mantido** |
+| Dica abaixo da grade | Criada, nomeando **Criar** e **Excluir** | **Removida** |
+| Dica na faixa de busca | Criada, nomeando **Criar** | **Removida** |
+| `$has_delete` | Criado para separar direito de limite de tamanho | **Removido** — só existia para a dica |
 
-**Não mudou:** nenhuma regra de permissão. `Port.php:542` e `:550` continuam
-exigindo UPDATE.
+**A dívida 6 está quitada:** o texto não fala mais de um botão que não é
+renderizado.
 
-**A mensagem, que é a entrega visível:**
+**Não mudou nenhuma regra de permissão.** As chamadas `Session::haveRight`
+continuam pedindo exatamente os mesmos direitos; o `diff` contra o 1.3.9 mostra
+só texto e a variável `$can_dismantle`.
 
-> Sem permissão para documentar portas. Exige «Atualizar» em «Portas de DGO»
-> (Administração → Perfis → aba DGO+).
+**Proveniência fechada nos dois:** o assistente baixou `8da0634` e `560fb64` do
+GitHub e provou por md5 que os arquivos publicados são idênticos aos preparados
+no sandbox, e que **nenhum outro dos 30 mudou**.
 
-**Proveniência fechada:** o assistente baixou o commit `f94dbe5` e provou por md5
-que os dois arquivos publicados são idênticos aos preparados no sandbox, e que
-**nenhum outro dos 30 arquivos mudou** (`diff -rq` sem saída).
-
-**Validado em tela + log (28/08)**, perfil `Tecnicos N1 (ID 12)`, `teste.001`,
-pelo roteiro corrigido da lição 151 (duas sessões simultâneas):
-
-1. Plug-in em **1.3.9** ativo (tela de plug-ins).
-2. Com ATUALIZAR, a porta **F1.07** da DGO 01 abriu editável.
-3. Com a aba aberta, o admin **retirou ATUALIZAR** em outra sessão.
-4. Digitou `2153`, saiu do campo → **a mensagem nova**, em vermelho, ao lado do
-   botão Salvar. Não "Falha ao salvar. Use o botão Salvar."
-5. Digitou em Observações, saiu, clicou em **Salvar** → mesma mensagem, **página
-   não recarregou**.
-6. **A prova decisiva, no `other_vhosts_access.log`:**
-   `POST /plugins/dgoplus/ajax/port.php ... 403 ... edit=1-7` às 11:06:33 —
-   **uma única linha para três disparos de `save()`**. Antes do bloco seriam três
-   requisições mais o POST de página inteira do fallback.
-7. Direito devolvido, Ctrl+F5, F1.07 documentada: **"Salvo ✓"** e a badge da
-   DGO 01 de **6 de 16** para **7 de 16**. A trava não vazou para o caminho feliz.
+**Validado em tela (28/08)**, perfil `Tecnicos N1 (ID 12)` com **só LER**,
+usuário `teste.001`: as duas dicas da moldura sumiram, a tarja do painel da porta
+continua, e devolver os três direitos traz de volta os botões de fileira/coluna e
+o formulário de novo elemento sem nada torto na coluna da direita.
 
 ---
 
 ## 6. Dívidas conhecidas
 
-1. **README desatualizado** — manda baixar `dgoplus-v1.0.0.zip` (linhas 38, 45,
-   56), fala em três tabelas quando são quatro (111, 142), e a linha 119 avisa
-   sobre portas órfãs, defeito que o 3q resolveu. **Escopo decidido em 28/08:**
-   vira porta de entrada curta — o que o plugin faz, requisitos, instalação
-   apontando para a **página de Releases** (nunca uma versão fixa, foi assim que
-   ele envelheceu), e links para `docs/`. Some tudo que duplica documentação.
+1. **README desatualizado** — manda baixar `dgoplus-v1.0.0.zip`, fala em três
+   tabelas quando são quatro, e avisa sobre portas órfãs, defeito que o 3q
+   resolveu. **Escopo decidido em 28/08:** vira porta de entrada curta — o que o
+   plugin faz, requisitos, instalação apontando para a **página de Releases**
+   (nunca uma versão fixa, foi assim que ele envelheceu), e links para `docs/`.
 2. **Sem catálogo de tradução**: interface pt-BR fixa. ⚠️ **Decisão de produto
-   pendente antes de qualquer código:** existe demanda real de outro idioma, ou
-   é higiene? Se for higiene, o custo não se paga agora. O trabalho tocaria
-   praticamente todos os 27 arquivos (envolver cada literal em
-   `__('...', 'dgoplus')`, criar `locales/`), o que é o oposto de um bloco — só
-   funciona partido por arquivo ou por tela, e o JS precisa de mecanismo próprio.
-3. ⚠️ **Lista integral de lições (1–113)** não incorporada. **Dois caminhos
-   decididos em 28/08:** (a) barato e parcial —
-   `grep -rn "lição\|Lição" src/ ajax/ front/ public/ setup.php` devolve número +
-   ponto do código, permitindo reconstituir o enunciado das citadas; (b) buscar o
-   documento original nas conversas anteriores do projeto.
-4. ~~Sem tag nem Release~~ ✅ **QUITADA (27/08): `v1.3.8` publicada e conferida
-   por sha256.**
+   pendente antes de qualquer código:** existe demanda real de outro idioma, ou é
+   higiene? O trabalho tocaria praticamente todos os 27 arquivos, o que é o
+   oposto de um bloco — só funciona partido por arquivo ou por tela, e o JS
+   precisa de mecanismo próprio.
+3. ⚠️ **Lista integral de lições (1–113)** não incorporada. **Dois caminhos:**
+   (a) barato e parcial — `grep -rn "lição\|Lição" src/ ajax/ front/ public/
+   setup.php`; (b) buscar o documento original nas conversas anteriores.
+4. ~~Sem tag nem Release~~ ✅ **QUITADA (27/08).**
 5. **A skill `glpi-plugin-teckcomp` está desatualizada**: host, usuário, porta e
    o comando de envio (`pscp` → `scp`), mais a ordem de entrega com `git diff`,
    que ela não conhece. **Aprovada em 28/08 para execução** — bloco SKILL.
-6. **Texto que fala de ação indisponível.** No painel da porta com vínculo
-   confirmado, a dica diz *"Desmontar remove o vínculo dos dois lados"* mesmo
-   quando o perfil não tem DELETE e o botão não é renderizado. Escopo do 5g-2.
+6. ~~Texto que fala de ação indisponível ("Desmontar" sem botão)~~ ✅ **QUITADA
+   pelo 5g-2 (28/08).**
 
 ---
 
 ## 7. Medições de campo
 
-⚠️ **Existem DUAS bases, e confundi-las é o erro mais caro desta seção.** Até o
-v11 este documento registrava só a homologação, sem dizer que era só ela.
+⚠️ **Existem DUAS bases, e confundi-las é o erro mais caro desta seção.**
 
 ### Produção — o parque real (28/08)
 
@@ -827,23 +857,34 @@ Documentadores ativos (27/08): Claudio Morett, Kayan Lucas, Pedro s, cristian.b.
 
 *(Em 23/08 eram 31 elementos e 1665 portas. A base de homologação também cresce.)*
 
-Elementos mais ocupados: `CINELASER` (PTO) 3/3 · `TESTE01` (DGO) 4/6 · `DGO 01`
-(DGO) **6/16 → 7/16 depois do teste do 5g-1** · `CLM 001` (DGO) 2/32 · `CTO02`
-(CTO) 1/16.
-
 **DGO 01**, em `Outlet Porto Belo`, piso `MALL - PORTO BELO`: grade de 16
-posições; comentário do ativo `teste 5f-2a vbv`; OBS do elemento preenchida;
-F1.03 com nome `1214`, F1.05 com `2153-0102`, **F1.07 com `2153` (5g-1)**.
-Alimenta: `CTO 01` (F1.01→E1, F1.04→E2, confirmados) e `CTO TESTE 5f2b`
-(F1.06→E3, confirmado).
+posições (F1 e F2), badge em **6 de 16**. Estado lido na tela de 28/08:
+
+| Posição | Estado |
+|---|---|
+| F1.01 | → E1 (vínculo confirmado, `CTO 01`) |
+| F1.02 | `1202` |
+| F1.03 | `1214` |
+| F1.04 | → E2 (`cto 01`) |
+| F1.05 | `2153-01…` |
+| F1.06 | → E3 (`CTO TESTE 5f2b`) |
+| F1.07 | **livre** |
+| F1.08 e F2.09–F2.16 | livres |
+
+⚠️ **Isto diverge do contexto v12**, que registrava F1.07 com `2153` e badge em
+7/16 depois do teste do 5g-1, e não citava F1.02. O saldo é o mesmo (6), mas as
+portas trocaram. **Causa não registrada** — a tela é a fonte da verdade, e o v13
+grava o que a tela mostrou.
+
+Comentário do ativo: `teste 5f-2a vbv`. OBS do elemento preenchida.
 
 **Vínculos pendentes na homologação:** `CTO01 → PTO 4 · E3` (por cristian.b, **7
 dias**) e `DIO 001 → CTO 001 · E2` (por Claudio Morett, 4 dias).
 
 ⚠️ **`CTO TESTE 5f2b`** — lixo de teste do 5f-2b, mesma localização, piso não
 atribuído, grade **4 × 16 = 64**, 0 documentadas. Purgar leva o vínculo junto
-(3q). São 64 portas mortas em 1889 — **3,4% da base**, e elas derrubam a
-ocupação geral da homologação.
+(3q). São 64 portas mortas em 1889 — **3,4% da base**. **Continua lá:** o vínculo
+F1.06 → E3 aparecia confirmado na tela de 28/08.
 
 Perfil de teste: **Tecnicos N1, ID 12**; usuário `teste.001`.
 
@@ -865,16 +906,18 @@ ressuscitar como novidade.
 | Criar Localização pelo direito do DGO+ | **Descartada** | `Location` é dropdown do GLPI inteiro |
 | Excluir elemento pelo direito do DGO+ | **Descartada** | Purgar ativo é do admin |
 | Corrigir a acentuação do CSV no plugin | **Descartada** | O relatório é tela do core (lição 127) |
-| Anexo pelo técnico **pelo formulário do core** | **Descartada (27/08)** | O formulário é do core e pergunta pelo `datacenter` UPDATE. Não tem contorno **dentro dele** |
+| Anexo pelo técnico **pelo formulário do core** | **Descartada (27/08)** | O formulário é do core e pergunta pelo `datacenter` UPDATE |
 | Anexo pelo técnico **por formulário próprio** | ⚠️ **REABERTA (27/08)** | A lição 148 derrubou a premissa. Virou candidato **5i** |
 | Documentos versionados dentro do repositório | **Descartada (27/08)** | `docs/contexto-dgoplus.md` sem sufixo: o histórico é o Git |
 | Exigir DELETE para recusar vínculo | **Descartada (já no 4c)** | Recusar e confirmar são as duas metades da mesma resposta |
 | `pscp` como veículo de envio | **Descartada (27/08)** | Não autentica: o servidor só aceita `publickey` (lição 139) |
 | Tirar `$dgo` da assinatura de `canWriteComment` | **Descartada (27/08)** | Mudar assinatura de método público não é escopo de bloco de permissão |
-| **Grade padrão por papel, ou grade escolhida ao criar** | **Descartada (28/08)** | A lição 146 é real, mas a solução é operacional: **o administrador do ambiente concede DELETE a quem concede CRIAR**. Não vale código |
-| **Entradas na conta da ocupação geral (badge "variante B")** | **Descartada (28/08)** | Somar entradas ao total mudaria o **significado** dos 44,9% da produção e misturaria porta de saída com alimentação: uma CTO alimentada e sem nenhum cliente apareceria como ocupada. A ocupação geral é a métrica de investimento e não muda de sentido por causa de badge |
-| **Item de roadmap para o estado do perfil de teste** | **Descartada (28/08)** | É decisão do administrador de cada ambiente, conforme a necessidade. Não é pendência de projeto |
-| **"Ver todos" no cartão de vínculos pendentes** | **Descartada (28/08)** | Já existe: "Abrir a fila completa", do bloco 4d |
+| Grade padrão por papel, ou grade escolhida ao criar | **Descartada (28/08)** | A lição 146 é real, mas a solução é operacional: o administrador concede DELETE a quem concede CRIAR |
+| Entradas na conta da ocupação geral (badge "variante B") | **Descartada (28/08)** | Mudaria o **significado** dos 44,9% da produção e misturaria porta de saída com alimentação |
+| Item de roadmap para o estado do perfil de teste | **Descartada (28/08)** | É decisão do administrador de cada ambiente |
+| "Ver todos" no cartão de vínculos pendentes | **Descartada (28/08)** | Já existe: "Abrir a fila completa", do bloco 4d |
+| **Dica de permissão abaixo da grade** | **Descartada (28/08, pelo 5g-2b)** | Banner permanente para estado que não é erro. Lição 153 |
+| **Dica de permissão na faixa de busca ("Criar elemento pelo mapa exige…")** | **Descartada (28/08, pelo 5g-2b)** | Idem. O lugar dessa informação é a aba DGO+ do perfil (5g-3) |
 
 ### Decisão de produto tomada em 28/08 — a badge do elemento
 
@@ -894,24 +937,28 @@ pela leitura.
 
 ## 9. Próximo passo imediato
 
-**A frente de permissões está quase fechada.** O 5g-1 resolveu o pior defeito
-dela — a mensagem que mentia e o reenvio. Sobram os textos.
+**A frente de permissões tem um defeito real ainda aberto, e ele foi descoberto
+nesta sessão.**
 
-1. **5g-2** — as tarjas que ainda não nomeiam o direito. Confirmado em tela
-   (28/08): comentário e vínculo **já nomeiam** (herança do 5f-1b e 5f-2a), mas o
-   painel da porta ainda diz *"Você tem permissão apenas de leitura nesta
-   porta."*, sem dizer qual direito nem onde. É a última tarja muda. Junto vão o
-   texto do "Desmontar" sem botão (dívida 6), o formulário de criar elemento que
-   some sem explicação e os botões de fileira/coluna no mesmo silêncio.
-   ⚠️ **Verificar no 5g-2:** se a lição 133 também vale para o
-   `ajax/dgocomment.php` — é outro arquivo e outro caminho de JS. Se valer, vira
-   **5g-1b**.
-2. **5g-3** — nota explicativa na aba DGO+ do perfil, dizendo ao administrador o
-   que cada nível concede.
-3. **Higiene**: purgar `CTO TESTE 5f2b` (64 portas mortas) e a pendência do
-   Histórico do ativo.
+1. **5g-1b — o auto-save do comentário do elemento.** É o 5g-1 aplicado ao
+   `public/dgoplus-identity.js` (306 linhas) e ao endpoint
+   `ajax/dgocomment.php` (45 linhas). Mesmo defeito, mesma correção: o `Error`
+   carrega `status`, o 403 é tratado antes do `fallbackOnFailure`,
+   `permissionDenied` é estado do módulo, e a mensagem nomeia **Atualizar** em
+   **Portas de DGO**. ⚠️ **O roteiro tem que seguir a lição 151**: o
+   `mountComment()` também sai na entrada sem `[data-dgoplus-dgo-flag]`, então o
+   direito precisa ser retirado **com a aba já aberta**. Prova no
+   `other_vhosts_access.log`, filtrando `dgocomment.php`.
+2. **5g-3 — a nota na aba DGO+ do perfil.** É onde entra o *"para usar anexos é
+   necessário…"* pedido pelo usuário, e é o destino de toda informação de
+   permissão que **não** cabe na tela do técnico (lição 153). Alvo:
+   `src/ProfileTab.php`. Conteúdo mínimo: o que cada nível concede (tabela da
+   seção 3), o que fica **fora** do DGO+ (Localização, exclusão do elemento) e o
+   que **anexos** exigem — `document` READ+UPDATE+CREATE **e `datacenter`
+   UPDATE**.
+3. **Higiene**: purgar `CTO TESTE 5f2b` (64 portas mortas) e confirmar a
+   pendência do Histórico do ativo.
 4. **SKILL** — barato, e para de custar em toda sessão nova.
-5. Depois: **5h-2** (um atributo), **BADGE-C**, **PAINEL-1**, **5b**, **5c**,
-   **5d**, **5e** (destravado pela pergunta dos "PTO 001", e agora com o ShopMap
-   junto), e **5i**.
+5. Depois: **5h-2**, **BADGE-C**, **PAINEL-1**, **5b**, **5c**, **5d**, **5e**
+   (com o ShopMap junto) e **5i**.
 6. **REV** — ao fim das correções, revisão competitiva. Ver roadmap.
