@@ -16,6 +16,21 @@
     var SELECTOR = 'form[data-dgoplus-port-form]';
 
     /**
+     * Bloco 5g-1: o 403 do endpoint quer dizer que o perfil NAO tem o direito
+     * de escrita - a tela foi montada com ele, ou o direito saiu no meio da
+     * sessao. E' estado da SESSAO, nao da celula: negado numa porta, negado em
+     * todas as portas da pagina. Sem esta trava, cada blur reenviava o mesmo
+     * conteudo e o log acumulava um 403 por campo (licao 133).
+     */
+    var permissionDenied = false;
+
+    /**
+     * Licao 119: mensagem de permissao que nao nomeia o direito faltante custa
+     * horas. Esta e' a mesma frase que o PHP usa nas recusas do 5f-1a e 5f-2a.
+     */
+    var DENIED_MESSAGE = 'Sem permissão para documentar portas. Exige «Atualizar» em «Portas de DGO» (Administração → Perfis → aba DGO+).';
+
+    /**
      * Token CSRF para AJAX. O core expoe getAjaxCsrfToken() em js/common.js,
      * que le o <meta property="glpi:csrf_token"> do head. A leitura direta do
      * meta fica como reserva, para o caso de ordem de carregamento.
@@ -91,6 +106,13 @@
          *        formulario ser postado de verdade, em vez de perder a edicao.
          */
         function save(fallbackOnFailure) {
+            if (permissionDenied) {
+                // Nao reenvia - mas tambem nao fica mudo (licao 16): quem
+                // continuar digitando tem que seguir vendo POR QUE nao salva.
+                setFlag(DENIED_MESSAGE, 'text-danger');
+                return;
+            }
+
             var current = snapshot();
             if (inFlight || current === lastSaved) {
                 return;
@@ -115,7 +137,12 @@
                 body: body
             }).then(function (response) {
                 if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
+                    // O status precisa CHEGAR ao catch: sem ele, 403 de
+                    // permissao e queda de rede sao o mesmo erro generico, e a
+                    // tela mente para o usuario (licao 14).
+                    var httpError = new Error('HTTP ' + response.status);
+                    httpError.status = response.status;
+                    throw httpError;
                 }
 
                 return response.json();
@@ -133,8 +160,17 @@
                 replaceCell(data.cell_html);
                 replaceBadges(data.badges_html);
                 setFlag('Salvo ✓', 'text-success');
-            }).catch(function () {
+            }).catch(function (error) {
                 inFlight = false;
+
+                if (error && error.status === 403) {
+                    // Falha de PERMISSAO, nao de rede. O fallback de postar a
+                    // pagina nao roda: ele tomaria o mesmo 403, agora levando
+                    // junto o que o usuario digitou.
+                    permissionDenied = true;
+                    setFlag(DENIED_MESSAGE, 'text-danger');
+                    return;
+                }
 
                 if (fallbackOnFailure) {
                     // Ultimo recurso: posta o formulario de verdade. submit()
