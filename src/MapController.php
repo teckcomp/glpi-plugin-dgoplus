@@ -1802,6 +1802,7 @@ class MapController
             // aparece quando ha' overflow, entao com poucos elementos nada
             // muda na tela.
             echo "<ul class='nav nav-tabs flex-grow-1' role='tablist'"
+                . " data-dgoplus-tabs='1'"
                 . " style='flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden'>";
             foreach ($groups as $group_role => $items) {
                 if ($items === []) {

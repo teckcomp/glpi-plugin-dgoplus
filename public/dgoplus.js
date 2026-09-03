@@ -438,3 +438,38 @@
         init();
     }
 })();
+
+/* Bloco 5e-3b: com a linha de abas rolavel (5e-3a), a aba ATIVA pode carregar
+ * fora da area visivel, a direita - visto em tela em 03/09 com o #42. Este
+ * modulo centraliza a aba ativa na carga, mexendo SO no scrollLeft da propria
+ * UL: nada de scrollIntoView, que rolaria tambem os ancestrais da pagina.
+ * Posicao por getBoundingClientRect, que nao depende de offsetParent. */
+(function () {
+    'use strict';
+
+    function init() {
+        var bar = document.querySelector("ul[data-dgoplus-tabs]");
+        if (!bar || bar.scrollWidth <= bar.clientWidth) {
+            return;
+        }
+
+        var active = bar.querySelector("a.nav-link.active");
+        if (!active) {
+            return;
+        }
+
+        var barRect    = bar.getBoundingClientRect();
+        var activeRect = active.getBoundingClientRect();
+        var target     = bar.scrollLeft
+            + (activeRect.left - barRect.left)
+            - (bar.clientWidth - activeRect.width) / 2;
+
+        bar.scrollLeft = Math.max(0, target);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
