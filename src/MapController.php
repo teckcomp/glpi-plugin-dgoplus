@@ -65,9 +65,6 @@ class MapController
         '#DC3545', '#3A3A3A', '#F2C230', '#8B2FA0', '#EC6BAF', '#2FBFB0',
     ];
 
-    /** Acima disso, as abas de DGO viram um seletor com busca */
-    private const MAX_TABS = 8;
-
     /**
      * Ponto de entrada chamado por front/map.php.
      *
@@ -1728,10 +1725,12 @@ class MapController
     /**
      * Seletor de elemento da localizacao + criacao de elemento novo.
      *
-     * Ate MAX_TABS elementos sao abas de verdade (um clique), agrupadas por
-     * papel na ordem do registro (bloco 4a-3). Acima disso vira um seletor
-     * unico com busca - o select2 que o core aplica em todo dropdown -, senao
-     * um andar com 20 elementos viraria uma parede de botoes.
+     * Todos os elementos sao abas de verdade (um clique), agrupadas por papel
+     * na ordem do registro (bloco 4a-3). Bloco 5e-3a: a linha de abas NAO
+     * quebra e NAO tem teto - quando nao cabe, rola na horizontal, com a barra
+     * logo abaixo. O seletor unico (antigo MAX_TABS = 8) foi removido por
+     * decisao do usuario em 03/09: visto ao vivo com 9 elementos, ele escondia
+     * o agrupamento por papel, os contadores e o selo de nome duplicado.
      *
      * @param int                           $locations_id
      * @param array<int,PassiveDCEquipment> $dgos
@@ -1776,7 +1775,7 @@ class MapController
 
         echo "<div class='d-flex align-items-center gap-2 flex-wrap justify-content-between mb-3'>";
 
-        if ($dgos !== [] && count($dgos) <= self::MAX_TABS) {
+        if ($dgos !== []) {
             // Bloco 4a-3: abas agrupadas por papel, na ordem do registro (que
             // e' a hierarquia fisica DIO -> DGO -> CTO, decisao do 4a-1). O
             // rotulo do grupo e' um nav-link desabilitado - classe do core,
@@ -1797,14 +1796,20 @@ class MapController
                 $groups[''] = $dgos;
             }
 
-            echo "<ul class='nav nav-tabs flex-grow-1' role='tablist'>";
+            // Bloco 5e-3a: estilo INLINE de proposito (licao 156 - classe de
+            // tema nao confirmada nao entra). nowrap + overflow-x e' o que
+            // transforma a parede de botoes em linha rolavel; a barra so'
+            // aparece quando ha' overflow, entao com poucos elementos nada
+            // muda na tela.
+            echo "<ul class='nav nav-tabs flex-grow-1' role='tablist'"
+                . " style='flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden'>";
             foreach ($groups as $group_role => $items) {
                 if ($items === []) {
                     continue;
                 }
 
                 if ($group_role !== '') {
-                    echo "<li class='nav-item d-flex align-items-center'>";
+                    echo "<li class='nav-item d-flex align-items-center' style='flex:0 0 auto;white-space:nowrap'>";
                     echo "<span class='nav-link disabled d-flex align-items-center gap-1 px-2 text-muted'"
                         . " style='font-size:0.72rem;font-weight:600;letter-spacing:0.04em'>"
                         . htmlescape(Setting::getRoleLabel((string) $group_role))
@@ -1820,7 +1825,7 @@ class MapController
                     $class  = 'nav-link d-flex align-items-center gap-2' . ($active ? ' active' : '');
                     $badge  = $active ? 'bg-blue-lt' : 'bg-secondary-lt';
 
-                    echo "<li class='nav-item'>";
+                    echo "<li class='nav-item' style='flex:0 0 auto;white-space:nowrap'>";
                     echo "<a class='" . $class . "' href='" . htmlescape($url) . "'>";
                     echo "<i class='ti ti-server'></i>";
                     // Bloco 5e-2b: com dois `DGO 01` e dois `CTO 01` na mesma
@@ -1837,54 +1842,6 @@ class MapController
                 }
             }
             echo "</ul>";
-        } elseif ($dgos !== []) {
-            $elements = [];
-            foreach ($dgos as $id => $item) {
-                $count = self::countDocumentedPorts(PassiveDCEquipment::class, $id);
-
-                // Bloco 4a-3: a sigla do papel entra na frente do nome, para o
-                // seletor unico nao perder o agrupamento que as abas ganharam.
-                $prefix = '';
-                if ($filter_on) {
-                    $item_role = Setting::getRoleOfItem($item);
-                    if ($item_role !== null) {
-                        $prefix = Setting::getRoleLabel($item_role) . ' · ';
-                    }
-                }
-
-                $elements[$id] = sprintf(
-                    '%s%s — %d %s',
-                    $prefix,
-                    // Bloco 5e-2b: mesma regra da aba - este e' o mesmo
-                    // conteudo em outra forma, e divergir aqui faria a lista
-                    // desambiguar so' abaixo de MAX_TABS.
-                    ItemLabel::shortForRow($item->fields, (int) $id),
-                    $count,
-                    __('documentadas', 'dgoplus')
-                );
-            }
-
-            echo "<form method='get' action='" . htmlescape(self::getPageUrl()) . "' id='dgoplus-dgo-form'>";
-            echo "<div class='d-flex align-items-center gap-2 flex-wrap'>";
-            echo Html::hidden('location', ['value' => $locations_id]);
-            if ($floors_id > 0) {
-                echo Html::hidden('floor', ['value' => $floors_id]);
-            }
-            $selector_role = Dashboard::currentRole();
-            if ($selector_role !== null) {
-                echo Html::hidden('role', ['value' => $selector_role]);
-            }
-            echo "<span class='text-muted d-flex align-items-center gap-1'>"
-                . "<i class='ti ti-server'></i> " . sprintf(__('%d elementos nesta localização', 'dgoplus'), count($dgos))
-                . "</span>";
-            Dropdown::showFromArray('dgo', $elements, [
-                'value'               => $active_id,
-                'width'               => '340px',
-                'display_emptychoice' => true,
-                'on_change'           => 'document.getElementById("dgoplus-dgo-form").submit();',
-            ]);
-            echo "</div>";
-            echo "</form>";
         }
 
         if ($can_create) {
