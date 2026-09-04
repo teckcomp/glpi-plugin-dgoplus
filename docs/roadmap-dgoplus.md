@@ -2,29 +2,20 @@
 
 > Companheiro do `contexto-dgoplus.md`. **Substituir**, nunca acumular.
 >
-> **Versão:** v17 — 28/08/2026. Sucede o v16, do mesmo dia.
-> A mudança que justifica a versão nova: **o último débito de prova do projeto
-> foi pago** (5g-1b exercitado em campo), **o 5e-2d foi ao ar pela metade**, e
-> **uma decisão de rótulo que estava aberta desde o v15 fechou**.
-> Versão **1.3.20**, `master` em **`fbf1952`**.
+> **Versão:** v19 — 04/09/2026. Sucede o v18, de 03/09.
+> A mudança que justifica a versão nova: **sessão de higiene fechada** — as
+> pendências **19** (F1.06 limpa) e **13** (`PISO VAZIO TESTE` removido)
+> encerraram em tela, a **dívida 5 quitou POR DECISÃO** (a skill cadastrada
+> não será trocada), e a homologação revelou uma localização que nenhum doc
+> conhecia (`Plaza Campos Gerais`). **Sessão sem código**: versão **1.3.22**,
+> `master` em **`12a7202`**, inalterados.
 
 ---
 
 ## Parte A — resultado da revisão (histórico, não mexer)
 
-| # | Passo | Decisão |
-|---|---|---|
-| 1 | Estado do ambiente | Homologação estava em 1.3.0. Corrigido pelo 5-sync. Lição 114 |
-| 2 | Bloco 5a | **Aprovado.** Poda em cascata funciona nos três seletores |
-| 3 | Ciclo do vínculo | **Aprovado.** Modelo sem lixeira honrado. Ajuste 5c ✅ |
-| 4 | Papéis | **Aprovado.** Quatro degraus bastam; splitter fora |
-| 5 | Escopo Localização → Piso | Piso fica; lote descartado; meia-medida → 5b ✅ |
-| 6 | A grade no dia a dia | **Aprovado.** Digitação um a um é o fluxo certo |
-| 7 | Permissões | **Maior achado.** Frente inteira **RESOLVIDA e EXERCITADA** |
-| 8 | Relatório | **Bug** (erro 1054) → 5h **RESOLVIDO** |
-
-**A frente de permissões da Fase 5 está fechada e agora também PROVADA em
-campo.** Os dois greps que a guardam:
+Tabela do v17 mantida integralmente. A frente de permissões da Fase 5 continua
+fechada e provada em campo; os dois greps de guarda:
 
 ```bash
 grep -rn -- '->can($items_id, READ)' src/ ajax/ front/ | wc -l    # 0
@@ -39,35 +30,28 @@ grep -rc 'PassiveDCEquipment::$rightname' src/ | grep -v ':0'     # nada
 
 | Bloco | O que fez | Versão / commit |
 |---|---|---|
-| 5a | Escopo Localização → Piso no seletor de destino | 1.3.1 |
-| 5h | JOIN da coluna Localização no relatório | 1.3.2 |
-| DOC, GIT-1, GIT-2, REL, REL-2 | `docs/`, clone Git, tags e Releases | 27/08 |
-| 5f-1a … 5f-3b | A frente de permissões inteira | até 1.3.8 |
-| 5g-1 | Auto-save da porta distingue 403 de rede | 1.3.9 |
-| 5g-2 / 5g-2b | Telas nomeiam o direito; dicas saem da moldura | 1.3.11 |
-| 5g-1b | Auto-save do comentário não reenvia recusa | 1.3.12 |
-| 5g-3 + PAINEL-1a + README | Nota no perfil; "Ver todos"; README reescrito | 1.3.13 |
-| 2b | Nota vira card abaixo da matriz | 1.3.14 |
-| 5b + 5e | Poda do seletor de piso; desambiguação por colisão | 1.3.15 |
-| 5c | Trilha parte da entrada, não do elemento | 1.3.16 |
-| 5e-2a / 5e-2b / 5e-2c | O `ItemLabel` e seus 12 consumidores | até 1.3.19 |
-| **5e-2d-1** | **Selo de nome duplicado: aba + cabeçalho da grade** | **`bb0a591`** |
-| **5e-2d-1b** | **Bump para 1.3.20 — bloco de reparo (lição 165)** | **1.3.20, `fbf1952`** |
+| 5a … 5e-2d-1b | Tudo do v17, até o selo de duplicado e o bump de reparo | até 1.3.20 |
+| 5e-3a | Abas sempre; linha única com rolagem horizontal; mata o seletor único e o `MAX_TABS` | 1.3.21, `28d5079` |
+| 5e-3b | Aba ativa centralizada na linha rolável ao carregar (JS, gancho `data-dgoplus-tabs`) | 1.3.22, `12a7202` |
+| **SKILL** | `SKILL.md` reescrito e entregue (03/09) | ✅ **ENCERRADO POR DECISÃO (04/09):** a skill cadastrada NÃO será trocada; o arquivo atualizado vive na base do projeto e prevalece |
 
-### ✅ Validado em tela nesta sessão
+### ✅ Validado em tela nesta sessão (04/09)
 
-| Bloco | O que se provou | Evidência |
+| Item | O que se provou | Evidência |
 |---|---|---|
-| **5g-1b** | Recusa de permissão trava o auto-save do comentário | Três blur com textos diferentes → **uma** linha `POST … 200 … dgocomment.php` |
-| **5e-2d-1** | Selo acende no par certo, não acende sozinho e **sobrevive ao filtro de piso** | Seis passos, seis telas |
-| **5e-2d-1b** | Versão volta a identificar o código | Tela de Plugins em **1.3.20** |
+| **Pendência 19** | F1.06 da `DGO 01 #34` limpa: código `2153` presente, SEM vínculo, E3 `livre` no seletor — faxina do `PurgeCleaner` na purga da `#36` confirmada | Print do painel da porta |
+| **Pendência 13** | `PISO VAZIO TESTE` existia (`Outlet Porto Belo`), provado vazio pelo escopo cheio do filtro, e **removido** — lista administrativa voltou a 3 pisos | Prints da lista antes/depois + "Operação realizada com sucesso" |
+| Selo pós-purga (de graça) | Pares `DGO 01` (#34/#37) e `CTO 01` (#35/#38) acesos; únicos sem selo; 8 abas em linha única sem barra | Print do mapa |
+
+### ☠️ Cancelado sem código
+
+| Bloco | Motivo |
+|---|---|
+| 5e-2d-2 | Preparado e descartado ANTES de aplicar (03/09); nada chegou ao repositório |
 
 ### ⚠️ Entregue mas NÃO exercitado
 
-**Nenhum.** Primeira vez desde o 1.3.12.
-
-Resta um passo solto, não um bloco: **o tooltip do ícone da aba** (passo 2 do
-roteiro do 5e-2d-1) nunca foi conferido. Trinta segundos na próxima sessão.
+**Nenhum.**
 
 ---
 
@@ -75,141 +59,77 @@ roteiro do 5e-2d-1) nunca foi conferido. Trinta segundos na próxima sessão.
 
 | # | Pergunta | Situação |
 |---|---|---|
-| 1 | Anexo exige `datacenter` UPDATE? | ✅ SIM. Candidato 5i |
-| 2 | Qual `jointype` para tabela polimórfica? | ✅ `itemtype_item_revert` + `specific_itemtype` |
-| 3 | `glpi_passivedcequipments` tem `is_recursive`? | ✅ tem |
-| 4 | Os dois elementos homônimos são ativos distintos? | ✅ Sim, ids 35 e 36, ambos CTO |
-| 5 | Existe clone Git no servidor? | ✅ criado |
-| 6 | A "Falha ao salvar" da F1.02 foi 403? | ✅ SIM, corrigida pelo 5g-1 |
-| 7 | O Histórico registra o técnico como autor? | Dada como ok pelo usuário, sem tela |
-| 8 | Limpar a ex-`CTO TESTE 5f2b` (`CTO 01 #36`) | ⚠️ **LIBERADA.** O cenário já serviu ao teste do 5e-2d-1. Pré-condição: desmontar a E3 primeiro |
-| 11 | Por que a DGO 01 mudou de portas documentadas? | **Aberta.** Baixo risco |
-| 12 | F1.06 da DGO 01 "sem acoplador" E com vínculo | ✅ Alimenta a **E3 da `CTO 01 #36`** |
-| 13 | `PISO VAZIO TESTE` e o papel trocado da `CTO 01` | ⚠️ Resta remover o piso. **Não visto em tela nesta sessão** |
-| 14 | Quem alimenta a E3 da `CTO 01 #36`? | ✅ A **F1.06 da `DGO 01 #34`** |
-| **15** | Porta de grade com vínculo e sem nome conta como documentada? | ✅ **RESPONDIDA (28/08, por código).** **SIM.** `applyInput` linha 512 não apaga porta com vínculo; `statsForDgo` só conta linhas e desconta sem-acoplador. **Destrava o BADGE-C** |
-| 16 | O shopmap guarda o vínculo por NOME ou por `itemtype`+`id`? | ⚠️ **Bloqueada** — repositório privado |
-| **17** | **Alguma localização da homologação tem 9+ elementos?** | **Nova (28/08).** Decide se o 5e-2d-2 é testável em homologação. `Outlet Porto Belo` = 5, `shopping palladium` = 4 |
-| **18** | **As 9 localizações da produção têm localização-pai?** | **Aberta, e agora de baixa prioridade** — deixou de importar quando o `completename` foi confirmado |
+| 7 | Histórico registra o técnico como autor? | Dada como ok pelo usuário, sem tela |
+| 11 | Por que a DGO 01 mudou de portas documentadas? | Aberta. Baixo risco |
+| 13 | `PISO VAZIO TESTE` | ✅ **FEITA (04/09).** Localizado na tela administrativa de Pisos, provado vazio, removido. Lista final: `L1`, `L2`, `MALL - PORTO BELO` |
+| 16 | shopmap guarda vínculo por NOME ou `itemtype`+`id`? | ⚠️ Bloqueada — repositório privado |
+| 18 | As 9 localizações da produção têm pai? | Aberta, baixa prioridade |
+| 19 | A F1.06 da `DGO 01 #34` ficou limpa após a purga da `#36`? | ✅ **FEITA (04/09).** Código `2153` presente, sem vínculo, E3 livre. `PurgeCleaner` aprovado |
+
+Pendências 1–6, 8, 12, 14, 15, 17 dos docs anteriores: todas respondidas,
+mantidas lá como histórico.
 
 ---
 
 ## Parte D — dívidas conhecidas
 
-| # | Dívida | Tamanho |
+| # | Dívida | Situação |
 |---|---|---|
-| 1 | ~~README desatualizado~~ | ✅ quitada |
-| 2 | **Sem catálogo de tradução.** ⚠️ Decisão de produto antes | Grande; não cabe num bloco |
-| 3 | **Lista integral de lições (1–113).** ⚠️ Caminho barato esgotado | Só pelo documento original |
-| 4 | ~~Sem tag/Release~~ | ✅ quitada |
-| 5 | **Skill `glpi-plugin-teckcomp` desatualizada** | Bloco SKILL |
-| 6 | ~~Texto fala de "Desmontar" sem o botão~~ | ✅ quitada |
-| 7 | **Seletor de destino usa formato próprio** (`CTO 01 (CTO) #35`) | ⚠️ **Reduzida:** com o `completename` confirmado, é só sobre o seletor |
-| **8** | **NOVA — o seletor único (9+ elementos) não sinaliza colisão** | É o 5e-2d-2. **Pesa na produção**, que tem 159 elementos |
+| 2 | **Sem catálogo de tradução.** Decisão de produto antes | Grande |
+| 3 | **Lista integral de lições (1–113)** | Só pelo documento original |
+| 5 | ~~Skill desatualizada~~ | ✅ **QUITADA POR DECISÃO (04/09):** a skill cadastrada fica como está; a fonte da verdade do ambiente é o `SKILL-glpi-plugin-teckcomp.md` na base do projeto. O conteúdo antigo da skill (`pscp`, `192.168.1.50`, zip) vira **ruído conhecido** — contexto e práticas abolidas prevalecem |
+| 7 | **Seletor de DESTINO usa formato próprio** (`CTO 01 (CTO) #35`) — revisto em tela em 04/09, segue vivo | Última inconsistência de formato — candidata a bloco pequeno |
 
 ---
 
 ## Parte E — estacionamento
 
-| Ideia | Fonte |
-|---|---|
-| Endpoint AJAX para o vínculo, chamando o mesmo `Link::propose()` | Comentário no `Link.php` |
-| Vínculo porta ↔ chamado | Roadmap original (Fase 4) |
-| Notificações nativas em evento de porta | Roadmap original (Fase 5) |
-| Widgets no dashboard nativo | Roadmap original (Fase 6) |
-| Colunas novas no relatório (papel, piso, estado do vínculo) | Passo 8 |
-| Comentário do elemento com carimbo de autor na tela | Observação do 5f-2a |
-| Aviso de vínculo pendente que envelhece | Achado de 28/08 |
-| PAINEL-1b · "Ver todos" em "Equipamentos mais ocupados" | ⚠️ **Medido:** a tela de destino **não existe** |
-| **Bloco de deploy da Fase 5 em produção** | ⚠️ **Não é opcional, só não tem data.** 4 documentadores reais mudam de permissão |
-| Elemento "fora dos papéis configurados" | 1 elemento em produção |
-| 5i · anexo por formulário próprio | ⚠️ **Medido:** reescrever o cartão inteiro |
-| Aviso na purga de elemento com vínculo vivo | O `PurgeCleaner` faz a faxina calado (lição 14) |
-| ~~Rótulo com localização em FOLHA~~ | ✅ **RESOLVIDO: fica `completename`.** Ver Parte F |
-| **Uniformizar o formato do seletor de destino com o `ItemLabel`** | Dívida 7 |
-| **Reaproveitar o `normalizeName()` do 5e-2d na frente shopmap** | Ele já faz `DGO 001` casar com `DGO001` |
+Lista do v17 mantida (endpoint AJAX de vínculo; porta ↔ chamado; notificações;
+widgets; colunas novas no relatório; carimbo de autor no comentário; pendente
+que envelhece; PAINEL-1b — tela de destino não existe; deploy da Fase 5 —
+obrigatório, sem data; elemento fora dos papéis; 5i — reescrever o cartão;
+aviso na purga com vínculo vivo; uniformizar o seletor de destino com o
+`ItemLabel`; `normalizeName()` na frente shopmap; sombra/indicador de "há mais
+abas" além da barra nativa).
 
 ---
 
 ## Parte F — decisões negativas
 
-Ver a seção 8 do `contexto-dgoplus.md`. **Trinta e seis** ideias avaliadas e
-recusadas com motivo. **Não ressuscitar sem fato novo.**
+Ver a seção 8 do `contexto-dgoplus.md`. As de 03/09 (MAX_TABS revogada;
+sufixo na `<option>` morto; `scrollIntoView`, múltiplas linhas, lista lateral
+e dropdown com limite maior descartados) permanecem. Nova, de 04/09:
 
-As desta sessão:
-
-- **Rótulo com localização em FOLHA — DESCARTADA.** E a variante **RAIZ**
-  também, e a de **trocar o separador `>` por `/`**. **Decisão do usuário: fica
-  o `completename`, exatamente como o core devolve.** No único caso real
-  conhecido (`Shopping Ventura > DGO Cristian`), a folha apagaria a unidade.
-- **Selo só na aba ativa — descartada.** Acende em todas as abas do par, porque
-  o par é a informação.
-- **Mexer no `MAX_TABS = 8` — descartada.** ✅ Confirmado pelo usuário: o
-  dropdown deve mesmo aparecer a partir do nono elemento.
-- **Selo nos cards de trilha, Alimenta, anexos e painel da porta — fora do
-  escopo.** Os dois primeiros atravessam localização; os dois últimos repetiriam
-  a marca do cabeçalho na mesma página.
-- **Commit único para "fechar tudo de uma vez" — reafirmada.** Diante do pedido
-  de fazer tudo numa tacada: vários blocos numa sessão, sim; num commit, não.
-
----
-
-## Parte G — a frente shopmap (fora deste repositório)
-
-⚠️ **`teckcomp/glpi-plugin-shopmap` está PRIVADO** — 404 anônimo conferido em
-28/08. **O assistente não lê esse código.**
-
-O problema é o mesmo do 5e: a lista de "Vincular ativo (nome)" mostra **nome +
-itemtype apenas**. A regra que vale para os dois plugins:
-
-> **Referência a ativo é `itemtype` + `id`. Nome é rótulo, nunca chave.**
-
-Sugestões registradas: rótulo explícito para ativo removido; filtro de entidade
-na busca; normalizar espaços (`DGO001` casar com `DGO 001`); aceitar `#id`
-digitado; e, se hoje o vínculo for por nome, **relatório em três baldes antes de
-migrar** (resolve para 1 / para 2+ / para 0).
-
-⚠️ **Novidade útil:** o `MapController::normalizeName()`, escrito no 5e-2d-1, já
-resolve a normalização de espaços e caixa. É código pronto para essa frente.
-
-**Destravar exige** ou tornar o repositório público, ou receber o arquivo que
-monta a lista de busca. É a pendência 16.
+- **Atualizar a skill `glpi-plugin-teckcomp` cadastrada — DESCARTADA por
+  decisão do usuário.** A skill fica com o conteúdo antigo; o retrato correto
+  do ambiente vive na base do projeto e no próprio contexto. **Não voltar a
+  propor a troca sem fato novo.**
 
 ---
 
 ## O que muda com a produção crescendo
 
-| Bloco | Como se comporta quando a base cresce |
+| Bloco | Comportamento com escala |
 |---|---|
-| ~~5e-2~~ | ✅ **RESOLVIDO** |
-| **5e-2d-1** | ✅ **No ar.** Melhora de valor com escala |
-| **5e-2d-2** | ⚠️ **É JUSTAMENTE onde a escala pesa:** localização com 9+ elementos usa o seletor único, e hoje ele **não sinaliza nada**. Na produção, com 159 elementos em 9 localizações, esse é o caso comum |
-| **5d** | Não piora. É correção de regra |
-| **5h-2** | **Melhora com escala** |
-| **BADGE-C**, contador de entradas | Neutros. Qualidade de leitura |
-| ~~Rótulo com `completename`~~ | Decidido: fica. O custo com árvore funda foi aceito |
-| **Deploy em produção** | Piora com o tempo |
+| 5e-3a/5e-3b | ✅ É a resposta à escala (159 elementos em 9 localizações viram linha rolável). ⚠️ Não medido com dezenas de abas reais |
+| 5d | Não piora. Correção de regra |
+| 5h-2 | Melhora com escala |
+| BADGE-C, contador de entradas | Neutros. Qualidade de leitura |
+| Deploy em produção | Piora com o tempo — 4 documentadores reais mudam de permissão |
 
 ---
 
 ## Próximo passo imediato
 
-1. **Tooltip da aba** — o único passo de roteiro solto. Trinta segundos.
-2. **5e-2d-2 — decisão antes do código:** validar em homologação (exige achar
-   localização com 9+ elementos — pendência 17) ou validar na produção. **Sem
-   uma das duas, o bloco não sai.**
-3. **Higiene, agora liberada:** desmontar a **E3 da `CTO 01 #36`**, purgá-la,
-   remover o `PISO VAZIO TESTE`, decidir o `DGO 01 #37`. ⚠️ **Purgar `#36` e
-   `#37` deixa a homologação sem nenhum par homônimo** — e portanto sem cenário
-   para reteste do 5e-2d-1.
-4. **SKILL** — barato, e para de custar em toda sessão.
-5. **Commit — bloco 5d**, confirmação em dois tempos. ⚠️ Mexe no
+1. **Commit dos docs v19** (`docs/` → sem reinstalação). O v18 nunca foi
+   commitado; o v19 entra direto sobre o v17.
+2. **Commit — bloco 5d**, confirmação em dois tempos. ⚠️ Mexe no
    `Link::propose()`.
-6. **Commit — BADGE-C + contador de entradas separado.** ✅ A pendência 15, que
-   era pré-requisito, está respondida.
-7. Depois: **5h-2**, **5i**, e o **deploy em produção**.
-8. **Frente shopmap** — bloqueada pela pendência 16.
-9. **REV** — revisão competitiva, ao fim de tudo.
+3. **Commit — BADGE-C + contador de entradas separado.**
+4. **5h-2**, **5i**, e o **bloco de deploy em produção** (com rollback —
+   começa por reler a produção em tela; retrato atual é de 28/08).
+5. **Frente shopmap** — bloqueada pela pendência 16.
+6. **REV** — revisão competitiva, ao fim de tudo.
 
-> A numeração de fases do roadmap antigo (do tempo do `mapadgo`) **não**
-> corresponde à numeração de blocos atual.
+> A numeração de fases do roadmap antigo (`mapadgo`) **não** corresponde à
+> numeração de blocos atual.
