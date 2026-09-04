@@ -3,31 +3,38 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v19 — 04/09/2026. Substitui o v18 integralmente.
-> Versão **1.3.22**, `master` em **`12a7202`** — **inalterados; sessão sem
-> código.**
+> **Versão deste documento:** v20 — 04/09/2026 (segunda sessão do dia). Substitui
+> o v19 integralmente. Versão **1.3.22**, `master` em **`1829021`** — **código
+> inalterado; sessão de validação, sem código.**
 >
-> **O que o v19 traz de novo em relação ao v18:**
+> **O que o v20 traz de novo em relação ao v19:**
 >
-> 1. **Pendência 19 fechada em tela:** a F1.06 da `DGO 01 #34` está limpa —
->    código `2153` presente, SEM vínculo, E3 `livre`. A faxina do
->    `PurgeCleaner` na purga da `#36` está provada.
-> 2. **Pendência 13 fechada em tela:** o `PISO VAZIO TESTE` existia (em
->    `Outlet Porto Belo`), foi provado vazio e **removido**. A lista
->    administrativa de Pisos terminou com 3 linhas.
-> 3. **Regra do filtro de piso relida no código:** o dropdown do mapa usa
->    `floorsWithItems()` — só pisos COM elemento no escopo corrente (decisão
->    do bloco 5b). **Existência de piso se confere na tela administrativa,
->    nunca no filtro do mapa.**
-> 4. **Localização nova descoberta:** `Plaza Campos Gerais`, com pisos `L1` e
->    `L2` — nenhum doc anterior a conhecia. Elementos dela NÃO lidos em tela.
-> 5. **Dívida 5 quitada POR DECISÃO:** a skill cadastrada não será trocada. O
->    retrato correto do ambiente vive na base do projeto
->    (`SKILL-glpi-plugin-teckcomp.md`); o conteúdo antigo da skill vira ruído
->    conhecido.
-> 6. **`docs/` do repositório verificado no tarball:** os nomes são SEM versão
->    (`contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md`) e o conteúdo
->    ainda é o **v17** — o v18 nunca foi commitado; o v19 entra direto.
+> 1. **O commit dos docs v19 FOI FEITO** — o `master` avançou de `12a7202` para
+>    **`1829021`**, e o tarball desse commit prova: `docs/` já contém o v19 e os
+>    13 arquivos de código conferem md5 a md5 com as impressões digitais do
+>    1.3.22. O passo 1 do roadmap v19 está quitado.
+> 2. **Pendência 11 FECHADA em tela:** o Histórico do `DGO 01 #34` (33 linhas)
+>    explica todo o delta de portas documentadas, com autor — o elemento nasceu
+>    em 27/08 pela mão do `cristian.b` e foi documentado por `teste.001` no
+>    mesmo dia. Mudança legítima de ambiente vivo.
+> 3. **Pendência 7 FECHADA de graça, pelos mesmos prints:** as linhas do
+>    Histórico carregam `teste.001 (19)` e `cristian.b (29)` como autores.
+>    O mecanismo foi provado também no código nesta sessão (ver seção 3,
+>    "Histórico").
+> 4. **Pendência 18 FECHADA em tela (produção):** as localizações TÊM pai — e
+>    a árvore é maior do que parecia: **427 linhas com VÁRIAS raízes**
+>    (`Shopping` com **~42**, informado pelo usuário; além de `Fleury`,
+>    `Confiance`, `Padrão`…), com **até três níveis**
+>    (`Shopping > Palladium Ctba > Diretoria`). A base de localizações é
+>    compartilhada com contextos que não são DGO+.
+> 5. **Fatos novos de homologação:** `Plaza Campos Gerais` TEM elementos e
+>    portas documentadas (`Pedro s`, 20/08); existem localizações
+>    `shopping estação` e `Shopping Ventura` (esta com filha
+>    `Shopping Ventura > DGO Cristian` — pai existe também na homologação).
+> 6. **Fato novo para a decisão do `completename`:** na produção o prefixo
+>    `Shopping > ` aparece em praticamente todo rótulo. A decisão de 28/08
+>    ("completename FICA") NÃO foi reaberta — o fato está registrado para
+>    quando o usuário quiser (seção 8).
 > 7. **Nenhuma lição nova numerada.** As mais recentes seguem 165 e 166.
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
@@ -47,7 +54,7 @@ que nunca chegaram ao Git.**
 |---|---|
 | **O que está rodando agora?** (tela, erro, permissão) | O servidor — sempre |
 | **O que o código É?** (registro durável, base de bloco novo) | **O GitHub — sempre** |
-| **Como estão os DADOS da homologação?** | **Só a tela, lida na sessão** (lição 160). **A homologação é ambiente vivo dos técnicos de campo** — elementos nascem e somem entre sessões. Em 04/09 apareceu até uma LOCALIZAÇÃO nova (`Plaza Campos Gerais`) que nenhum doc conhecia |
+| **Como estão os DADOS da homologação?** | **Só a tela, lida na sessão** (lição 160). **A homologação é ambiente vivo dos técnicos de campo** — em 04/09 (2ª sessão) o relatório revelou localizações e documentação que nenhum doc conhecia |
 
 ### A ordem de entrega
 
@@ -86,11 +93,12 @@ abolido. Isso é **ruído conhecido**, como o aviso de `version changed` no log:
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 04/09 | commit **`12a7202`**, versão **1.3.22** (confirmado por `ls-remote` na sessão) |
-| Versão em homologação | **1.3.22** — aplicada e reinstalada em 03/09; nada mudou em 04/09 |
-| **Paridade** | ✅ Provada por md5 em 03/09 (arquivos do `12a7202` = entregues) |
+| `master` em 04/09 (2ª sessão) | commit **`1829021`** (docs v19), versão **1.3.22** — confirmado por `ls-remote` na sessão |
+| Último commit de CÓDIGO | `12a7202` (1.3.22) — o `1829021` só mudou `docs/` |
+| Versão em homologação | **1.3.22** — aplicada e reinstalada em 03/09 |
+| **Paridade** | ✅ Provada por md5 NESTA sessão: os 13 arquivos de código do `1829021` = impressões digitais do 1.3.22 |
 | Arquivos no repositório | **31** (28 do plugin + 3 em `docs/`) |
-| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — **nomes SEM versão; a versão vive no cabeçalho** (verificado no tarball em 04/09). Conteúdo atual: **v17** — o v18 nunca foi commitado |
+| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — **nomes SEM versão; a versão vive no cabeçalho**. Conteúdo atual: **v19** (commit `1829021`); o v20 entra por cima |
 | GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data` |
 | **Homologação** | **`177.87.230.179`, porta SSH `2078`, usuário `resolutto`** |
 | URL externa do GLPI | `http://177.87.230.179:2077/` |
@@ -154,8 +162,9 @@ cd /var/www/html/glpi/plugins/dgoplus
 git status --short && git log -1 --oneline && grep PLUGIN_DGOPLUS_VERSION setup.php
 ```
 
-⚠️ Quando o HEAD é commit de `docs/`, o `git log -1` mostra o commit dos docs —
-o último commit de CÓDIGO pode ser anterior. Normal (lição 143).
+⚠️ Quando o HEAD é commit de `docs/` (é o caso do `1829021`), o `git log -1`
+mostra o commit dos docs — o último commit de CÓDIGO pode ser anterior. Normal
+(lição 143).
 
 **Reverter:**
 
@@ -230,19 +239,21 @@ muda, decisão de reinstalar em negrito na primeira linha; **(2)** `scp` literal
 com md5 esperados; **(3)** comandos de aplicar com `git diff` como conferência;
 **(4)** roteiro numerado com resultado esperado, log e reversão.
 
-⚠️ **Sessão de VALIDAÇÃO não é entrega de bloco** — só roteiro. A sessão de
-04/09 foi inteira assim: duas conferências em tela, uma remoção, zero código.
+⚠️ **Sessão de VALIDAÇÃO não é entrega de bloco** — só roteiro. As duas
+sessões de 04/09 foram assim: higiene (1ª) e fechamento de pendências 7/11/18
+(2ª), zero código.
 ⚠️ **Bloco sem cenário de teste na homologação não é entregue.**
 ⚠️ **Bloco preparado pode MORRER antes de aplicar** (03/09, 5e-2d-2) — não é
 erro, é o processo funcionando. **Ver a alternativa rodando vale mais que
 decisão fechada em abstrato.**
+⚠️ **Roteiro preparado pode ficar DESNECESSÁRIO** (04/09, pendência 7: as
+telas da pendência 11 já provaram o autor — nada foi gravado à toa).
 
 ### Roteiro de teste — exigências acumuladas
 
-- Se confere contra o código antes de sair (lição 158). ⚠️ Reforçada em 04/09:
-  **explicação de comportamento de tela também se confere no código** — a
-  diferença entre a lista administrativa de pisos e o dropdown do mapa só se
-  explicou lendo o `floorsWithItems()`, não deduzindo.
+- Se confere contra o código antes de sair (lição 158). Na 2ª sessão de 04/09
+  isso significou ler `Port.php`, `Link.php`, `Log.php` e `CommonDBChild.php`
+  (core) ANTES de escrever o roteiro do histórico.
 - Todo passo que troca de tela diz COMO chegar lá (lição 159).
 - Toda pré-condição de dados é lida em tela antes de virar passo (lição 160).
 - Passo que prevê "não muda" também é passo.
@@ -251,7 +262,7 @@ decisão fechada em abstrato.**
 ### Nome de arquivo entregue leva o bloco
 
 `MapController-5e3b.php`, `dgoplus-5e3b.js.txt`. O `cp` renomeia (lição 140).
-Docs versionam no nome do arquivo ENTREGUE (`contexto-dgoplus-v19.md`); no
+Docs versionam no nome do arquivo ENTREGUE (`contexto-dgoplus-v20.md`); no
 repositório o `cp` grava sem versão (`docs/contexto-dgoplus.md`).
 
 ### O repositório é público — usar isso por padrão
@@ -276,6 +287,9 @@ completa é `^+`/`^-` menos os cabeçalhos `+++`/`---`.
 `src/Glpi/...`; schema em `install/mysql/glpi-empty.sql`. ⚠️ **O CSS do tema
 NÃO é legível por esse caminho** (lição 156). Caminhos baratos: classe que o
 plugin já imprime em tela, ou estilo inline (foi o inline no 5e-3a).
+⚠️ Para arquivo de TAG (estável), `raw.githubusercontent.com` serve — o
+problema de cache do raw é com commit recente, não com tag (usado em 04/09
+para `Log.php` e `CommonDBChild.php` da 11.0.6).
 
 ### O sandbox do assistente TEM PHP e Node
 
@@ -300,28 +314,19 @@ bump; afirmar consequência sem simular o formato inteiro.
 
 A DGO **não é um itemtype do plugin**. Cada elemento é um `PassiveDCEquipment`
 nativo; o plugin acrescenta grade, escopo e vínculos. O core não conhece as
-tabelas do plugin — daí o `PurgeCleaner` (✅ **faxina provada em tela em
-04/09**: a purga da `#36` levou o vínculo da F1.06 da `#34` junto e liberou a
-E3). Escopo: **Localização (nativa) → Piso (intitulado do plugin)**.
+tabelas do plugin — daí o `PurgeCleaner` (faxina provada em tela em 04/09).
+Escopo: **Localização (nativa) → Piso (intitulado do plugin)**.
 
-### Pisos — cadastro × filtro (relido no código em 04/09)
+### Pisos — cadastro × filtro
 
 - **Cadastro** em `Configurar → Listas suspensas → Pisos` — é lá que se
   confere a EXISTÊNCIA de um piso.
 - **O filtro do mapa usa `floorsWithItems()`** — só pisos COM elemento no
-  escopo corrente. Decisão do bloco 5b, comentada no código: *"piso vazio na
-  lista é uma promessa falsa — escolher um deles esvaziava a tela sem dizer
-  por quê"*. Consequências práticas:
-  - Piso vazio NUNCA aparece no dropdown do mapa — ausência ali não prova
-    inexistência.
-  - Localização sem piso COM elemento não renderiza o filtro (visto em tela:
-    `shopping palladium`).
-  - Escopo cheio ("Todos os papéis" + "Todos os pisos") sem o piso na lista
-    **prova que ele está vazio** — foi a prova usada antes da remoção do
-    `PISO VAZIO TESTE`.
-- `Floor::getForLocation()` (a lista bruta, com entidade somada via
-  `getEntitiesRestrictCriteria`) é o que valida `?floor=` na entrada do
-  controlador.
+  escopo corrente (decisão do bloco 5b). Piso vazio NUNCA aparece no dropdown;
+  localização sem piso com elemento não renderiza o filtro; escopo cheio sem o
+  piso na lista prova que ele está vazio.
+- `Floor::getForLocation()` (lista bruta, com entidade somada) valida
+  `?floor=` na entrada do controlador.
 
 ### Papéis
 
@@ -338,9 +343,32 @@ fiber_num)`, `kind` fora (lição 112). **`Port::applyInput()` é o ponto único
 de gravação** — faz o `checkRight(UPDATE)` que lança o 403. Grade padrão 4×16
 = 64 posições (lição 146). Porta sem acoplador não conta como documentada.
 
-✅ Porta de grade **com vínculo e sem nome CONTA como documentada** —
-`applyInput` linha 512 não apaga linha com vínculo; `statsForDgo` (947–967)
-conta linhas e desconta sem-acoplador. Destrava o BADGE-C.
+Porta de grade **com vínculo e sem nome CONTA como documentada** —
+`applyInput` não apaga linha com vínculo; `statsForDgo` (947–968 no 1.3.22)
+conta linhas da grade (`is_deleted=0`) e desconta as sem-acoplador.
+
+**Carimbo de documentação (bloco 3s):** `documentStamp()` é o ponto único de
+`users_id_documenter`/`date_documented`; carimba só quando o VALOR do código
+muda — corrigir OBS não rouba autoria; apagar código não apaga carimbo.
+
+### Histórico — mecanismo PROVADO em código e em tela (04/09, 2ª sessão)
+
+Fatos verificados no commit `1829021` + core 11.0.6:
+
+- `Port` estende `CommonDBChild` com `dohistory = true`; **não declara**
+  `$logs_for_parent` — vale o default do core, **`true`**
+  (`CommonDBChild.php:62`). Toda gravação de porta gera linha no **Histórico
+  do elemento pai** (`HISTORY_ADD/UPDATE/DELETE_SUBITEM`).
+- `applyInput` grava por `$port->add()`/`$port->update()` (objeto, nunca SQL
+  direto) — os ganchos de histórico disparam sempre.
+- Cada linha do `glpi_logs` grava **`user_name`** = nome do usuário logado
+  (`Log::history` → `User::getNameForLog`). **O técnico aparece como autor** —
+  provado em tela: `cristian.b (29)` e `teste.001 (19)` nomeados linha a linha
+  no Histórico do `DGO 01 #34`.
+- `history_blacklist = ['users_id_documenter', 'date_documented']` — o
+  carimbo NÃO vira linha de histórico (seria ruído); o que aparece é a mudança
+  de código/OBS/acoplador.
+- `Link` tem `dohistory = true` (histórico próprio, é `CommonDBTM`).
 
 ### Vínculos
 
@@ -360,14 +388,20 @@ Ponto único do nome em tela. `forRow`/`forItem` = `nome · localização · #id
 recortadas). Localização via `Dropdown::getDropdownName` — devolve o
 **`completename`** (árvore com `>`), memorizado em cache estático.
 
-✅ **Decisão fechada (28/08): `completename` FICA.** Não reabrir sem fato novo.
-Nome vazio imprime `sem nome`; ausente devolve `elemento #%d`.
+✅ **Decisão fechada (28/08): `completename` FICA.** ⚠️ **FATO NOVO registrado
+em 04/09 (2ª sessão), sem reabrir a decisão:** as localizações da produção
+usadas pelo DGO+ são filhas da raiz `Shopping` — rótulo tipo
+`nome · Shopping > Palladium Umuarama · #id` — e a árvore chega a **três
+níveis** (`Shopping > Palladium Ctba > Diretoria`); se algum elemento for
+pendurado num terceiro nível, o rótulo carrega os três degraus. Reabrir é
+decisão do usuário (seção 8). Nome vazio imprime `sem nome`; ausente devolve
+`elemento #%d`.
 
 **Consumidores (medidos no `fbf1952`, inalterados):** `MapController.php` 8,
 `Link.php` 6, `Dashboard.php` 1.
 
-⚠️ **O seletor de DESTINO continua fora do `ItemLabel`** (`CTO 01 (CTO) #35`
-— revisto em tela em 04/09, na F1.06). É a dívida 7.
+⚠️ **O seletor de DESTINO continua fora do `ItemLabel`** (`CTO 01 (CTO) #35`).
+É a dívida 7.
 
 ### O selo de nome duplicado — 5e-2d-1
 
@@ -378,9 +412,9 @@ consulta própria por carga, memorizada, só nomes com 2+); `normalizeName()`
 `DUP_COLOR = '#D68A3A'`).
 
 **A consulta é PRÓPRIA de propósito** — calcular do `getDgosAtLocation()`
-faria o selo sumir conforme o filtro de piso/papel. ✅ 100% exercitado
-(tooltip dinâmico conferido em 03/09); em 04/09 os pares pós-purga (`#34/#37`
-e `#35/#38`) continuavam acesos e os únicos, apagados.
+faria o selo sumir conforme o filtro de piso/papel. ✅ 100% exercitado; em
+04/09 (2ª sessão) o tooltip do `#34` foi revisto de novo, aceso e correto
+("Nome repetido nesta localização: #34, #37").
 
 Fora do selo, de propósito: trilha, Alimenta, anexos, painel da porta. Nome
 vazio nunca acende.
@@ -394,15 +428,13 @@ abas de verdade, agrupadas por papel, em **linha única que não quebra**:
   style='flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden'>` — estilo inline
   de propósito (lição 156); cada `<li>` com `flex:0 0 auto;white-space:nowrap`.
 - A **barra de rolagem horizontal** aparece nativa, **só quando há overflow**
-  — visto de novo em 04/09: 8 elementos na `Outlet Porto Belo`, sem barra.
+  — 8 elementos na `Outlet Porto Belo`, sem barra (revisto de novo em 04/09).
 - **5e-3b:** módulo IIFE no fim do `dgoplus.js` que, na carga, havendo
   overflow E aba ativa, **centraliza a ativa mexendo só no `scrollLeft` da
-  própria UL** — nada de `scrollIntoView`. Posição por
-  `getBoundingClientRect`. Sem overflow, sem ativa ou sem a UL: sai calado.
+  própria UL** — nada de `scrollIntoView`. Sem overflow, sem ativa ou sem a
+  UL: sai calado.
 
-O formato de aba segue `shortForRow` + selo + contagem. A armadilha "o
-`<option>` não aceita HTML" continua verdadeira no GLPI, mas sem consumidor no
-plugin.
+O formato de aba segue `shortForRow` + selo + contagem.
 
 ### Comentário do elemento
 
@@ -425,9 +457,12 @@ Jointypes válidos no 11.0.6; para a porta, `itemtype_item_revert` +
 3 itemtype, 5 tube, 6 fiber, 7 comment, 8 Localização (`nosearch`), 9
 no_coupler, 10 kind, 11 documentado por, 12 date_documented, 19 date_mod,
 121 date_creation. `Port::getReportUrl()` é o ponto único da URL. A busca do
-mapa é GLOBAL — é o desenho, **e busca PORTAS** (código/nome/observação): em
-04/09, "piso" devolveu 0 porque nenhuma porta carrega esse texto — a busca não
-enxerga pisos nem elementos.
+mapa é GLOBAL e busca PORTAS (código/nome/observação) — não enxerga pisos nem
+elementos.
+
+⚠️ **Portas anteriores ao bloco 3s aparecem com "Documentado por" vazio no
+relatório** (visto em 04/09: linhas de 04–17/08 sem carimbo). Comportamento
+esperado, não defeito — o carimbo não é retroativo.
 
 ### Schema e direitos
 
@@ -440,8 +475,7 @@ gravação; anexos = `document` R+U+C **e `datacenter` UPDATE**; papéis =
 `parentIsReachable()` falha fechado.
 
 ⚠️ **A Fase 5 ainda não chegou à produção.** Deploy com plano de rollback —
-bloco próprio, sem data. Começa por RELER a produção em tela (retrato é de
-28/08).
+bloco próprio, sem data. Começa por RELER a produção em tela.
 
 ### Anexos
 
@@ -452,11 +486,10 @@ candidato **5i**.
 ### Arquivos
 
 **31 no repositório** (28 + 3 em `docs/`). `docs/` = `contexto-dgoplus.md`,
-`roadmap-dgoplus.md`, `README.md` (nomes sem versão — verificado no tarball em
-04/09).
+`roadmap-dgoplus.md`, `README.md` (nomes sem versão).
 
-**Impressões digitais do 1.3.22**, medidas no commit `12a7202` (03/09,
-inalteradas):
+**Impressões digitais do 1.3.22** — re-conferidas em 04/09 (2ª sessão) no
+tarball do `1829021`, todas batendo:
 
 ```
 34f90a86923074e0d79a3a95e721a0f2  setup.php                    (269 linhas)
@@ -481,19 +514,17 @@ dae5e817600bfdb6db3345cfa0383ea0  ajax/dgocomment.php           (52 linhas)
 
 ⚠️ Lacuna 1–113 mantida (dívida 3, caminho barato esgotado). A tabela de
 lições 3–166 permanece integralmente válida — **nenhuma lição nova numerada
-em 04/09**. As mais recentes:
+em 04/09** (nas duas sessões). As mais recentes:
 
 | # | Lição |
 |---|---|
 | 165 | **Bump de versão no `setup.php` faz PARTE do bloco de código** |
 | 166 | **Antes de afirmar a consequência de uma alternativa, escrever o resultado por extenso** |
 
-Reforço de 04/09 (sem número novo — coberto pelas regras existentes):
-**explicação de comportamento de tela se confere no código antes de virar
-afirmação.** A diferença lista administrativa × dropdown do mapa foi explicada
-lendo o `floorsWithItems()`, depois de uma primeira inferência incompleta
-("filtro aparece se há piso cadastrado" — o critério real é piso COM
-elemento).
+Reforços de 04/09 (sem número novo): explicação de comportamento de tela se
+confere no código antes de virar afirmação (1ª sessão, `floorsWithItems()`;
+2ª sessão, `logs_for_parent` — o comentário do `Port.php` afirmava `true`, mas
+a propriedade não está declarada; a prova veio do default do core, lido).
 
 **Armadilhas permanentes do GLPI 11**: lista integral mantida.
 
@@ -502,15 +533,8 @@ elemento).
 ## 5. Estado por bloco
 
 Blocos 1 a 5e-3b: fechados e validados (até 1.3.22). A frente 5e está
-ENCERRADA. O que muda no v19:
-
-| Bloco | Entrega | Estado |
-|---|---|---|
-| 5e-2d-1 | Selo de nome duplicado | ✅ 100% exercitado; pares pós-purga revistos em 04/09 |
-| 5e-2d-2 | Marca textual no seletor único | ☠️ Cancelado sem código (03/09) |
-| 5e-3a | Abas sempre + rolagem horizontal | ✅ Fechado e validado (1.3.21, `28d5079`) |
-| 5e-3b | Aba ativa centralizada na carga | ✅ Fechado e validado (1.3.22, `12a7202`) |
-| **SKILL** | `SKILL.md` reescrito, entregue em 03/09 | ✅ **ENCERRADO POR DECISÃO (04/09):** a skill cadastrada NÃO será trocada; o arquivo na base do projeto é a fonte e este contexto prevalece sobre a skill antiga |
+ENCERRADA. Sem mudança de estado de bloco no v20 — a sessão foi de pendências
+(seção 7 do roadmap).
 
 **Nenhum bloco está no estado "entregue e não exercitado".**
 
@@ -522,11 +546,10 @@ ENCERRADA. O que muda no v19:
 2. **Sem catálogo de tradução** — decisão de produto pendente.
 3. **Lista integral de lições (1–113)** — só pelo documento original.
 4. ~~Tag/Release~~ ✅ quitada.
-5. ~~Skill desatualizada~~ ✅ **QUITADA POR DECISÃO (04/09)** — a skill fica
-   como está; fonte da verdade = arquivo na base do projeto + este contexto.
+5. ~~Skill desatualizada~~ ✅ quitada por decisão (04/09).
 6. ~~"Desmontar" sem botão~~ ✅ quitada.
 7. **Seletor de DESTINO fora do `ItemLabel`** (`CTO 01 (CTO) #35`). Última
-   inconsistência de formato — revista em tela em 04/09.
+   inconsistência de formato.
 8. ~~Seletor único sem marca de colisão~~ ✅ quitada por remoção (03/09).
 
 ---
@@ -536,69 +559,84 @@ ENCERRADA. O que muda no v19:
 ⚠️ **Duas bases; tudo aqui é retrato datado** (lição 160). **A homologação é
 ambiente vivo dos técnicos** — reler SEMPRE.
 
-### Produção (retrato de 28/08, NÃO relido desde então)
+### Produção (retratos de 28/08 e 04/09)
 
-159 elementos (DIO 3, DGO 67, CTO 88, PTO 1; 2 na lixeira; 1 fora dos papéis);
-4944 portas (2220 doc., 44,9%); 9 localizações — `Palladium Umuarama` 91,0% …
-`Palladium Ctba` 2,5%. Documentadores: Claudio Morett, Kayan Lucas, Pedro s,
-cristian.b. Pergunta das localizações-pai segue aberta e de baixa prioridade.
+- **Elementos/portas (28/08, NÃO relido):** 159 elementos (DIO 3, DGO 67,
+  CTO 88, PTO 1; 2 na lixeira; 1 fora dos papéis); 4944 portas (2220 doc.,
+  44,9%); 9 localizações COM elementos — `Palladium Umuarama` 91,0% …
+  `Palladium Ctba` 2,5%. Documentadores: Claudio Morett, Kayan Lucas, Pedro s,
+  cristian.b.
+- **Localizações (04/09, 2ª sessão — pendência 18 FECHADA):** a lista
+  administrativa tem **427 linhas**, com **VÁRIAS raízes**: `Shopping` (as
+  unidades DGO+: `Shopping > Palladium Ctba`, `Shopping > Jockey Plaza`,
+  `Shopping > Palladium Umuarama`, `Shopping > Estacao`,
+  `Shopping > Plaza Campos Gerais`, etc.), e também `Fleury`, `Confiance` e
+  `Padrão`, entre outras — **apenas ~42 das 427 são de shoppings (informado
+  pelo usuário)**. A árvore chega a **três níveis**
+  (`Shopping > Palladium Ctba > Diretoria`). **A base de localizações da
+  produção é compartilhada com contextos alheios ao DGO+** — o grosso das 427
+  não tem elemento óptico. Consequências anotadas: rótulo (seção 3, ItemLabel)
+  e valor do 5h-2 (seção 9).
 
-### Homologação — localizações conhecidas (04/09)
+### Homologação — localizações conhecidas (04/09, 2ª sessão)
 
 | Localização | O que se sabe | Fonte |
 |---|---|---|
 | `Outlet Porto Belo` | 8 elementos (tabela abaixo); piso `MALL - PORTO BELO` | Tela 03–04/09 |
-| `shopping palladium` | 4 elementos; **sem piso com elemento** (filtro Piso nem renderiza) | Tela 03–04/09 |
-| **`Plaza Campos Gerais`** | **NOVA aos docs (04/09).** Pisos `L1` e `L2` cadastrados. **Elementos NÃO lidos em tela — não afirmar** | Tela administrativa de Pisos |
+| `shopping palladium` | Elementos com portas (Claudio Morett, 20/08, no relatório); sem piso com elemento | Tela 03–04/09 |
+| `Plaza Campos Gerais` | Pisos `L1`/`L2`; **TEM elementos com portas documentadas** (`Pedro s`, 20/08 — grade e entrada, visto no relatório). Elementos não abertos no mapa — contagens não afirmadas | Relatório de portas 04/09 |
+| `shopping estação` | **NOVA aos docs (04/09, 2ª sessão).** Portas documentadas por `Pedro s` (20/08) e outras de 08–13/08 sem carimbo | Relatório de portas 04/09 |
+| `Shopping Ventura` | **NOVA aos docs.** Tem filha `Shopping Ventura > DGO Cristian` — **pai existe também na homologação**; porta de 04/08 sem carimbo | Relatório de portas 04/09 |
 
-**Pisos cadastrados (tela administrativa, 04/09, pós-remoção):** `L1` e `L2`
-(`Plaza Campos Gerais`), `MALL - PORTO BELO` (`Outlet Porto Belo`) — 3 linhas.
-**`PISO VAZIO TESTE` removido em 04/09** ("Operação realizada com sucesso").
+**Relatório de portas da homologação em 04/09: 66 linhas no total.**
 
-### `Outlet Porto Belo` — 8 elementos (lido 03/09, revisto parcialmente 04/09)
+**Pisos cadastrados (04/09, 1ª sessão):** `L1` e `L2` (`Plaza Campos
+Gerais`), `MALL - PORTO BELO` (`Outlet Porto Belo`) — 3 linhas.
+
+### `Outlet Porto Belo` — 8 elementos
 
 | Elemento | id | Papel | Selo | Obs |
 |---|---|---|---|---|
 | `DIO 001` | 39 | DIO | — | 2 doc. Criado pelos técnicos |
 | `DGO 01 - PORTO BELO` | 33 | DGO | — | 1 doc |
-| `DGO 01` | 34 | DGO | ⚠ par com #37 | **5 doc** — ✅ **F1.06 conferida em 04/09: código `2153`, SEM vínculo, E3 `livre`** (faxina do `PurgeCleaner` provada) |
+| `DGO 01` | 34 | DGO | ⚠ par com #37 | **5 doc** (contador revisto em 04/09, 2ª sessão). **Histórico lido: 33 linhas** — criado por `cristian.b` em 27/08 09:18; F1.01–F1.06 adicionadas em 27/08 (cristian.b a F1.01; teste.001 as demais); E1 adicionada por Claudio em 29/08 |
 | `DGO 01` | 37 | DGO | ⚠ par com #34 | 1 doc. **FICA — treinamento** |
 | `CTO 01` | 35 | CTO | ⚠ par com #38 | 1 doc |
 | `CTO 01` | 38 | CTO | ⚠ par com #35 | 0 doc. Criado pelos técnicos |
 | `TESTE 5e2d2 A` | 41 | CTO | — | 0 doc. **FICA — treinamento** |
 | `TESTE 5e2d2 B` | 42 | CTO | — | 0 doc. **FICA — treinamento** |
 
-- Grade da `#34` em 04/09: E1 ocupada (F1.01), E2–E4 livres; F1.02 `1202`,
-  F1.03 `1214`, F1.05 `2153-01…`, F1.06 `2153`; 5 de 16 documentadas.
-- `CTO 01 #36` purgada em 03/09; pendências 8 (v17) e 19 encerradas.
-- 8 abas em linha única, sem barra (revisto em 04/09).
-- Elemento `#40`: não visto em tela; não afirmar.
+**Nota aberta (pequena, opcional):** o Histórico do `#34` mostra **6 adições
+de grade** (F1.01–F1.06) e o contador da aba mostra **5**. Pela regra do
+`statsForDgo`, a que não conta ou está sem acoplador ou foi esvaziada e
+apagada — candidata: **F1.04**. Um olhar na grade fecha; não é pendência
+numerada.
 
 **Painel/pendentes:** retrato do v16, não relido. Perfil de teste: `Tecnicos
-N1, ID 12`, usuário `teste.001` (não usados desde 28/08).
+N1, ID 12`, usuário `teste.001` — **`teste.001 (19)` visto ativo no histórico
+de 27/08**.
 
 ---
 
 ## 8. Decisões negativas registradas
 
-Tabela integral do v18 mantida (MAX_TABS revogada e removida; sufixo na
-`<option>` morto; `scrollIntoView`, múltiplas linhas, lista lateral e dropdown
-com limite maior descartados; mais as 36 do v17). Nova, de 04/09:
-
-| Ideia | Decisão | Motivo |
-|---|---|---|
-| **Atualizar a skill `glpi-plugin-teckcomp` cadastrada** | **DESCARTADA por decisão do usuário (04/09)** | A skill fica com o conteúdo antigo (`pscp`, `192.168.1.50`, zip); a fonte da verdade do ambiente é o arquivo na base do projeto + este contexto, que PREVALECEM sobre a skill. **Não voltar a propor a troca sem fato novo** |
+Tabela integral do v19 mantida (skill não será trocada; MAX_TABS revogada;
+sufixo na `<option>` morto; `scrollIntoView`, múltiplas linhas, lista lateral
+e dropdown com limite maior descartados; mais as 36 do v17).
 
 ### Decisões de produto vigentes
 
+- **`completename` FICA (28/08)** — ⚠️ com **fato novo registrado em 04/09**:
+  as localizações DGO+ da produção são filhas de `Shopping` (prefixo
+  `Shopping > ` nos rótulos) e a árvore chega a três níveis. **A decisão NÃO
+  foi reaberta**; reabrir exige vontade do usuário, agora com o fato na mesa.
 - **BADGE-C · variante C** — dois contadores (`0/16 grade` · `2/4 entradas`);
   toca `statsForDgo`, `renderBadges`, `ajax/port.php`.
 - **5d · confirmar em dois tempos** — vínculo que pula degrau não grava na
   primeira. O trabalho real: destino e entrada sobreviverem ao redirect.
   Limitações aceitas: marcador forjável no POST; nada registrado depois.
 - **Abas sempre, rolagem horizontal** — vigente desde 03/09.
-- **Filtro de piso só com pisos ocupados** (bloco 5b) — confirmada de fato em
-  04/09; a tela administrativa é quem responde pela existência.
+- **Filtro de piso só com pisos ocupados** (bloco 5b).
 - **Elementos de treinamento na homologação** — `#37`, `#41`, `#42`
   permanentes; purgá-los exige nova decisão do usuário.
 
@@ -606,13 +644,14 @@ com limite maior descartados; mais as 36 do v17). Nova, de 04/09:
 
 ## 9. Próximo passo imediato
 
-1. **Commit dos docs v19** no repositório (só `docs/` → sem reinstalação).
-   O v18 nunca foi commitado — o v19 entra direto sobre o v17.
+1. **Commit dos docs v20** no repositório (só `docs/` → sem reinstalação).
+   Entra por cima do v19 (commit `1829021`).
 2. **Commit — 5d**, confirmação em dois tempos. ⚠️ Mexe no `Link::propose()`.
 3. **Commit — BADGE-C + contador de entradas separado.**
-4. **5h-2** (remover `nosearch` da Localização no relatório), **5i** (anexo
-   por formulário próprio), e o **bloco de deploy em produção** (com rollback;
-   começa por reler a produção em tela).
+4. **5h-2** (remover `nosearch` da Localização no relatório — **valorizado
+   pelo fato das 427 localizações da produção**), **5i** (anexo por formulário
+   próprio), e o **bloco de deploy em produção** (com rollback; começa por
+   reler a produção em tela).
 5. **Frente shopmap** — bloqueada pela pendência 16 (repositório privado).
 6. **REV** — revisão competitiva, ao fim de tudo.
 
@@ -622,16 +661,18 @@ com limite maior descartados; mais as 36 do v17). Nova, de 04/09:
 
 ## 10. O que correu mal do lado do assistente
 
-**O padrão se mantém: zero erro em código gravado** (sessão de 04/09 nem teve
-código). Ocorrências:
+**O padrão se mantém: zero erro em código gravado** (sessão sem código).
+Nenhuma ocorrência na 2ª sessão de 04/09 — as afirmações de mecanismo
+(histórico, autor, blacklist) foram todas lidas no código/core ANTES do
+roteiro, e a única suspeita (comentário do `logs_for_parent` sem propriedade
+declarada) foi resolvida lendo o default do core, não assumindo.
 
-| # | Ocorrência | Custo | Vira lição? |
-|---|---|---|---|
-| 1 | Inferência incompleta sobre o filtro de Piso ("aparece se a localização tem piso cadastrado" — o critério real é piso COM elemento) | Zero — corrigida lendo o `floorsWithItems()` no código ANTES de qualquer ação | Não — coberta pelas regras existentes; registrada como reforço na seção 2 |
-| 2 | Memória de que o `docs/` do repositório usava nomes versionados | Zero — desmentida pelo tarball antes de montar o commit | Não — regra 1 do projeto aplicada (verificar antes de afirmar) |
-
-**O que o processo provou em 04/09:** a existência do piso foi decidida pela
-tela administrativa (não pelo filtro do mapa) e o vazio foi provado pelo
-escopo cheio do filtro — duas fontes, cada uma respondendo à sua pergunta; a
-F1.06 fechou com um único print; e as duas inferências erradas do assistente
-morreram na verificação, antes de custar qualquer coisa.
+**O que o processo provou em 04/09 (2ª sessão):** um roteiro preparado
+(pendência 7) morreu por já estar provado pelas telas de outra pendência —
+nada foi gravado à toa na homologação; a leitura da produção rendeu fatos que
+mudam prioridade (427 localizações, maioria alheia ao DGO+ → 5h-2 mais
+valioso) e alimentam uma decisão futura (rótulo com até três degraus); e a
+primeira leitura do v20 ("o padrão `Shopping >` domina"), corretamente
+ressalvada como "só página 1 lida", foi **corrigida pelo usuário com mais
+tela ANTES do commit** — várias raízes, ~42 de shoppings. A ressalva
+funcionou como desenhada: dedução declarada nunca virou fato.
