@@ -3567,34 +3567,25 @@ class MapController
         echo "<label class='form-label mb-1'>" . __('Elemento de destino', 'dgoplus') . "</label>";
         echo "<select name='dst_items_id' class='form-select form-select-sm' data-dgoplus-link-dst='1'>";
 
-        // Bloco 5e: dois elementos com o MESMO nome e o mesmo papel produziam
-        // duas opcoes identicas, e escolher entre elas era sorteio. O escopo do
-        // 5a separa quando estao em localizacoes ou pisos diferentes; quando
-        // estao no mesmo, nada os distinguia.
-        //
-        // A desambiguacao e' POR COLISAO: quem tem nome unico continua com o
-        // rotulo limpo, e so' o par ambiguo ganha o sufixo. Sufixo em todo
-        // mundo seria ruido em 159 elementos para resolver um caso.
+        // Bloco 5e-4 (decisao de 04/09): TODO elemento leva o sufixo #id.
+        // A regra anterior do 5e ("sufixo so' na colisao") morreu por decisao
+        // do usuario - nome duplicado virou rotina de campo, e id sempre
+        // visivel casa com a regra dura do projeto: referencia a ativo e'
+        // itemtype+id, nome e' rotulo.
         //
         // O sufixo e' o id do ativo porque e' o unico campo garantidamente
-        // presente e unico - nome pode repetir (e' o defeito), piso quase
-        // nunca esta preenchido, e localizacao ja e' o recorte do 5a.
-        $label_count = [];
-        $cand_labels = [];
+        // presente e unico - nome pode repetir, piso quase nunca esta
+        // preenchido, e localizacao ja e' o recorte do 5a. Elemento SEM nome
+        // ja abre o rotulo com #id; nesse caso o sufixo nao repete.
         foreach ($candidates as $cid => $cand) {
+            $cid       = (int) $cid;
             $cand_role = Setting::getRoleForType((int) ($cand[Setting::getTypeField()] ?? 0));
-            $label     = ($cand['name'] ?: ('#' . $cid))
-                . ($cand_role !== null ? ' (' . Setting::getRoleLabel($cand_role) . ')' : '');
+            $role_sfx  = ($cand_role !== null ? ' (' . Setting::getRoleLabel($cand_role) . ')' : '');
+            $label     = ($cand['name'] !== '' && $cand['name'] !== null)
+                ? $cand['name'] . $role_sfx . ' #' . $cid
+                : '#' . $cid . $role_sfx;
 
-            $cand_labels[(int) $cid] = $label;
-            $label_count[$label]     = ($label_count[$label] ?? 0) + 1;
-        }
-
-        foreach ($cand_labels as $cid => $label) {
-            if (($label_count[$label] ?? 0) > 1) {
-                $label .= ' #' . $cid;
-            }
-            echo "<option value='" . (int) $cid . "'>" . htmlescape($label) . "</option>";
+            echo "<option value='" . $cid . "'>" . htmlescape($label) . "</option>";
         }
 
         echo "</select>";
