@@ -2,14 +2,14 @@
 
 > Companheiro do `contexto-dgoplus.md`. **Substituir**, nunca acumular.
 >
-> **Versão:** v20 — 04/09/2026 (segunda sessão do dia). Sucede o v19.
-> A mudança que justifica a versão nova: **as três pendências finalizáveis
-> fecharam em tela** — **7** (histórico registra o técnico como autor,
-> provado com print), **11** (delta de portas da `DGO 01 #34` explicado linha
-> a linha, com autores) e **18** (localizações da produção TÊM pai: raiz
-> `Shopping`, lista com 427 linhas). Só a **16** (shopmap) segue viva, e
-> bloqueada. **Sessão sem código**: versão **1.3.22**, último commit de código
-> `12a7202`; `master` em **`1829021`** (docs v19, já commitados).
+> **Versão:** v21 — 04/09/2026 (terceira sessão do dia). Sucede o v20.
+> A mudança que justifica a versão nova: **bloco 5e-4 entregue e validado**
+> (`#id` em todo elemento do seletor de destino — versão **1.3.23**, commit
+> **`0be3216`**), **três validações fechadas em tela** (V1: nota do `#34`
+> resolvida — F1.04 esvaziada/apagada; V2: "antes" do 5d provado — pulo de
+> degrau grava na primeira; V3: "antes" do BADGE-C provado — badge só grade),
+> e **retrato novo da homologação** (41 elementos, PTOs existem, 9
+> localizações). Docs v20 já estavam commitados (`1486d78`) antes da sessão.
 
 ---
 
@@ -33,30 +33,32 @@ grep -rc 'PassiveDCEquipment::$rightname' src/ | grep -v ':0'     # nada
 |---|---|---|
 | 5a … 5e-2d-1b | Tudo do v17, até o selo de duplicado e o bump de reparo | até 1.3.20 |
 | 5e-3a | Abas sempre; linha única com rolagem horizontal; mata o seletor único e o `MAX_TABS` | 1.3.21, `28d5079` |
-| 5e-3b | Aba ativa centralizada na linha rolável ao carregar (JS, gancho `data-dgoplus-tabs`) | 1.3.22, `12a7202` |
-| **docs v19** | Commit dos docs da sessão de higiene | `1829021` (só `docs/`) |
-| **SKILL** | Encerrado por decisão (04/09): a skill cadastrada não será trocada | — |
+| 5e-3b | Aba ativa centralizada na linha rolável ao carregar | 1.3.22, `12a7202` |
+| docs v19 | Commit dos docs da sessão de higiene | `1829021` |
+| docs v20 | Commit dos docs das pendências 7/11/18 | `1486d78` |
+| **5e-4** | **`#id` em TODO elemento do seletor de destino** — revoga "sufixo só na colisão" (5e) por decisão do usuário; opção A (formato `nome (PAPEL) #id` mantido); elemento sem nome sai `#id (PAPEL)` sem repetir | **1.3.23, `0be3216`** ✅ validado em tela |
+| SKILL | Encerrado por decisão (04/09): a skill cadastrada não será trocada | — |
 
-### ✅ Validado em tela nesta sessão (04/09, 2ª sessão)
+### ✅ Validado em tela nesta sessão (04/09, 3ª sessão)
 
 | Item | O que se provou | Evidência |
 |---|---|---|
-| **Pendência 11** | Histórico do `DGO 01 #34` (33 linhas): elemento criado por `cristian.b` em 27/08 09:18; F1.01 documentada por ele; F1.02–F1.06 por `teste.001` ao longo de 27/08; ajuste de Claudio em 28/08; entrada E1 em 29/08. Todo o delta de contagem explicado, com autor — mudança legítima de ambiente vivo | Prints do Histórico (2 telas) + contraprova no relatório (carimbo `Teste 001` na `(49)`) |
-| **Pendência 7** | O histórico registra o TÉCNICO como autor: `teste.001 (19)` e `cristian.b (29)` nomeados linha a linha. Mecanismo provado também no código: `dohistory` + default `logs_for_parent=true` do core + `user_name` no `glpi_logs` + gravação via `add()/update()` no `applyInput` | Mesmos prints da 11 — o roteiro próprio ficou desnecessário, nada foi gravado |
-| **Pendência 18** | Localizações da produção TÊM pai: **427 linhas com várias raízes** — `Shopping` (~42, com as unidades DGO+ como filhas), `Fleury`, `Confiance`, `Padrão`… — e até **três níveis** (`Shopping > Palladium Ctba > Diretoria`). A base é compartilhada com contextos alheios ao DGO+ | Prints de Configurar → Listas suspensas → Localizações (produção) + contagem de shoppings informada pelo usuário |
-| Selo/abas (de graça) | Tooltip do `#34` aceso e correto; 8 abas em linha única sem barra; contador do `#34` em 5 | Print do mapa |
+| **V1 — nota do `#34`** | Contador 5 CORRETO: das 6 adições do Histórico, a **F1.04 está `livre`** na grade (esvaziada e apagada, não sem-acoplador). Nota fechada sem virar pendência | Print da grade do #34 |
+| **V2 — "antes" do 5d** | Proposta **DIO→CTO pulando o DGO grava na PRIMEIRA confirmação**, direto como pendente ocupando as duas pontas — nenhuma segunda tela. `hierarchyAllows()` só compara ordem, lido no código. De graça: trilha exercitada com confirmado (`DIO · #39 → E1 · aqui`); F1.02 com vínculo e sem nome contou como documentada (2→3→2 após desmonte) | Prints painel #39, cartão #41 (pendente e confirmado); código `Link.php` |
+| **V3 — "antes" do BADGE-C** | Badge é SÓ grade: `#34` com E1 ocupada mostra `5 de 16`; `#41` com E1 ocupada mostra `0 de 64` — entradas mudas. `renderBadges()` lido no código | Prints de 3 cartões |
+| **5e-4 (o bloco)** | As 7 opções da Outlet com `#id`, inclusive nomes únicos (`TESTE 5e2d2 A (CTO) #41`, `DGO 01 - PORTO BELO (DGO) #33`); propor/desmontar inalterados | Validação do usuário em tela |
+| Busca do mapa | Procura PORTAS, não elementos — "#39" e "DIO 001 · #39" devolvem 0 com estado vazio falando. Comportamento documentado | 2 prints |
 
-### Fatos novos colhidos de graça (2ª sessão de 04/09)
+### Fatos novos colhidos de graça (3ª sessão de 04/09)
 
-- **Homologação:** `Plaza Campos Gerais` TEM elementos com portas
-  documentadas (`Pedro s`, 20/08); localizações `shopping estação` e
-  `Shopping Ventura` (com filha `DGO Cristian`) apareceram — nenhum doc as
-  conhecia. Relatório com 66 linhas.
-- **Portas pré-3s sem carimbo** (04–17/08) no relatório — esperado, o carimbo
-  não é retroativo.
-- **Nota aberta pequena:** Histórico do `#34` tem 6 adições de grade, contador
-  mostra 5 — candidata F1.04 (sem acoplador ou esvaziada). Um olhar fecha;
-  não virou pendência numerada.
+- **Homologação cresceu MUITO:** painel geral com **41 elementos** (DIO 6,
+  DGO 16, CTO 13, **PTO 6** — PTOs existem!), 18 sem documentação, **2165
+  portas** (42 doc., 1,9%), 1 porta na lixeira, **9 localizações com
+  elementos** — `A+`, `Bio qualquer > bio001` e `Shopping itajai/Bigode - 000`
+  eram desconhecidas dos docs; a 9ª ficou fora do print. Outlet inalterada
+  (8 elementos).
+- ⚠️ Consequência para 5e-3a/b: já EXISTEM localizações maiores que a Outlet
+  na homologação — medir as abas com dezenas quando uma for aberta.
 
 ### ☠️ Cancelado sem código
 
@@ -74,13 +76,14 @@ grep -rc 'PassiveDCEquipment::$rightname' src/ | grep -v ':0'     # nada
 
 | # | Pergunta | Situação |
 |---|---|---|
-| 7 | Histórico registra o técnico como autor? | ✅ **FEITA (04/09, 2ª sessão).** Provada com print: `teste.001` e `cristian.b` nomeados no Histórico do `#34`. Mecanismo provado no código (dohistory, logs_for_parent default true, user_name no glpi_logs) |
-| 11 | Por que a DGO 01 mudou de portas documentadas? | ✅ **FEITA (04/09, 2ª sessão).** O elemento nasceu em 27/08 e foi documentado em ritmo de campo — delta explicado linha a linha com autores. Mudança legítima de ambiente vivo |
+| 7 | Histórico registra o técnico como autor? | ✅ FEITA (04/09, 2ª sessão) |
+| 11 | Por que a DGO 01 mudou de portas documentadas? | ✅ FEITA (04/09, 2ª sessão) |
 | 16 | shopmap guarda vínculo por NOME ou `itemtype`+`id`? | ⚠️ **Bloqueada** — repositório privado. Única pendência viva |
-| 18 | As localizações da produção têm pai? | ✅ **FEITA (04/09, 2ª sessão).** SIM: 427 localizações com várias raízes (`Shopping` ~42 — as do DGO+ —, `Fleury`, `Confiance`, `Padrão`…), até três níveis |
+| 18 | As localizações da produção têm pai? | ✅ FEITA (04/09, 2ª sessão) |
 
-Pendências 1–6, 8, 12, 13, 14, 15, 17, 19 dos docs anteriores: todas
-respondidas, mantidas lá como histórico.
+Pendências 1–6, 8, 12–15, 17, 19: respondidas, mantidas nos docs anteriores
+como histórico. A nota aberta do `#34` (6 adições × contador 5) **fechou no
+V1** sem nunca ter sido numerada.
 
 ---
 
@@ -91,7 +94,7 @@ respondidas, mantidas lá como histórico.
 | 2 | **Sem catálogo de tradução.** Decisão de produto antes | Grande |
 | 3 | **Lista integral de lições (1–113)** | Só pelo documento original |
 | 5 | ~~Skill desatualizada~~ | ✅ Quitada por decisão (04/09) |
-| 7 | **Seletor de DESTINO usa formato próprio** (`CTO 01 (CTO) #35`) | Última inconsistência de formato — candidata a bloco pequeno |
+| 7 | **Seletor de DESTINO usa formato próprio** (`nome (PAPEL) #id`) | **Mantida por decisão no 5e-4 (opção A)** — a opção B (nascer do `ItemLabel::shortForRow`) foi oferecida e recusada. Reabrir é do usuário |
 
 ---
 
@@ -99,22 +102,21 @@ respondidas, mantidas lá como histórico.
 
 Lista do v17 mantida (endpoint AJAX de vínculo; porta ↔ chamado; notificações;
 widgets; colunas novas no relatório; carimbo de autor no comentário; pendente
-que envelhece; PAINEL-1b — tela de destino não existe; deploy da Fase 5 —
-obrigatório, sem data; elemento fora dos papéis; 5i — reescrever o cartão;
-aviso na purga com vínculo vivo; uniformizar o seletor de destino com o
-`ItemLabel`; `normalizeName()` na frente shopmap; sombra/indicador de "há mais
-abas" além da barra nativa). **Nova entrada (04/09, 2ª sessão):** avaliar o
-efeito do `completename` de produção nos rótulos do `ItemLabel` — prefixo
-`Shopping > ` nas unidades DGO+ e árvore com até três níveis; fato novo
-registrado, decisão do `completename` NÃO reaberta.
+que envelhece; PAINEL-1b; deploy da Fase 5 — obrigatório, sem data; elemento
+fora dos papéis; 5i — reescrever o cartão; aviso na purga com vínculo vivo;
+uniformizar o seletor de destino com o `ItemLabel` [= dívida 7]; 
+`normalizeName()` na frente shopmap; sombra/indicador de "há mais abas";
+efeito do `completename` de produção nos rótulos). **Nova entrada (04/09, 3ª
+sessão):** medir 5e-3a/b com localização de dezenas de abas — a homologação já
+tem candidatas.
 
 ---
 
 ## Parte F — decisões negativas
 
-Ver a seção 8 do `contexto-dgoplus.md`. Todas as anteriores permanecem
-(inclusive: não trocar a skill cadastrada; não voltar sem fato novo). Nenhuma
-nova na 2ª sessão de 04/09.
+Ver a seção 8 do `contexto-dgoplus.md`. **Mudança na 3ª sessão de 04/09:**
+a decisão "sufixo só na colisão" (5e) foi **REVOGADA pelo usuário** e
+substituída por "`#id` sempre" (5e-4, opção A). Todas as demais permanecem.
 
 ---
 
@@ -122,9 +124,10 @@ nova na 2ª sessão de 04/09.
 
 | Bloco | Comportamento com escala |
 |---|---|
-| 5e-3a/5e-3b | ✅ É a resposta à escala. ⚠️ Não medido com dezenas de abas reais |
+| 5e-3a/5e-3b | ✅ É a resposta à escala. ⚠️ Não medido com dezenas de abas — homologação já tem candidatas |
+| 5e-4 | Neutro-positivo: id sempre visível independe da quantidade |
 | 5d | Não piora. Correção de regra |
-| 5h-2 | **Melhora com escala — e subiu de valor: a produção tem 427 localizações cadastradas, a maioria alheia ao DGO+** (fato de 04/09) |
+| 5h-2 | **Melhora com escala** — 427 localizações na produção, maioria alheia ao DGO+ |
 | BADGE-C, contador de entradas | Neutros. Qualidade de leitura |
 | Deploy em produção | Piora com o tempo — 4 documentadores reais mudam de permissão |
 
@@ -132,11 +135,11 @@ nova na 2ª sessão de 04/09.
 
 ## Próximo passo imediato
 
-1. **Commit dos docs v20** (`docs/` → sem reinstalação). Entra por cima do
-   v19 (`1829021`).
-2. **Commit — bloco 5d**, confirmação em dois tempos. ⚠️ Mexe no
-   `Link::propose()`.
-3. **Commit — BADGE-C + contador de entradas separado.**
+1. **Commit dos docs v21** (`docs/` → sem reinstalação). Entra por cima do
+   v20; código segue no `0be3216`.
+2. **Bloco 5d** — confirmação em dois tempos na proposta com pulo de degrau.
+   ⚠️ Mexe no `Link::propose()`. Cenário de teste fixado: `#39 F1.02 → #41 E1`.
+3. **Bloco BADGE-C** — contadores de grade e entradas separados.
 4. **5h-2**, **5i**, e o **bloco de deploy em produção** (com rollback —
    começa por reler a produção em tela).
 5. **Frente shopmap** — bloqueada pela pendência 16.
