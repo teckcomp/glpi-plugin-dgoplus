@@ -2994,6 +2994,37 @@ class MapController
     }
 
     /**
+     * O usuario logado consegue ABRIR este anexo? Bloco 5i-2.
+     *
+     * Ponto unico: o veredicto e' o MESMO canViewFile() que o
+     * front/document.send.php aplica, com os mesmos itemtype/items_id do
+     * link montado em documentUrl(). Assim a tela do plugin nunca diverge do
+     * porteiro real do arquivo - se o core recusaria o download, a tela nao
+     * desenha <img> nem link (imagem quebrada e' falha silenciosa). Em tela
+     * (05/09) o caminho que abre neste ambiente e' Documentos - Ler no
+     * perfil; a rota via leitura do ATIVO nao se confirmou aqui e ficou como
+     * investigacao opcional - por isso a pergunta vai ao core, nao a uma
+     * regra propria.
+     *
+     * @param int $documents_id
+     * @param int $items_id
+     * @return bool
+     */
+    private static function canOpenDocument(int $documents_id, int $items_id): bool
+    {
+        $doc = new Document();
+
+        if ($documents_id <= 0 || !$doc->getFromDB($documents_id)) {
+            return false;
+        }
+
+        return (bool) $doc->canViewFile([
+            'itemtype' => PassiveDCEquipment::class,
+            'items_id' => $items_id,
+        ]);
+    }
+
+    /**
      * Card compacto de anexos, na coluna da direita.
      *
      * So miniatura + nome + contador. O componente nativo de anexo
@@ -3155,22 +3186,37 @@ class MapController
         } else {
             echo "<div class='d-flex flex-wrap gap-2 mb-3'>";
 
-            foreach ($documents as $doc) {
-                $doc_id = (int) $doc['id'];
-                $mime   = (string) ($doc['mime'] ?? '');
-                $label  = (string) ($doc['name'] ?: ($doc['filename'] ?? '#' . $doc_id));
-                $url    = self::documentUrl($doc_id, $items_id);
+            $locked_any = false;
 
-                echo "<a href='" . htmlescape($url) . "' target='_blank' rel='noopener'"
-                    . " class='text-decoration-none text-muted' title='" . htmlescape($label) . "'"
-                    . " style='display:block;width:74px'>";
+            foreach ($documents as $doc) {
+                $doc_id   = (int) $doc['id'];
+                $mime     = (string) ($doc['mime'] ?? '');
+                $label    = (string) ($doc['name'] ?: ($doc['filename'] ?? '#' . $doc_id));
+                $can_open = self::canOpenDocument($doc_id, $items_id);
+
+                // Bloco 5i-2: sem direito de abrir, nem <img> nem link - o
+                // navegador desenharia imagem quebrada, que e' recusa muda.
+                if ($can_open) {
+                    $url = self::documentUrl($doc_id, $items_id);
+                    echo "<a href='" . htmlescape($url) . "' target='_blank' rel='noopener'"
+                        . " class='text-decoration-none text-muted' title='" . htmlescape($label) . "'"
+                        . " style='display:block;width:74px'>";
+                } else {
+                    $locked_any = true;
+                    echo "<span class='text-muted'"
+                        . " title='" . htmlescape(__('Abrir exige Documentos · Ler.', 'dgoplus')) . "'"
+                        . " style='display:block;width:74px'>";
+                }
 
                 echo "<span style='display:flex;align-items:center;justify-content:center;"
                     . "width:74px;height:60px;border-radius:6px;overflow:hidden;"
                     . "background:" . self::CELL_FREE_BG . ";border:1px solid " . self::CELL_FREE_BORDER . "'>";
 
-                if (str_starts_with($mime, 'image/')) {
-                    echo "<img src='" . htmlescape($url) . "' alt='" . htmlescape($label) . "'"
+                if (!$can_open) {
+                    echo "<i class='ti ti-lock' style='font-size:22px'></i>";
+                } elseif (str_starts_with($mime, 'image/')) {
+                    echo "<img src='" . htmlescape(self::documentUrl($doc_id, $items_id)) . "'"
+                        . " alt='" . htmlescape($label) . "'"
                         . " style='width:100%;height:100%;object-fit:cover'>";
                 } else {
                     $icon = ($mime === 'application/pdf') ? 'ti-file-type-pdf' : 'ti-file';
@@ -3179,10 +3225,16 @@ class MapController
 
                 echo "</span>";
                 echo "<span class='d-block text-truncate' style='font-size:9.5px'>" . htmlescape($label) . "</span>";
-                echo "</a>";
+                echo $can_open ? "</a>" : "</span>";
             }
 
             echo "</div>";
+
+            if ($locked_any) {
+                echo "<div class='text-muted small mb-3'>"
+                    . htmlescape(__('Abrir anexo exige Documentos com Ler no perfil (aba Gerência).', 'dgoplus'))
+                    . "</div>";
+            }
         }
 
         $params = self::scope($locations_id, $floors_id, ['dgo' => $items_id]);
@@ -3252,19 +3304,40 @@ class MapController
             // Estado vazio mudo parece defeito (licao 16).
             echo "<div class='text-muted mb-3'>" . htmlescape(__('Nenhum anexo.', 'dgoplus')) . "</div>";
         } else {
+            $locked_any = false;
+
             echo "<div class='table-responsive mb-3'><table class='table table-vcenter card-table mb-0'><tbody>";
             foreach ($documents as $doc) {
-                $doc_id = (int) $doc['id'];
-                $label  = (string) ($doc['name'] ?: ($doc['filename'] ?? '#' . $doc_id));
+                $doc_id   = (int) $doc['id'];
+                $label    = (string) ($doc['name'] ?: ($doc['filename'] ?? '#' . $doc_id));
+                $can_open = self::canOpenDocument($doc_id, $items_id);
+
                 echo "<tr>";
-                echo "<td style='width:28px'><i class='ti ti-file'></i></td>";
-                echo "<td><a href='" . htmlescape(self::documentUrl($doc_id, $items_id)) . "'"
-                    . " target='_blank' rel='noopener'>" . htmlescape($label) . "</a></td>";
+
+                // Bloco 5i-2: mesma guarda da faixa de miniaturas - sem
+                // direito de abrir, nome vira texto e o cadeado fala.
+                if ($can_open) {
+                    echo "<td style='width:28px'><i class='ti ti-file'></i></td>";
+                    echo "<td><a href='" . htmlescape(self::documentUrl($doc_id, $items_id)) . "'"
+                        . " target='_blank' rel='noopener'>" . htmlescape($label) . "</a></td>";
+                } else {
+                    $locked_any = true;
+                    echo "<td style='width:28px'><i class='ti ti-lock'"
+                        . " title='" . htmlescape(__('Abrir exige Documentos · Ler.', 'dgoplus')) . "'></i></td>";
+                    echo "<td class='text-muted'>" . htmlescape($label) . "</td>";
+                }
+
                 echo "<td class='text-end text-muted text-nowrap'>"
                     . htmlescape(Html::convDateTime((string) ($doc['assocdate'] ?? ''))) . "</td>";
                 echo "</tr>";
             }
             echo "</tbody></table></div>";
+
+            if ($locked_any) {
+                echo "<div class='text-muted small mb-3'>"
+                    . htmlescape(__('Abrir anexo exige Documentos com Ler no perfil (aba Gerência).', 'dgoplus'))
+                    . "</div>";
+            }
         }
 
         if (Session::haveRight(Port::$rightname, UPDATE)) {

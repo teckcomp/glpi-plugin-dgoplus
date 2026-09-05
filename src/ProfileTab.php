@@ -115,10 +115,13 @@ class ProfileTab extends CommonGLPI
             . __('Quem cria elemento pelo mapa costuma precisar de Excluir junto: todo elemento novo nasce com a grade padrão (4 × 16 = 64 posições), e reduzi-la exige Excluir.', 'dgoplus')
             . "</p>";
 
+        // Bloco 5i-2: o texto acompanhou o 5i. O formulario nativo (e o
+        // "Data centers - Atualizar" que ele exigia) saiu de cena; anexar
+        // passou a ser ato do plugin. Abrir continua com o porteiro do core.
         echo "<p class='mb-2'><strong>"
-            . __('Anexos são a exceção e não dependem deste direito.', 'dgoplus')
-            . "</strong> "
-            . __('O cartão de anexos usa o formulário nativo do GLPI, que pergunta pelo ativo, não pelo plugin. Para anexar é necessário Documento com Ler + Atualizar + Criar (aba Gerência) e Data centers com Atualizar (aba Gerência).', 'dgoplus')
+            . __('Anexar pelo mapa exige apenas o Atualizar do DGO+', 'dgoplus')
+            . "</strong> — "
+            . __('o formulário de anexo é do próprio plugin. Já abrir ou baixar um anexo exige Documentos com Ler (aba Gerência): sem esse direito a lista aparece, mas o arquivo fica com cadeado.', 'dgoplus')
             . "</p>";
 
         echo "<p class='mb-2'>"
