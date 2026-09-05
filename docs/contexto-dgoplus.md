@@ -3,37 +3,35 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v22 — 05/09/2026. Substitui o v21 integralmente.
-> Versão **1.3.24**, `master` em **`b4437e5`** (bloco 5d, código + bump).
+> **Versão deste documento:** v23 — 05/09/2026 (2ª sessão do dia). Substitui o
+> v22 integralmente. Versão **1.3.26**, `master` em **`bf8281b`**
+> (bloco PAINEL-2b, código + bump).
 >
-> **O que o v22 traz de novo em relação ao v21:**
+> **O que o v23 traz de novo em relação ao v22:**
 >
-> 1. **O commit dos docs v21 FOI FEITO** antes desta sessão — `master` em
->    `999401c`, provado por tarball no início da sessão (docs contêm o v21;
->    `setup.php` ainda em 1.3.23).
-> 2. **Bloco 5d entregue, commitado (`b4437e5`) e VALIDADO em tela:**
->    proposta que PULA degrau na hierarquia não grava na primeira submissão —
->    volta com aviso ("pula degrau") e botão "Confirmar mesmo assim";
->    o segundo tempo grava normalmente. Descida de um degrau segue gravando
->    na primeira, sem aviso (provado em tela: `#39 → #33`). Opção A
->    (destino e entrada preservados no redirect) escolhida em sessão.
-> 3. **Pergunta do usuário respondida e registrada:** o 5d **não trava** o
->    vínculo DIO→CTO — é ciência em dois cliques, não proibição. Proibir o
->    pulo de verdade reverteria a "hierarquia permissiva" da Fase 4 e é
->    decisão de produto nova, não aberta.
-> 4. **Fato novo da homologação (ambiente vivo, lição 160):** a `F1.02` do
->    `#39` apareceu com vínculo **CONFIRMADO** para `#41 E1` — alguém propôs
->    E confirmou depois do desmonte de 04/09. O cenário fixado do 5d ficou
->    ocupado; o teste rodou com célula livre do `#39` → **`#42 E1`**.
->    O vínculo confirmado da F1.02 **não foi desmontado** no teste (decisão
->    de preservar possível exercício real dos técnicos); estado atual dele:
->    reler em tela.
-> 5. **Ruído de log NOVO, candidato à lista de conhecidos:** `glpi.CRITICAL`
->    do `CacheClearCommand` no `cache:clear` do console — backtrace 100%
->    Symfony/console, nenhum frame de plugin, e o comando terminou com
->    "Cache esvaziado com sucesso". Não investigado; observar nas próximas
->    aplicações antes de promover a ruído conhecido.
-> 6. **Nenhuma lição nova numerada.** As mais recentes seguem 165 e 166.
+> 1. **O commit dos docs v22 FOI FEITO** — `master` estava em `0ef7bf3` no
+>    início da sessão, provado por tarball (docs = v22, md5 a md5 com a base).
+> 2. **Bloco BADGE-C (+PAINEL-2) entregue e validado** — 1.3.25, `e5d01fc`.
+>    Cabeçalho da grade com DOIS contadores: `N/cap grade` (azul) e
+>    `M/4 entradas` (verde, `bg-green-lt`), ambos com tooltip; "sem
+>    acoplador" intacto. `Port::statsForDgo` virou o ponto único das DUAS
+>    contagens (grade E entradas). Bloco único (badge + cartão de painel)
+>    por decisão explícita do dono, contra a recomendação de dividir.
+> 3. **Bloco PAINEL-2b entregue e validado** — 1.3.26, `bf8281b`. O cartão
+>    próprio "Entradas ocupadas" (nascido no PAINEL-2) foi visto em tela,
+>    rejeitado pelo dono e substituído pela **variante B**: pastilha verde
+>    no rodapé dos cartões "Ocupação geral" (`25/164 entradas ocupadas`) e
+>    "Portas livres" (`139/164 entradas livres`), helper `entriesPill()`
+>    como ponto único do estilo; layout de 4 cartões restaurado (xl-4).
+>    Variante escolhida sobre mockup ANTES do código.
+> 4. **Fato novo do ambiente vivo:** o painel revelou **25 entradas ocupadas
+>    em 164** — os técnicos criaram dezenas de vínculos que nenhum doc
+>    conhecia. Quebra pendente×confirmado NÃO verificada (pendência 20,
+>    opcional; SQL pronta na §7).
+> 5. **Lição nova numerada: 167** (mockup antes de tela nova — ver §4).
+> 6. `cache:clear` rodou 2× sem o `glpi.CRITICAL` aparecer na saída do
+>    console; candidato do v22 segue em observação (log não inspecionado
+>    especificamente para isso).
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
 
@@ -43,8 +41,8 @@
 
 **O GitHub é o repositório canônico do DGO+. A homologação é descartável.**
 
-Todo estado do código tem que ser reconstruível a partir do `master` sozinho. A
-regra nasceu de um fato: **houve um incidente doméstico em que a base de
+Todo estado do código tem que ser reconstruível a partir do `master` sozinho.
+A regra nasceu de um fato: **houve um incidente doméstico em que a base de
 homologação foi perdida com um repositório dentro dela, levando junto correções
 que nunca chegaram ao Git.**
 
@@ -52,7 +50,7 @@ que nunca chegaram ao Git.**
 |---|---|
 | **O que está rodando agora?** (tela, erro, permissão) | O servidor — sempre |
 | **O que o código É?** (registro durável, base de bloco novo) | **O GitHub — sempre** |
-| **Como estão os DADOS da homologação?** | **Só a tela, lida na sessão** (lição 160). **A homologação é ambiente vivo dos técnicos de campo** — em 05/09 a F1.02 do `#39` apareceu com vínculo confirmado que nenhum doc conhecia |
+| **Como estão os DADOS da homologação?** | **Só a tela, lida na sessão** (lição 160). Ambiente vivo dos técnicos — em 05/09 apareceram 25 entradas ocupadas que nenhum doc conhecia |
 
 ### A ordem de entrega
 
@@ -67,9 +65,9 @@ que nunca chegaram ao Git.**
 6. Console do GLPI + restart, e então o roteiro de teste.
 
 **O passo 2 não é opcional** (lição 140). ⚠️ **O bump de versão no `setup.php`
-faz parte do bloco** (lição 165). No 5d o `git diff --stat` bateu EXATO com o
-previsto por comando (3 files, +158/−9), e a paridade do commit publicado foi
-provada por md5 depois do push.
+faz parte do bloco** (lição 165). Nos dois blocos de 05/09 (2ª) o
+`git diff --stat` bateu EXATO com o previsto por comando (5 files +104/−13;
+2 files +54/−24) e a paridade dos commits publicados foi provada por md5.
 
 O zip sobrevive só como artefato de Release.
 
@@ -77,12 +75,12 @@ O zip sobrevive só como artefato de Release.
 
 **Decisão do usuário (04/09): a skill `glpi-plugin-teckcomp` cadastrada NÃO
 será trocada.** Ela ainda descreve `pscp`/PuTTY, `192.168.1.50` e zip — tudo
-abolido. Isso é **ruído conhecido**:
+abolido. Ruído conhecido:
 
 - A fonte da verdade do ambiente é o **`SKILL-glpi-plugin-teckcomp.md` na base
   do projeto** (md5 `edc469d2a1f5a9400b330143c0bf3891`), somado a este contexto.
 - Quando a skill carregada e o contexto divergirem, **o contexto manda**.
-- Não voltar a propor a troca sem fato novo (decisão negativa, seção 8).
+- Não voltar a propor a troca sem fato novo (decisão negativa, §8).
 
 ---
 
@@ -92,16 +90,16 @@ abolido. Isso é **ruído conhecido**:
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 05/09 | commit **`b4437e5`** (5d), versão **1.3.24** — push visto na sessão |
-| Último commit de CÓDIGO | o próprio `b4437e5` |
-| Versão em homologação | **1.3.24** — aplicada, reinstalada e ativada em 05/09 |
-| **Paridade** | ✅ Provada por md5 na sessão: `Link.php`, `MapController.php` e `setup.php` do commit publicado = arquivos entregues |
+| `master` em 05/09 (2ª) | commit **`bf8281b`** (PAINEL-2b), versão **1.3.26** — push visto na sessão |
+| Último commit de CÓDIGO | o próprio `bf8281b` (anterior: `e5d01fc`, BADGE-C) |
+| Versão em homologação | **1.3.26** — aplicada, reinstalada e ativada em 05/09 |
+| **Paridade** | ✅ Provada por md5 na sessão para os DOIS commits (`e5d01fc`: 5 arquivos; `bf8281b`: 2 arquivos) |
 | Arquivos no repositório | **31** (28 do plugin + 3 em `docs/`) |
-| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — **nomes SEM versão; a versão vive no cabeçalho**. Conteúdo atual: **v21** (commit `999401c`); o v22 entra por cima |
+| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — nomes SEM versão. Conteúdo atual: **v22** (commit `0ef7bf3`); o v23 entra por cima |
 | GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data` |
 | **Homologação** | **`177.87.230.179`, porta SSH `2078`, usuário `resolutto`** |
 | URL externa do GLPI | `http://177.87.230.179:2077/` |
-| **Autenticação SSH** | **Chave.** O servidor **recusa senha**. Lição 139 |
+| **Autenticação SSH** | **Chave.** O servidor **recusa senha** (lição 139) |
 | PC do usuário | **Windows, com OpenSSH** (`ssh`/`scp`), **sem Git local**, **sem PuTTY** |
 | Assistente | Não tem SSH nem token. Prepara e valida → o usuário aplica, confere por `git diff`, commita e testa |
 
@@ -162,8 +160,8 @@ git status --short && git log -1 --oneline && grep PLUGIN_DGOPLUS_VERSION setup.
 ```
 
 ⚠️ Quando o HEAD é commit de `docs/`, o `git log -1` mostra o commit dos docs —
-o último commit de CÓDIGO pode ser anterior. Normal (lição 143). Após o commit
-dos docs v22, o HEAD será de docs e o código seguirá no `b4437e5`.
+o último commit de CÓDIGO pode ser anterior (lição 143). Após o commit dos
+docs v23, o HEAD será de docs e o código seguirá no `bf8281b`.
 
 **Reverter:**
 
@@ -182,11 +180,11 @@ grep -h "<endpoint>" /var/log/apache2/other_vhosts_access.log | tail -n 10
 
 Não existe `sql-errors.log` (lição 122). **Nem toda recusa vira 403** —
 `dgocomment.php` responde 200 com `denied:true`; `port.php` responde 403
-(lição 154). Ruído conhecido no log: aviso de `version changed` da
-reinstalação (lições 114/116), backtrace do plugin `fields`, `Test logger`.
-⚠️ **Candidato novo (05/09, não investigado):** `glpi.CRITICAL` do
-`CacheClearCommand` no `cache:clear` do console — backtrace só Symfony, o
-comando termina com sucesso. Observar antes de promover a conhecido.
+(lição 154). Ruído conhecido: aviso de `version changed` da reinstalação
+(114/116), backtrace do plugin `fields`, `Test logger`. ⚠️ **Candidato em
+observação:** `glpi.CRITICAL` do `CacheClearCommand` no `cache:clear` —
+em 05/09 (2ª) o comando rodou 2× com saída limpa; o log não foi inspecionado
+especificamente. Seguir observando antes de promover a conhecido.
 
 ### Topologia web
 
@@ -198,7 +196,7 @@ Apache 80/443 interno; externo por `177.87.230.179:2077`.
 
 `v1.3.8` publicada em 27/08 (zip 177 KB, sha256 `34e1fd…ef16`); `v1.3.2`
 continua publicada. Tags: `v1.0.0` … `v1.3.2`, `v1.3.8`. **As versões 1.3.3 a
-1.3.24 não têm tag** — degraus internos da Fase 5. Próxima tag quando a Fase 5
+1.3.26 não têm tag** — degraus internos da Fase 5. Próxima tag quando a Fase 5
 fechar.
 
 ### Outros plugins na mesma base
@@ -212,16 +210,13 @@ fechar.
 ### O shopmap — frente irmã, fora deste repositório
 
 ⚠️ **`github.com/teckcomp/glpi-plugin-shopmap` está PRIVADO** (404 anônimo,
-28/08). O assistente não lê esse código. Problema: "Vincular ativo (nome)"
-lista nome + itemtype apenas.
+28/08). O assistente não lê esse código.
 
 > **Referência a ativo é `itemtype` + `id`. Nome é rótulo, nunca chave.**
-> (Regra que também motivou o 5e-4: id sempre visível no seletor de destino.)
 
 Falta responder — e só a base do shopmap responde: *o vínculo é guardado pelo
 NOME ou por `itemtype`+`id`?* Por chave → só tela. Por nome → tela + migração
-em três baldes. O `MapController::normalizeName()` (5e-2d-1) é a peça
-reaproveitável.
+em três baldes. O `MapController::normalizeName()` é a peça reaproveitável.
 
 ### Quando reinstalar
 
@@ -244,35 +239,35 @@ com md5 esperados; **(3)** comandos de aplicar com `git diff` como conferência;
 
 ⚠️ **Sessão de VALIDAÇÃO não é entrega de bloco** — só roteiro.
 ⚠️ **Bloco sem cenário de teste na homologação não é entregue.**
-⚠️ **Decisão vigente pode ser REABERTA pelo usuário** — o gatilho previsto é
-vontade do dono; o assistente prova no código o comportamento atual ANTES de
-mexer. Em 05/09 o inverso também aconteceu: a pergunta "isso trava o vínculo
-direto?" foi respondida COM o código lido na sessão (é ciência, não bloqueio),
-e a decisão não foi reaberta.
+⚠️ **Decisão vigente pode ser REABERTA pelo usuário.** Em 05/09 (2ª) o dono
+exerceu isso duas vezes: (a) aprovou bloco ÚNICO para BADGE-C+PAINEL-2 depois
+de ouvir a recomendação de dividir — a mitigação foi o ponto único de contagem
+e roteiro autoconferente; (b) rejeitou o cartão próprio do painel após vê-lo
+em tela e escolheu a variante B sobre mockup. Custo total: um bloco a mais,
+zero retrabalho de dados.
+⚠️ **Tela NOVA pede mockup aprovado antes do código** (lição 167).
 
 ### Roteiro de teste — exigências acumuladas
 
-- Se confere contra o código antes de sair (lição 158). Na sessão do 5d:
-  `propose`, `hierarchyAllows`, `skipWarning`, o formulário Alimenta e os dois
-  módulos do `dgoplus.js` (poda e entradas ocupadas) foram lidos ANTES de
-  qualquer afirmação — inclusive o `rebuild(keepValue)` que prova que a poda
-  inicial preserva a pré-seleção.
-- Todo passo que troca de tela diz COMO chegar lá (lição 159) — a busca do
-  mapa NÃO é caminho para elemento (procura portas). Caminho certo: escopo na
-  Localização + clique na aba.
-- Toda pré-condição de dados é lida em tela antes de virar passo (lição 160) —
-  em 05/09 isso salvou o roteiro: o par fixado (`F1.02`) apareceu ocupado e o
-  cenário mudou para célula livre → `#42 E1` sem custo.
-- Passo que prevê "não muda" também é passo (provado: `#39 → #33` gravou na
-  primeira, sem aviso).
-- Passo que prova a decisão de projeto vem nomeado como tal.
+- Se confere contra o código antes de sair (lição 158). Em 05/09 (2ª):
+  `statsForDgo`, `renderBadges`, `displayGrid`, `displayEntryStrip`,
+  `renderEntryBox`, `findByDestinations`, `card()` e o endpoint AJAX foram
+  lidos ANTES de qualquer afirmação.
+- Todo passo que troca de tela diz COMO chegar lá (lição 159).
+- Toda pré-condição de dados é lida em tela antes de virar passo (lição 160).
+- Roteiro autoconferente quando possível: o badge de entradas se prova contra
+  a faixa E1–E4 da MESMA tela; a pastilha do painel se prova contra o badge.
+- Passo que prevê "não muda" também é passo (frações do 4d intactas).
+- **Frases novas de tela são simuladas por extenso ANTES de codar**
+  (lição 166) — incluindo casos zerado e de escopo vazio (`0/0`).
 
 ### Nome de arquivo entregue leva o bloco
 
-`Link-5d.php`, `MapController-5d.php`, `setup-5d.php`. O `cp` renomeia
-(lição 140). Docs versionam no nome do arquivo ENTREGUE
-(`contexto-dgoplus-v22.md`); no repositório o `cp` grava sem versão
-(`docs/contexto-dgoplus.md`).
+`Port-badgec.php`, `Dashboard-painel2b.php` etc. ⚠️ **`ajax/port.php` e
+`front/port.php` têm o MESMO nome-base** — a entrega usa nome desambiguado
+(`port-ajax-<bloco>.php`) e o `cp` leva o caminho completo. Docs versionam no
+nome ENTREGUE (`contexto-dgoplus-v23.md`); no repositório o `cp` grava sem
+versão (`docs/contexto-dgoplus.md`).
 
 ### O repositório é público — usar isso por padrão
 
@@ -281,35 +276,38 @@ git ls-remote https://github.com/teckcomp/glpi-plugin-dgoplus.git refs/heads/mas
 https://codeload.github.com/teckcomp/glpi-plugin-dgoplus/tar.gz/<sha>
 ```
 
-Preferir `codeload` com SHA ao `raw` (lição 132); `api.github.com` bate no
-limite anônimo. **Padrão:** baixar tarball do commit atual, editar cópia,
-validar, provar por `diff -rq` que só o escopo mudou; depois do push, baixar o
-commit publicado e provar paridade por md5 (feito no 5d).
-
-**Número previsto sai de comando** (lições 141, 150, 155, 163).
+Preferir `codeload` com SHA (lição 132); `api.github.com` bate no limite
+anônimo. **Padrão:** tarball do commit atual → editar cópia → validar →
+`diff -rq` provando escopo → depois do push, baixar o publicado e provar
+paridade por md5 (feito 2× nesta sessão). **Número previsto sai de comando**
+(lições 141, 150, 155, 163) — o `git diff --stat` é previsto criando um git
+local sobre o tarball no sandbox.
 
 ### O core do GLPI também é legível
 
 `github.com/glpi-project/glpi`, tag `11.0.6`; classes `Glpi\` em
-`src/Glpi/...`; schema em `install/mysql/glpi-empty.sql`. ⚠️ **O CSS do tema
-NÃO é legível por esse caminho** (lição 156). Para arquivo de TAG (estável),
-`raw.githubusercontent.com` serve — o problema do raw é commit recente.
+`src/Glpi/...`; schema em `install/mysql/glpi-empty.sql`. ⚠️ O CSS do tema NÃO
+é legível por esse caminho (lição 156) — o atalho é classe que o plugin já
+imprime em tela (`bg-green-lt` foi validado assim: o cartão "Portas livres"
+já o imprimia, provado por screenshot ANTES do BADGE-C usá-lo).
 
 ### O sandbox do assistente TEM PHP e Node
 
-`php -l` (8.3.6) e `node --check` (v22.22.2). `apt-get update` e
-`apt-get install -y php-cli` em dois comandos (lição 126). ⚠️ O sandbox pode
-nascer SEM o php-cli instalado — instalar faz parte do preparo, não é erro.
+`php -l` (8.3.6) e `node --check`. `apt-get update` e `apt-get install -y
+php-cli` em dois comandos (lição 126). ⚠️ O sandbox pode nascer SEM php-cli E
+com repositório apt quebrado (nodesource 403) — remover
+`/etc/apt/sources.list.d/nodesource.list` antes do update resolve. Instalar
+faz parte do preparo, não é erro.
 
 ### Práticas abolidas
 
-Lista integral mantida (lições 114–166), sem adição em 05/09.
-Destaques permanentes: reinstalar por precaução; `pscp`; zip como veículo;
-nome final em vez de `<Arquivo>-<bloco>`; JS sem `.txt`; F12 para status;
-prever números de cabeça; julgar tela sem confirmar versão; remontar arquivo
-de memória; caminho abreviado; roteiro sem conferir contra o código; dado de
-homologação sem reler em tela; purgar sem ler as quatro entradas; bloco sem
-bump; afirmar consequência sem simular o formato inteiro.
+Lista integral mantida (lições 114–167). Destaques: reinstalar por precaução;
+`pscp`; zip como veículo; nome final em vez de `<Arquivo>-<bloco>`; JS sem
+`.txt`; F12 para status; prever números de cabeça; julgar tela sem confirmar
+versão; remontar arquivo de memória; caminho abreviado; roteiro sem conferir
+contra o código; dado de homologação sem reler em tela; bloco sem bump;
+afirmar consequência sem simular o formato inteiro; **tela nova sem mockup
+aprovado** (167).
 
 ---
 
@@ -334,152 +332,125 @@ Piso (intitulado do plugin)**.
 `Setting::ROLES` **é** a hierarquia: `dio` → `dgo` → `cto` → `pto`. Splitter
 fora; proporção no OBS. Produção: um Tipo por papel (`DIO+`, `DGO+`, `CTO+`,
 `PTO+`), em `glpi_configs`, contexto `plugin:dgoplus`.
-`Setting::getRoleLabel()` = `strtoupper` do papel (verificado no 5d).
 ⚠️ Produção mostra 1 elemento fora dos papéis.
 
 ### Portas
 
-Uma tabela, dois `kind`: `KIND_GRID` (tubo × fibra, ABNT/EIA) e `KIND_ENTRY`
-(E1–E4, `tube_num = 0`). Chave única `(itemtype, items_id, tube_num,
-fiber_num)`, `kind` fora (lição 112). **`Port::applyInput()` é o ponto único
-de gravação** — faz o `checkRight(UPDATE)` que lança o 403. Grade padrão 4×16
-= 64 posições (lição 146). Porta sem acoplador não conta como documentada.
+Uma tabela, dois `kind`: `KIND_GRID` (tubo × fibra) e `KIND_ENTRY` (E1–E4,
+`tube_num = 0`, `MAX_ENTRIES = 4`). Chave única `(itemtype, items_id,
+tube_num, fiber_num)`, `kind` fora (lição 112). **`Port::applyInput()` é o
+ponto único de gravação** — `checkRight(UPDATE)` que lança o 403. Grade padrão
+4×16 = 64. Porta sem acoplador não conta como documentada.
 
-Porta de grade **com vínculo e sem nome CONTA como documentada** (exercitado
-2× em 04/09). `statsForDgo` conta linhas da grade (`is_deleted=0`) e desconta
-as sem-acoplador. Porta esvaziada e apagada some da contagem (V1 de 04/09).
+**`Port::statsForDgo()` — desde o BADGE-C é o ponto único das DUAS contagens
+do elemento:** grade (`documented`, `no_coupler`, `total`, via
+`gridCriteria()`) E entradas (`entries_occupied`, `entries_total` =
+`MAX_ENTRIES` fixo). **Entrada ocupada = linha de entrada viva com vínculo
+apontando para ela (`Link::findByDestinations`), pendente incluso** — a MESMA
+definição da faixa E1–E4 (`renderEntryBox`). Badge do cabeçalho e pastilhas
+do painel consomem daqui/da mesma definição, nunca de conta própria divergente.
 
-**Carimbo de documentação (bloco 3s):** `documentStamp()` é o ponto único de
-`users_id_documenter`/`date_documented`; carimba só quando o VALOR do código
-muda. Não é retroativo (portas pré-3s sem carimbo no relatório: esperado).
+**Carimbo de documentação (3s):** `documentStamp()` é o ponto único; carimba
+só quando o VALOR do código muda; não retroativo.
 
 ### Histórico — mecanismo provado (v20, íntegro)
 
-`Port` estende `CommonDBChild` com `dohistory = true`; sem `$logs_for_parent`
-declarado vale o default `true` do core — toda gravação de porta gera linha no
-Histórico do elemento pai, com **`user_name` do usuário logado** (técnico
-aparece como autor; provado em tela com `cristian.b` e `teste.001`).
+`Port` estende `CommonDBChild` com `dohistory = true`; toda gravação de porta
+gera linha no Histórico do elemento pai com `user_name` do usuário logado.
 `history_blacklist = ['users_id_documenter', 'date_documented']`. `Link` tem
 `dohistory = true` próprio.
 
 ### Vínculos
 
-`glpi_plugin_dgoplus_links`: uma linha, dois lados. Sem `is_deleted` — recusa
-E desmonte apagam. Pendente já ocupa a porta. Uma porta alimenta um destino
-só. Hierarquia permissiva: pode pular nível, nunca subir nem empatar;
-`hierarchyAllows()` só compara ordem (`<`).
+`glpi_plugin_dgoplus_links`: uma linha, dois lados (`plugin_dgoplus_ports_id_src`
+grade de origem, `plugin_dgoplus_ports_id_dst` entrada de destino; UNIQUE nos
+dois lados). `status`: `pendente` | `confirmado`. Sem `is_deleted` — recusa e
+desmonte apagam. Pendente já ocupa. Hierarquia permissiva; `hierarchyAllows()`
+compara ordem. **5d (1.3.24):** pulo de degrau exige ciência em dois tempos —
+`skipWarning()` ponto único da frase; `needs_ack` no `propose()`; é ciência,
+não bloqueio. `Link::propose()` é o ponto único de criação.
+`findByDestinations()`/`findByOrigins()` devolvem `[]` para lista vazia
+(filtro nunca some). ⚠️ Pendente que envelhece não avisa ninguém.
 
-**Bloco 5d (1.3.24) — o pulo de degrau exige ciência em dois tempos:**
-
-- **`Link::skipWarning(?$src_role, ?$dst_role): ?string`** é o PONTO ÚNICO da
-  medida do pulo e da frase do aviso. Devolve a frase quando a diferença de
-  ordem é > 1 (`"Este vínculo pula degrau na hierarquia: DIO alimenta CTO sem
-  passar por DGO."`; DIO→PTO lista `DGO, CTO`); devolve `null` na descida de
-  um degrau e em papel inválido/fora de ordem (problema do `hierarchyAllows`,
-  que roda antes).
-- **`Link::propose()`** ganhou o parâmetro `skip_ack` e a chave `needs_ack`
-  no retorno (contrato: `{ok, error, id, needs_ack}`). A checagem roda
-  **DEPOIS de todas as recusas de leitura e ANTES de materializar** —
-  `needs_ack` só aparece quando o resto passaria, e o primeiro tempo não
-  deixa rastro no banco (regra do 4c-2 intacta).
-- **`actionProposeLink()`**: `needs_ack` não é erro — redireciona carregando
-  `skip_dst`/`skip_slot` na URL, sem mensagem de sessão.
-- **Formulário Alimenta (segundo tempo):** valida `skip_dst` pelo MESMO
-  `skipWarning()` (forjado/sem pulo → nada acende); pré-seleciona destino,
-  entrada e a localização do destino (o JS poda por localização e o
-  `rebuild(keepValue)` preserva a seleção — lido no `dgoplus.js`); renderiza
-  pílula `bg-yellow-lt` "pula degrau" + `form-hint` com a frase, hidden
-  `skip_ack=1` e botão **"Confirmar mesmo assim"**.
-- ⚠️ **Limitações ACEITAS (decisão de produto):** o marcador é forjável no
-  POST; nada fica registrado depois do segundo tempo; trocar o destino para
-  OUTRO pulo depois do primeiro tempo grava sem novo aviso. **É ciência, não
-  bloqueio nem auditoria** — pergunta respondida em 05/09: o vínculo direto
-  DIO→CTO continua permitido.
-
-Só confirmado sobe na trilha (4e). **`Link::propose()` é o ponto único de
-criação.** Recusar e confirmar pedem UPDATE; desmontar pede DELETE.
-`upstreamLevels(…, ?$from_entry_id)` restringe o nível 0 a uma entrada (5c).
-⚠️ Pendente que envelhece não avisa ninguém.
-
-⚠️ **Dois "confirmar" distintos — não confundir:** o Confirmar/Recusar no
-destino é o fluxo do pendente (Fase 4), depois do vínculo gravado. O
-"Confirmar mesmo assim" do 5d é NA PROPOSTA, antes de gravar. Coexistem.
+⚠️ **Dois "confirmar" distintos:** Confirmar/Recusar no destino = fluxo do
+pendente (Fase 4). "Confirmar mesmo assim" do 5d = na proposta, antes de
+gravar. Coexistem.
 
 ### O rótulo de elemento — `src/ItemLabel.php`
 
-Ponto único do nome em tela. `forRow`/`forItem` = `nome · localização · #id`;
-`shortForRow` = `nome · #id`. Localização via `Dropdown::getDropdownName` —
-`completename` (árvore com `>`), cache estático.
+`forRow`/`forItem` = `nome · localização · #id`; `shortForRow` = `nome · #id`.
+`completename` FICA (decisão de 28/08). Consumidores (medidos no `fbf1952`):
+`MapController` 8, `Link` 6, `Dashboard` 1 — blocos posteriores não mexeram.
+⚠️ Seletor de DESTINO continua fora do `ItemLabel` (dívida 7, mantida).
 
-✅ **Decisão fechada (28/08): `completename` FICA.** Nome vazio imprime `sem
-nome`; ausente devolve `elemento #%d`.
+### O cabeçalho da grade — badges (BADGE-C, 1.3.25)
 
-**Consumidores (medidos no `fbf1952`; 5e-4 e 5d NÃO mexeram neles):**
-`MapController.php` 8, `Link.php` 6, `Dashboard.php` 1.
-
-⚠️ **O seletor de DESTINO continua fora do `ItemLabel`** — formato próprio
-`nome (PAPEL) #id`. É a dívida 7, **mantida por decisão (opção A do 5e-4)**.
+`MapController::renderBadges(documented, capacity, no_coupler,
+entries_occupied, entries_total)` — assinatura de 5 parâmetros desde o
+BADGE-C. Renderiza: `bg-blue-lt` "`N/cap grade`" (title "N de cap portas de
+grade documentadas"), `bg-green-lt` "`M/4 entradas`" (title "M de 4 entradas
+ocupadas"), e `bg-red-lt` "N sem acoplador" só quando > 0. **Dois chamadores,
+sempre juntos:** `displayGrid` (carga) e `ajax/port.php` (reescreve o span
+`#dgoplus-badges` inteiro a cada porta salva — o badge de entradas sobrevive
+ao AJAX por construção). O selo de duplicado fica FORA do span de propósito.
 
 ### O seletor de destino — 5e-4 + 5d
 
-Montagem em `MapController.php` (região ~3570 no `b4437e5`), select nativo
-escrito à mão (select2 esconderia opção podada por JS). **TODO candidato leva
-`#id`** — `nome (PAPEL) #id`; sem nome: `#id (PAPEL)` sem repetir. O `value`
-do `<option>` sempre foi o id. **Novidade do 5d:** no segundo tempo do pulo,
-o destino, a entrada e a localização voltam pré-selecionados (atributo
-`selected` condicional; ver seção Vínculos).
+Select nativo em `MapController`, formato próprio `nome (PAPEL) #id`
+(dívida 7). Segundo tempo do pulo pré-seleciona destino/entrada/localização.
 
 ### O selo de nome duplicado — 5e-2d-1
 
-Três peças no `MapController`: `duplicateNamesAt()` (consulta própria,
-memorizada), `normalizeName()`, `renderDuplicateMark()` (ícone na aba, pílula
-`bg-orange-lt`; `DUP_COLOR = '#D68A3A'`). A consulta é própria de propósito —
-o selo não pode sumir com filtro de piso/papel. Nome vazio nunca acende.
+`duplicateNamesAt()` (consulta própria, memorizada), `normalizeName()`,
+`renderDuplicateMark()`. Nome vazio nunca acende.
 
-### Abas — o único modo de exibição (5e-3a e 5e-3b)
+### Abas — o único modo de exibição (5e-3a/b)
 
-Todos os elementos são abas, agrupadas por papel, linha única sem quebra com
-rolagem horizontal nativa só no overflow; módulo IIFE no `dgoplus.js`
-centraliza a ativa via `scrollLeft` (nunca `scrollIntoView`). Formato
-`shortForRow` + selo + contagem. ⚠️ Não medido com dezenas de abas — e a
-homologação JÁ TEM localizações maiores; medir quando abrir uma.
+Todos os elementos são abas por papel, linha única com rolagem horizontal;
+IIFE no `dgoplus.js` centraliza a ativa via `scrollLeft`. ⚠️ Não medido com
+dezenas de abas.
+
+### O painel — `src/Dashboard.php`
+
+Faixa 1 com **4 cartões** (layout restaurado no PAINEL-2b): Elementos
+cadastrados (xl-4), Sem documentação (xl-4), Ocupação geral (xl-2, compacto),
+Portas livres (xl-2, compacto). **As frações de grade dos dois compactos usam
+`gridCriteria()` nas duas consultas — decisão do 4d, intocável** (entrada
+nunca entra nessas contas). **PAINEL-2b (1.3.26):** os dois compactos ganham
+no rodapé a pastilha `entriesPill()` (ponto único do estilo, `bg-green-lt`
+com tooltip): "`25/164 entradas ocupadas`" na Ocupação geral e
+"`139/164 entradas livres`" nas Portas livres (`livres = max(0, total −
+ocupadas)`; `total = MAX_ENTRIES × elementos no escopo`). O `collect()` faz
+UMA consulta de entradas + `findByDestinations` e devolve
+`entries_occupied`/`entries_total`. O cartão próprio "Entradas ocupadas"
+existiu só no 1.3.25 e foi removido (decisão negativa, §8).
 
 ### Comentário do elemento
 
-`DgoIdentity::applyComment()` é o ponto único (POST clássico e
-`ajax/dgocomment.php`). `denied => true` só na recusa; frase da tela vem do
-PHP.
+`DgoIdentity::applyComment()` é o ponto único. `denied => true` só na recusa.
 
 ### Auto-save — os dois JS
 
-`public/dgoplus.js` (475 linhas) e `public/dgoplus-identity.js` (362).
-403 ≠ rede; recusa não reenvia (5g-1b). `save()` sai cedo em
-`current === lastSaved`. Sem o direito, o JS nem se instala (lição 151).
-O 5d NÃO tocou nos JS — a preservação do segundo tempo é toda no PHP e os
-módulos existentes já se comportam (poda com `keepValue`; o módulo de
-entradas só move a seleção se a preservada estiver ocupada).
+`public/dgoplus.js` (475) e `public/dgoplus-identity.js` (362). Nenhum bloco
+de 05/09 tocou JS — o span de badges é reescrito com o HTML que o PHP manda.
 
 ### Busca e relatório — tabela polimórfica
 
-Jointypes válidos no 11.0.6; para a porta, `itemtype_item_revert` +
-`specific_itemtype`. Search options do Port: 1 code, 2 name, 3 itemtype,
-5 tube, 6 fiber, 7 comment, 8 Localização (`nosearch`), 9 no_coupler, 10 kind,
-11 documentado por, 12 date_documented, 19 date_mod, 121 date_creation.
-`Port::getReportUrl()` é o ponto único da URL. **A busca do mapa é GLOBAL e
-busca PORTAS** (código/nome/observação) — termo de elemento devolve 0 com
-estado vazio falando.
+Para a porta, `itemtype_item_revert` + `specific_itemtype`. Search options do
+Port: 1 code, 2 name, 3 itemtype, 5 tube, 6 fiber, 7 comment, 8 Localização
+(`nosearch` — alvo do 5h-2), 9 no_coupler, 10 kind, 11 documentado por,
+12 date_documented, 19 date_mod, 121 date_creation. `Port::getReportUrl()` é o
+ponto único da URL. A busca do mapa é GLOBAL e busca PORTAS.
 
 ### Schema e direitos
 
 Quatro tabelas: `_ports`, `_panels`, `_floors`, `_links`. Direito
-`plugin_dgoplus_port`, matriz de 4 níveis = 15; aba **DGO+**, linha **"Portas
-de DGO"**. Tabela de exigências inalterada (READ vê; UPDATE documenta, comenta
-e mexe em vínculo; DELETE esvazia/desmonta; CREATE cria; entidade trava toda
-gravação; anexos = `document` R+U+C **e `datacenter` UPDATE**; papéis =
+`plugin_dgoplus_port`, matriz de 4 níveis = 15. Tabela de exigências
+inalterada (anexos = `document` R+U+C e `datacenter` UPDATE; papéis =
 `config` UPDATE). `parentIsReachable()` falha fechado.
 
-⚠️ **A Fase 5 ainda não chegou à produção.** Deploy com plano de rollback —
-bloco próprio, sem data. Começa por RELER a produção em tela.
+⚠️ **A Fase 5 ainda não chegou à produção.** Deploy com rollback — bloco
+próprio, sem data. Começa por RELER a produção em tela.
 
 ### Anexos
 
@@ -490,50 +461,43 @@ Cartão usa formulário do core → exige `datacenter` UPDATE (lição 134). Mas
 
 **31 no repositório** (28 + 3 em `docs/`).
 
-**Impressões digitais do 1.3.24** (commit `b4437e5`; os três primeiros
-conferidos por md5 na sessão contra o publicado; os demais herdados do 1.3.23,
-inalterados pelo `diff -rq` do preparo):
+**Impressões digitais do 1.3.26** (commit `bf8281b`; os alterados nas duas
+entregas conferidos por md5 contra o publicado; demais herdados do 1.3.24):
 
 ```
-d59c88c05481f24aa30d4c97496b95eb  setup.php                    (269 linhas)
-9a7634edb132423b73bd9357e36b9230→ b61cb5d74230088b7e7c02ffb35ddff2  src/Link.php (1310 linhas)
-b68a10857d45aad1ca57e1636c6033bc  src/MapController.php        (3702 linhas)
+8e64bd1e984db5a9a3948948b4241238  setup.php                    (269 linhas)
+5d35c9af8851c633286a378bedd5489c  src/Port.php                 (1142 linhas)
+04eb0026d8c52f580e7cdf1876b862b6  src/MapController.php        (3729 linhas)
+1a1f77115c954785cec105bf3227094a  src/Dashboard.php            (1352 linhas)
+2597d942e15dae5d5ff02a9308a7c0db  ajax/port.php                (125 linhas)
 3d9daa717ad679a9091fbd548ad92191  public/dgoplus.js            (475 linhas)
 d58fdb6b783801190a79eb1ace005fca  public/dgoplus-identity.js   (362 linhas)
 f8d60d99db81dc8958e67424a844351f  src/ItemLabel.php            (166 linhas)
-52ab95366b20809e952972c1c1a9b823  src/Port.php                 (1120 linhas)
+b61cb5d74230088b7e7c02ffb35ddff2  src/Link.php                 (1310 linhas)
 36ecd197f374c180a42ef7bbccc47b8c  src/DgoIdentity.php          (381 linhas)
-d2baa8fdfdfe4d54cfdd784f59b0443a  src/Dashboard.php            (1282 linhas)
 f4d2f1d2773e81bfb6486e15371ef816  src/ProfileTab.php           (184 linhas)
-b0e4f1837feab5a54d42868e8d88a4b7  ajax/port.php                (123 linhas)
 dae5e817600bfdb6db3345cfa0383ea0  ajax/dgocomment.php           (52 linhas)
 4b1c3380384313d07614738dbc52bbd5  front/port.php                (26 linhas)
 9e68cde24dfd0694f1bf4bc4fdbffd9f  README.md                    (165 linhas)
 ```
 
-(A linha do `Link.php` registra a troca: o md5 antigo do 1.3.23 à esquerda,
-o vigente à direita. Vigentes: `b61cb5d…` Link, `b68a108…` MapController,
-`d59c88c…` setup.)
-
 ---
 
 ## 4. Lições aprendidas
 
-⚠️ Lacuna 1–113 mantida (dívida 3). A tabela de lições 3–166 permanece
-integralmente válida — **nenhuma lição nova numerada em 05/09**. As mais
-recentes:
+⚠️ Lacuna 1–113 mantida (dívida 3). Tabela 3–166 integralmente válida.
+**Lição nova de 05/09 (2ª sessão):**
 
 | # | Lição |
 |---|---|
-| 165 | **Bump de versão no `setup.php` faz PARTE do bloco de código** |
-| 166 | **Antes de afirmar a consequência de uma alternativa, escrever o resultado por extenso** |
+| 165 | Bump de versão no `setup.php` faz PARTE do bloco de código |
+| 166 | Antes de afirmar a consequência de uma alternativa, escrever o resultado por extenso |
+| **167** | **Elemento visual NOVO no produto pede mockup aprovado ANTES do bloco.** O badge do cabeçalho (com mockup) passou de primeira; o cartão do painel (sem mockup) renderizou correto e mesmo assim foi rejeitado e substituído no bloco seguinte — "certo" tecnicamente não é "o que o dono queria ver" |
 
-Reforços de 05/09 (sem número novo): a lição 166 aplicada de novo — as frases
-do `skipWarning` foram simuladas por extenso para TODAS as combinações de
-papéis antes de codificar; a lição 160 salvou o roteiro (par fixado apareceu
-ocupado, cenário trocado em tela sem custo); e o desenho do 5d nasceu de uma
-regra de arquitetura, não de gosto — a frase do aviso vive num único método
-consumido pela recusa E pela tela, matando a divergência silenciosa na raiz.
+Reforços sem número novo: lição 166 aplicada 2× (frases simuladas por extenso
+com casos zerado e `0/0`); lição 160 rendeu de novo (25 entradas ocupadas que
+nenhum doc conhecia); lição 156 quitada por evidência (screenshot provou
+`bg-green-lt` renderizado ANTES do uso).
 
 **Armadilhas permanentes do GLPI 11**: lista integral mantida.
 
@@ -541,139 +505,122 @@ consumido pela recusa E pela tela, matando a divergência silenciosa na raiz.
 
 ## 5. Estado por bloco
 
-Blocos 1 a 5e-4: fechados e validados (até 1.3.23). **5d fechado e validado
-(1.3.24, `b4437e5`)** — roteiro completo em 05/09: primeiro tempo sem gravar
-(aviso, pré-seleção, botão trocado), segundo tempo pendente, "não muda"
-provado (`#39 → #33` na primeira, sem aviso), limpeza feita, log limpo.
+Blocos 1 a 5d: fechados e validados (até 1.3.24). **BADGE-C fechado e
+validado (1.3.25, `e5d01fc`)** — badges de grade+entradas no cabeçalho, AJAX
+preservando os dois. **PAINEL-2b fechado e validado (1.3.26, `bf8281b`)** —
+pastilhas nos dois KPIs, cartão próprio removido, layout restaurado.
 
-**Nenhum bloco está no estado "entregue e não exercitado".**
+**Nenhum bloco no estado "entregue e não exercitado".**
 
 ---
 
 ## 6. Dívidas conhecidas
 
-1. ~~README~~ ✅ quitada.
-2. **Sem catálogo de tradução** — decisão de produto pendente.
-3. **Lista integral de lições (1–113)** — só pelo documento original.
-4. ~~Tag/Release~~ ✅ quitada.
-5. ~~Skill desatualizada~~ ✅ quitada por decisão (04/09).
-6. ~~"Desmontar" sem botão~~ ✅ quitada.
-7. **Seletor de DESTINO fora do `ItemLabel`** — formato próprio
-   `nome (PAPEL) #id`. **Mantida por decisão no 5e-4 (opção A).** Reabrir é
-   do usuário.
-8. ~~Seletor único sem marca de colisão~~ ✅ quitada por remoção (03/09).
+1. ~~README~~ ✅. 2. **Sem catálogo de tradução.** 3. **Lições 1–113 só no
+documento original.** 4. ~~Tag/Release~~ ✅. 5. ~~Skill~~ ✅ por decisão.
+6. ~~"Desmontar" sem botão~~ ✅. 7. **Seletor de DESTINO fora do `ItemLabel`**
+— mantida por decisão (5e-4). 8. ~~Marca de colisão~~ ✅.
 
 ---
 
 ## 7. Medições de campo
 
-⚠️ **Duas bases; tudo aqui é retrato datado** (lição 160). **A homologação é
-ambiente vivo dos técnicos** — reler SEMPRE.
+⚠️ **Duas bases; tudo aqui é retrato datado** (lição 160). Reler SEMPRE.
 
 ### Produção (retratos de 28/08 e 04/09 — NÃO relidos em 05/09)
 
-- **Elementos/portas (28/08):** 159 elementos (DIO 3, DGO 67, CTO 88, PTO 1;
-  2 na lixeira; 1 fora dos papéis); 4944 portas (2220 doc., 44,9%); 9
-  localizações COM elementos. Documentadores: Claudio Morett, Kayan Lucas,
-  Pedro s, cristian.b.
-- **Localizações (04/09):** 427 linhas, VÁRIAS raízes (`Shopping` ~42,
-  `Fleury`, `Confiance`, `Padrão`…), até três níveis. Base compartilhada com
-  contextos alheios ao DGO+.
+- 159 elementos (DIO 3, DGO 67, CTO 88, PTO 1; 2 na lixeira; 1 fora dos
+  papéis); 4944 portas (2220 doc., 44,9%); 9 localizações com elementos.
+- Localizações: 427 linhas, várias raízes, até três níveis.
 
-### Homologação — painel geral (04/09 — NÃO relido em 05/09)
+### Homologação — painel geral (05/09, 2ª sessão — RELIDO)
 
-**41 elementos**: DIO 6, DGO 16, CTO 13, PTO 6; 18 sem porta registrada;
-**2165 portas**, 42 documentadas (1,9%), 1 na lixeira; **9 localizações com
-elementos** (tabela integral no v21; `A+`, `Bio qualquer > bio001` e
-`Shopping itajai/Bigode - 000` eram desconhecidas dos docs).
+**41 elementos** (DIO 6, DGO 16, CTO 13, PTO 6), nenhum na lixeira; 18 sem
+porta; **2165 portas de grade, 43 documentadas (2,0%)** — era 42 em 04/09 —
+**2122 livres, 3 na lixeira**; **25/164 entradas ocupadas** (fato novo — os
+técnicos criaram dezenas de vínculos); 9 localizações com elementos (tabela
+integral no print da sessão: A+, Bio qualquer > bio001, Outlet Porto Belo,
+Plaza Campos Gerais, shopping estação, Shopping itajai/Bigode - 000,
+shopping palladium, Shopping Pato Branco, Shopping Ventura > DGO Cristian).
 
-### `Outlet Porto Belo` — 8 elementos (lido PARCIALMENTE em 05/09)
+**Pendência 20 (opcional):** quebra pendente×confirmado dos 25. SQL pronta:
 
-| Elemento | id | Papel | Selo | Obs |
-|---|---|---|---|---|
-| `DIO 001` | 39 | DIO | — | ⚠️ **F1.02 com vínculo CONFIRMADO → `#41 E1`** (visto em tela 05/09 — alguém propôs e confirmou após 04/09; NÃO desmontado no teste, preservado como possível exercício real). Célula livre usada no teste do 5d e desmontada. Contadores NÃO relidos após o teste |
-| `DGO 01 - PORTO BELO` | 33 | DGO | — | Recebeu o vínculo do passo "não muda" (gravou na primeira); desmontado ao fim |
-| `DGO 01` | 34 | DGO | ⚠ par com #37 | 5 doc (retrato de 04/09) |
-| `DGO 01` | 37 | DGO | ⚠ par com #34 | 1 doc. **FICA — treinamento** |
-| `CTO 01` | 35 | CTO | ⚠ par com #38 | 1 doc |
-| `CTO 01` | 38 | CTO | ⚠ par com #35 | 0 doc |
-| `TESTE 5e2d2 A` | 41 | CTO | — | ⚠️ **E1 OCUPADA pelo vínculo confirmado da F1.02 do #39** (05/09). **FICA — treinamento** |
-| `TESTE 5e2d2 B` | 42 | CTO | — | E1 usada no teste do 5d e liberada no desmonte. **FICA — treinamento** |
+```bash
+mysql glpi -e "
+SELECT COUNT(*) AS total, SUM(status='pendente') AS pendentes,
+       SUM(status='confirmado') AS confirmados
+FROM glpi_plugin_dgoplus_links;"
+```
 
-⚠️ **O par de teste fixado do 5d (`#39 F1.02 → #41 E1`) ESTÁ OCUPADO** pelo
-vínculo confirmado. Cenário substituto exercitado: célula livre do `#39` →
-`#42 E1`. Se um bloco futuro precisar de par DIO→CTO livre, reler a tela e
-escolher na hora.
+(Credenciais, se o socket recusar: `/var/www/html/glpi/config/config_db.php`.)
 
-**Painel/pendentes:** retrato do v16, não relido. Perfil de teste: `Tecnicos
-N1, ID 12`, usuário `teste.001`.
+### `Outlet Porto Belo` — 8 elementos (retrato de 05/09 1ª sessão, parcial)
+
+| Elemento | id | Papel | Obs |
+|---|---|---|---|
+| `DIO 001` | 39 | DIO | F1.02 com vínculo CONFIRMADO → `#41 E1` (visto 05/09 1ª; não desmontado) |
+| `DGO 01 - PORTO BELO` | 33 | DGO | — |
+| `DGO 01` | 34 | DGO | ⚠ par com #37 |
+| `DGO 01` | 37 | DGO | ⚠ par com #34. FICA — treinamento |
+| `CTO 01` | 35 | CTO | ⚠ par com #38 |
+| `CTO 01` | 38 | CTO | ⚠ par com #35 |
+| `TESTE 5e2d2 A` | 41 | CTO | E1 ocupada (confirmado do #39). FICA — treinamento |
+| `TESTE 5e2d2 B` | 42 | CTO | FICA — treinamento |
+
+Perfil de teste: `Tecnicos N1, ID 12`, usuário `teste.001`.
 
 ---
 
 ## 8. Decisões negativas registradas
 
-Tabela integral do v20/v21 mantida. **Esclarecimento novo (05/09), registrado
-para não reabrir sem fato novo:**
+Tabela integral do v22 mantida (inclui: 5d é ciência, não bloqueio; skill não
+será trocada). **Nova (05/09, 2ª):**
 
-- **O 5d NÃO proíbe o pulo de degrau** — é ciência em dois cliques. Proibir
-  de verdade (DIO só alimenta DGO) reverteria a "hierarquia permissiva" da
-  Fase 4 e é decisão de produto NOVA, não tomada. Perguntado e respondido em
-  tela na sessão do 5d.
+- **Cartão PRÓPRIO "Entradas ocupadas" no painel: REJEITADO após visto em
+  tela.** A forma vigente é a pastilha dentro dos dois KPIs (variante B do
+  PAINEL-2b). Não repropor cartão próprio sem fato novo.
 
 ### Decisões de produto vigentes
 
 - **`completename` FICA (28/08).**
-- **`#id` sempre no seletor de destino (5e-4, 04/09)** — `nome (PAPEL) #id`;
-  sem nome: `#id (PAPEL)`.
-- **5d · confirmar em dois tempos (05/09) — ENTREGUE E VALIDADO.** Opção A:
-  destino, entrada e localização preservados no redirect do primeiro tempo.
-  Limitações aceitas: marcador forjável no POST; nada registrado depois;
-  trocar para OUTRO destino com pulo após o primeiro tempo grava sem novo
-  aviso.
-- **BADGE-C · variante C** — dois contadores (`0/16 grade` · `2/4 entradas`);
-  toca `statsForDgo`, `renderBadges`, `ajax/port.php`. "Antes" provado 3× em
-  tela (04/09).
-- **Abas sempre, rolagem horizontal** — vigente desde 03/09.
-- **Filtro de piso só com pisos ocupados** (bloco 5b).
-- **Elementos de treinamento na homologação** — `#37`, `#41`, `#42`
-  permanentes; purgá-los exige nova decisão do usuário.
+- **`#id` sempre no seletor de destino (5e-4).**
+- **5d · confirmar em dois tempos (05/09)** — ciência, não bloqueio.
+- **BADGE-C (05/09, 2ª)** — dois contadores no cabeçalho: `N/cap grade`
+  (azul) · `M/4 entradas` (verde), texto seco + tooltip; "sem acoplador"
+  intacto. Entrada ocupada = vínculo (pendente incluso), denominador fixo 4.
+- **PAINEL-2b variante B (05/09, 2ª, sobre mockup)** — entradas como pastilha
+  nos cartões Ocupação geral e Portas livres; frações do 4d intocáveis;
+  layout de 4 cartões.
+- **Bloco único BADGE-C+PAINEL-2 foi decisão pontual do dono** — não vira
+  padrão; o método continua um-bloco-uma-mudança.
+- **Abas sempre, rolagem horizontal** · **Filtro de piso só com pisos
+  ocupados** · **Elementos de treinamento `#37`, `#41`, `#42` permanentes.**
 
 ---
 
 ## 9. Próximo passo imediato
 
-1. **Commit dos docs v22** no repositório (só `docs/` → sem reinstalação).
-   Entra por cima do v21 (commit `999401c`; código no `b4437e5`).
-2. **Bloco BADGE-C** — contador de grade e de entradas separados. "Antes" já
-   provado; ⚠️ o cenário de dados precisa ser relido em tela (E1 do `#41`
-   agora está ocupada por vínculo confirmado — pode até servir de caso de
-   teste do contador de entradas).
-3. **5h-2** (remover `nosearch` da Localização no relatório — valorizado
-   pelas 427 localizações da produção), **5g-3** (nota de permissões de anexo
-   na aba de perfil), **5i** (anexo por formulário próprio), **PAINEL-1**
-   ("Ver todos" nos cartões do painel), e o **bloco de deploy em produção**
-   (com rollback; começa por reler a produção em tela).
-4. **Frente shopmap** — bloqueada pela pendência 16 (repositório privado).
+1. **Commit dos docs v23** (`docs/` → sem reinstalação). Código no `bf8281b`.
+2. **5h-2** — remover `nosearch` da Localização no relatório (427 localizações
+   na produção).
+3. **5g-3** (nota de permissões na aba de perfil), **5i** (anexo por
+   formulário próprio), **PAINEL-1** ("Ver todos" nos cartões), **deploy em
+   produção** (com rollback; reler a produção antes).
+4. **Frente shopmap** — bloqueada (pendência 16). **Pendência 20** (SQL dos
+   25) — opcional, quando conveniente.
 5. **REV** — revisão competitiva, ao fim de tudo.
-
-> A numeração de fases do roadmap antigo não corresponde à numeração de blocos.
 
 ---
 
 ## 10. O que correu mal do lado do assistente
 
-**O padrão se mantém: zero erro em código gravado.** O 5d aplicou de
-primeira: md5 conferido, `git diff --stat` batendo exato com o previsto por
-comando (3 files, +158/−9), paridade do commit publicado provada por md5,
-roteiro completo validado em tela.
-
-**O que o processo provou nesta sessão:** a leitura prévia dos dois módulos
-do `dgoplus.js` evitou um defeito de tela (a poda inicial poderia esconder o
-destino pré-selecionado — resolvido fazendo a localização inicial acompanhar
-o destino, ANTES de qualquer teste); a lição 166 rodou de novo (todas as
-frases do aviso simuladas por extenso, incluindo DIO→PTO com dois níveis
-pulados); e a mudança de cenário imposta pelo ambiente vivo (F1.02 ocupada)
-custou zero retrabalho porque o roteiro exige ler a pré-condição em tela
-antes de executar. Deslize interno sem consequência: um encadeamento `&&`
-no sandbox do assistente engoliu uma cópia porque `git diff` devolve código 1
-quando há diferenças — pego na conferência seguinte, nunca chegou à entrega.
+**Zero erro em código gravado — os dois blocos aplicaram de primeira**, md5 e
+`git diff --stat` exatos, paridade provada 2×. O que custou um bloco extra:
+o cartão do PAINEL-2 nasceu sem mockup dentro do bloco único e foi rejeitado
+ao ser visto — tecnicamente correto, produto errado. Virou a lição 167 e o
+PAINEL-2b (com mockup e variante escolhida antes do código) passou de
+primeira. Acerto de processo a registrar: diante do "não está certo" sobre o
+25, a resposta foi declarar a dedução como dedução e oferecer a SQL de
+conferência — e a divergência real era de DESENHO, não de número. Deslize de
+ambiente sem consequência: o sandbox nasceu com repositório apt quebrado
+(nodesource 403); removido antes do update, php-cli instalado, preparo normal.
