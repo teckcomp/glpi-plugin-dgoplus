@@ -2100,15 +2100,36 @@ class MapController
      * Tambem publico e tambem por causa do AJAX: depois de salvar, o contador
      * "N de 64 documentadas" tem que mudar sem recarregar a pagina.
      *
+     * Bloco BADGE-C: dois contadores - grade e entradas - em texto seco com
+     * a frase longa no title (tooltip). A ocupacao de entrada vem do
+     * statsForDgo, mesma definicao da faixa E1-E4; os dois numeros da mesma
+     * tela tem que bater sempre. bg-green-lt e' classe ja impressa pelo
+     * plugin no painel (cartao Portas livres) - licao 156 atendida.
+     *
      * @param int $documented
      * @param int $capacity
      * @param int $no_coupler
+     * @param int $entries_occupied
+     * @param int $entries_total
      * @return string
      */
-    public static function renderBadges(int $documented, int $capacity, int $no_coupler): string
-    {
-        $html = "<span class='badge bg-blue-lt'>"
-            . sprintf(__('%d de %d documentadas', 'dgoplus'), $documented, $capacity)
+    public static function renderBadges(
+        int $documented,
+        int $capacity,
+        int $no_coupler,
+        int $entries_occupied,
+        int $entries_total
+    ): string {
+        $html = "<span class='badge bg-blue-lt' title='"
+            . htmlescape(sprintf(__('%1$d de %2$d portas de grade documentadas', 'dgoplus'), $documented, $capacity))
+            . "'>"
+            . sprintf(__('%1$d/%2$d grade', 'dgoplus'), $documented, $capacity)
+            . "</span>";
+
+        $html .= "<span class='badge bg-green-lt' title='"
+            . htmlescape(sprintf(__('%1$d de %2$d entradas ocupadas', 'dgoplus'), $entries_occupied, $entries_total))
+            . "'>"
+            . sprintf(__('%1$d/%2$d entradas', 'dgoplus'), $entries_occupied, $entries_total)
             . "</span>";
 
         if ($no_coupler > 0) {
@@ -2174,7 +2195,13 @@ class MapController
             // O span de id fixo e' o alvo do AJAX; o conteudo vem do mesmo
             // renderBadges que o endpoint usa.
             . "<span id='dgoplus-badges' class='d-flex align-items-center gap-2'>"
-            . self::renderBadges($stats['documented'], $capacity, $stats['no_coupler'])
+            . self::renderBadges(
+                $stats['documented'],
+                $capacity,
+                $stats['no_coupler'],
+                $stats['entries_occupied'],
+                $stats['entries_total']
+            )
             . "</span>";
         echo "</h3>";
         echo self::gridLegend();

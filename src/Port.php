@@ -940,9 +940,18 @@ class Port extends CommonDBChild
      * "Documentadas" NAO conta as sem acoplador: elas nao sao ocupacao, sao
      * indisponibilidade.
      *
+     * Bloco BADGE-C: tambem conta as entradas ocupadas, na MESMA definicao
+     * da faixa E1-E4 (renderEntryBox): entrada ocupada = linha de entrada
+     * viva com vinculo apontando para ela - pendente ocupa igual (Fase 4).
+     * O denominador e' fixo em MAX_ENTRIES: a faixa desenha E1-E4 por
+     * construcao, exista ou nao a linha no banco. Este metodo e' o PONTO
+     * UNICO das duas contagens - badge do cabecalho e cartao do painel
+     * consomem daqui, nunca de consulta propria.
+     *
      * @param string $itemtype
      * @param int    $items_id
-     * @return array{documented:int, no_coupler:int, total:int}
+     * @return array{documented:int, no_coupler:int, total:int,
+     *               entries_occupied:int, entries_total:int}
      */
     public static function statsForDgo(string $itemtype, int $items_id): array
     {
@@ -960,10 +969,23 @@ class Port extends CommonDBChild
             }
         }
 
+        $entry_rows = $port->find([
+            'itemtype'   => $itemtype,
+            'items_id'   => $items_id,
+            'is_deleted' => 0,
+        ] + self::entryCriteria());
+
+        $entry_ids = [];
+        foreach ($entry_rows as $erow) {
+            $entry_ids[] = (int) $erow['id'];
+        }
+
         return [
-            'documented' => count($rows) - $no_coupler,
-            'no_coupler' => $no_coupler,
-            'total'      => count($rows),
+            'documented'       => count($rows) - $no_coupler,
+            'no_coupler'       => $no_coupler,
+            'total'            => count($rows),
+            'entries_occupied' => count(Link::findByDestinations($entry_ids)),
+            'entries_total'    => self::MAX_ENTRIES,
         ];
     }
 

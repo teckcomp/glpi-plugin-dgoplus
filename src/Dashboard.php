@@ -220,6 +220,7 @@ class Dashboard
      *   by_role:array<string,int>, nodoc_by_role:array<string,int>,
      *   capacity:int, documented:int, free:int, occupancy:float,
      *   items_sem_doc:int, ports_trash:int,
+     *   entries_occupied:int, entries_total:int,
      *   by_location:array<int,array{name:string,items:int,roles:array<string,int>,documented:int,capacity:int}>,
      *   top_items:array<int,array{id:int,name:string,role:string|null,locations_id:int,documented:int,capacity:int,pct:float}>,
      *   recent:array<int,array{position:string,edit_key:string,item_id:int,locations_id:int,item_name:string,code:string,date_mod:string}>
@@ -335,6 +336,29 @@ class Dashboard
                 'items_id'   => $item_ids,
                 'is_deleted' => 1,
             ] + Port::gridCriteria()));
+        }
+
+        // Bloco PAINEL-2: entradas ocupadas no escopo, MESMA definicao da
+        // faixa E1-E4 e do badge da grade (vinculo apontando para a entrada
+        // ocupa; pendente incluso). De proposito FORA de Ocupacao geral e
+        // Portas livres: a decisao do 4d (gridCriteria nas fracoes) permanece
+        // - grade tem capacidade por layout, entrada tem teto fixo de
+        // MAX_ENTRIES por elemento. Misturar recriaria o defeito que o 4d
+        // matou.
+        $entries_occupied = 0;
+        if ($item_ids !== []) {
+            $entry_rows = $port_model->find([
+                'itemtype'   => PassiveDCEquipment::class,
+                'items_id'   => $item_ids,
+                'is_deleted' => 0,
+            ] + Port::entryCriteria());
+
+            $entry_ids = [];
+            foreach ($entry_rows as $row) {
+                $entry_ids[] = (int) $row['id'];
+            }
+
+            $entries_occupied = count(Link::findByDestinations($entry_ids));
         }
 
         // --- Agregacao por elemento ---
@@ -453,6 +477,8 @@ class Dashboard
             'occupancy'     => $capacity > 0 ? round($documented * 100 / $capacity, 1) : 0.0,
             'items_sem_doc' => $sem_doc,
             'ports_trash'   => $ports_trash,
+            'entries_occupied' => $entries_occupied,
+            'entries_total'    => Port::MAX_ENTRIES * count($item_ids),
             'by_location'   => $by_location,
             'top_items'     => $top,
             'recent'        => $recent,
@@ -527,7 +553,7 @@ class Dashboard
             : __('nenhum na lixeira', 'dgoplus');
 
         self::card(
-            'col-12 col-lg-6 col-xl-4',
+            'col-12 col-lg-6 col-xl-3',
             sprintf(__('%s cadastrados', 'dgoplus'), self::ucfirstLabel(self::roleNoun($role, 2))),
             (string) $d['total_items'],
             $subtitle,
@@ -544,7 +570,7 @@ class Dashboard
         // na cor de alerta: num cartao de pendencia, o que salta e' o que falta
         // fazer, nao o que ja esta feito.
         self::card(
-            'col-12 col-lg-6 col-xl-4',
+            'col-12 col-lg-6 col-xl-3',
             sprintf(__('%s sem documentação', 'dgoplus'), self::ucfirstLabel(self::roleNoun($role, 2))),
             (string) $d['items_sem_doc'],
             $d['items_sem_doc'] > 0
@@ -581,6 +607,20 @@ class Dashboard
                 ? sprintf(__('%d na lixeira', 'dgoplus'), $d['ports_trash'])
                 : __('nenhuma na lixeira', 'dgoplus'),
             'ti ti-plug',
+            'bg-green-lt',
+            ['compact' => true]
+        );
+
+        // --- 5. Entradas ocupadas (numero unico, encolhe) --- Bloco PAINEL-2.
+        // Cartao PROPRIO, nunca dentro das fracoes de grade (decisao do 4d).
+        // Ocupada = vinculo apontando para a entrada, pendente incluso -
+        // mesma definicao da faixa E1-E4 e do badge do cabecalho (BADGE-C).
+        self::card(
+            'col-6 col-lg-3 col-xl-2',
+            __('Entradas ocupadas', 'dgoplus'),
+            (string) $d['entries_occupied'],
+            sprintf(__('de %d entradas', 'dgoplus'), $d['entries_total']),
+            'ti ti-link',
             'bg-green-lt',
             ['compact' => true]
         );

@@ -118,6 +118,8 @@ echo json_encode([
     'badges_html' => MapController::renderBadges(
         $stats['documented'],
         $capacity,
-        $stats['no_coupler']
+        $stats['no_coupler'],
+        $stats['entries_occupied'],
+        $stats['entries_total']
     ),
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
