@@ -280,6 +280,55 @@ class Link extends CommonDBTM
     }
 
     /**
+     * Frase de aviso quando o vinculo PULA degrau na hierarquia. Bloco 5d.
+     *
+     * PONTO UNICO da medida do pulo e do texto: o propose() usa esta frase
+     * para recusar o primeiro tempo, e a tela (MapController, secao
+     * "Alimenta") usa a MESMA chamada para decidir se desenha o aviso e o
+     * botao de confirmacao. Regra em dois lugares divergiria em silencio
+     * (licoes 47 e 48) - por isso a frase nasce aqui e so' aqui.
+     *
+     * Devolve null quando NAO ha pulo: descida de um degrau, papel invalido
+     * ou fora de ordem. Esses dois ultimos sao problema do hierarchyAllows,
+     * que roda antes - este metodo nunca e' a primeira linha de defesa.
+     *
+     * @param string|null $src_role papel da origem (Setting::getRoleOfItem)
+     * @param string|null $dst_role papel do destino
+     * @return string|null frase do aviso, ou null sem pulo
+     */
+    public static function skipWarning(?string $src_role, ?string $dst_role): ?string
+    {
+        if ($src_role === null || $dst_role === null) {
+            return null;
+        }
+
+        $roles = Setting::getRoles();
+        $order = array_flip($roles);
+
+        if (!isset($order[$src_role]) || !isset($order[$dst_role])) {
+            return null;
+        }
+
+        $depth = $order[$dst_role] - $order[$src_role];
+        if ($depth <= 1) {
+            return null;
+        }
+
+        $skipped = array_slice($roles, $order[$src_role] + 1, $depth - 1);
+        $labels  = [];
+        foreach ($skipped as $skipped_role) {
+            $labels[] = Setting::getRoleLabel($skipped_role);
+        }
+
+        return sprintf(
+            __('Este vínculo pula degrau na hierarquia: %1$s alimenta %2$s sem passar por %3$s.', 'dgoplus'),
+            Setting::getRoleLabel($src_role),
+            Setting::getRoleLabel($dst_role),
+            implode(', ', $labels)
+        );
+    }
+
+    /**
      * Propoe um vinculo: porta de grade da origem -> entrada do destino.
      *
      * PONTO UNICO de criacao de vinculo (bloco 4c), pela mesma razao de
@@ -300,9 +349,18 @@ class Link extends CommonDBTM
      * unico ponto em que o invariante "linha de entrada so' existe com
      * vinculo" afrouxa, e e' invisivel de proposito.
      *
+     * Bloco 5d: proposta que PULA degrau (ex.: DIO -> CTO sem passar pelo
+     * DGO) nao grava na primeira submissao. O primeiro tempo devolve
+     * needs_ack=true com a frase do skipWarning(); o segundo tempo, com
+     * skip_ack no POST, grava normalmente. Limitacao ACEITA em decisao de
+     * produto: o marcador e' forjavel no POST e nada fica registrado depois
+     * - e' ciencia, nao auditoria. A checagem roda DEPOIS de toda recusa de
+     * leitura: needs_ack so' aparece quando o resto passaria.
+     *
      * @param array $params itemtype, items_id, tube_num, fiber_num (origem);
-     *                      dst_itemtype, dst_items_id, dst_slot (destino)
-     * @return array{ok:bool, error:string, id:int}
+     *                      dst_itemtype, dst_items_id, dst_slot (destino);
+     *                      skip_ack (ciencia do pulo de degrau, bloco 5d)
+     * @return array{ok:bool, error:string, id:int, needs_ack:bool}
      */
     public static function propose(array $params): array
     {
@@ -313,9 +371,10 @@ class Link extends CommonDBTM
         $dst_itemtype = (string) ($params['dst_itemtype'] ?? '');
         $dst_items_id = (int) ($params['dst_items_id'] ?? 0);
         $dst_slot     = (int) ($params['dst_slot'] ?? 0);
+        $skip_ack     = (int) ($params['skip_ack'] ?? 0) === 1;
 
         $fail = static function (string $error): array {
-            return ['ok' => false, 'error' => $error, 'id' => 0];
+            return ['ok' => false, 'error' => $error, 'id' => 0, 'needs_ack' => false];
         };
 
         if ($itemtype === '' || $items_id <= 0 || $tube_num < 1 || $fiber_num < 1) {
@@ -345,7 +404,11 @@ class Link extends CommonDBTM
         }
 
         // Papel vem do Tipo nativo, nunca do nome (regra dura do 4a).
-        if (!self::hierarchyAllows(Setting::getRoleOfItem($origin), Setting::getRoleOfItem($dest))) {
+        // Em variaveis porque o 5d os reusa depois das recusas de leitura.
+        $src_role = Setting::getRoleOfItem($origin);
+        $dst_role = Setting::getRoleOfItem($dest);
+
+        if (!self::hierarchyAllows($src_role, $dst_role)) {
             return $fail(sprintf(
                 __('A hierarquia não permite este vínculo: a origem precisa estar acima do destino (%s), nunca no mesmo nível nem abaixo.', 'dgoplus'),
                 Setting::getRoleChainLabel()
@@ -409,6 +472,18 @@ class Link extends CommonDBTM
             }
         }
 
+        // Bloco 5d: o PRIMEIRO TEMPO do pulo de degrau. Roda por ultimo, de
+        // proposito: needs_ack so' aparece quando todas as outras recusas ja
+        // passariam - confirmar o pulo para entao tomar "entrada ocupada"
+        // seria pergunta em vao. Nada foi materializado ate aqui (regra do
+        // 4c-2 intacta): o primeiro tempo nao deixa rastro no banco.
+        if (!$skip_ack) {
+            $skip_warn = self::skipWarning($src_role, $dst_role);
+            if ($skip_warn !== null) {
+                return ['ok' => false, 'error' => $skip_warn, 'id' => 0, 'needs_ack' => true];
+            }
+        }
+
         // Daqui em diante nenhuma recusa de regra e' possivel: pode materializar.
         $grid = Port::ensureGrid($itemtype, $items_id, $tube_num, $fiber_num);
         if (!$grid['ok']) {
@@ -459,7 +534,7 @@ class Link extends CommonDBTM
             return $fail(__('Não foi possível criar o vínculo — a porta ou a entrada pode ter sido ocupada agora. Recarregue a página e tente de novo.', 'dgoplus'));
         }
 
-        return ['ok' => true, 'error' => '', 'id' => $id];
+        return ['ok' => true, 'error' => '', 'id' => $id, 'needs_ack' => false];
     }
 
     /**

@@ -1005,7 +1005,24 @@ class MapController
             'dst_itemtype' => PassiveDCEquipment::class,
             'dst_items_id' => $_POST['dst_items_id'] ?? 0,
             'dst_slot'     => $_POST['dst_slot'] ?? 0,
+            'skip_ack'     => $_POST['skip_ack'] ?? 0,
         ]);
+
+        // Bloco 5d: o primeiro tempo do pulo de degrau NAO e' erro - e' a
+        // pergunta. O redirect carrega o destino e a entrada escolhidos
+        // (skip_dst/skip_slot) para o formulario redesenhar preservado, com
+        // o aviso e o botao "Confirmar mesmo assim" (opcao A, 05/09). A
+        // frase do aviso NAO viaja na sessao: a tela a rederiva do MESMO
+        // skipWarning() que recusou - ponto unico, sem divergencia.
+        if (!$result['ok'] && !empty($result['needs_ack'])) {
+            self::redirectTo(self::scope($locations_id, $floors_id, [
+                'dgo'       => $items_id,
+                'edit'      => $tube_num . '-' . $fiber_num,
+                'skip_dst'  => (int) ($_POST['dst_items_id'] ?? 0),
+                'skip_slot' => (int) ($_POST['dst_slot'] ?? 0),
+            ]));
+            return;
+        }
 
         if (!$result['ok']) {
             Session::addMessageAfterRedirect($result['error'], false, ERROR);
@@ -3469,6 +3486,29 @@ class MapController
             }
         }
 
+        // Bloco 5d: segundo tempo do pulo de degrau. skip_dst/skip_slot
+        // chegam pela URL do redirect do primeiro tempo (actionProposeLink).
+        // A validacao e' a MESMA pergunta do propose - Link::skipWarning() -
+        // no ponto unico: skip_dst forjado, fora dos candidatos ou sem pulo
+        // real simplesmente nao acende nada e o formulario nasce normal.
+        $skip_dst  = (int) ($_GET['skip_dst'] ?? 0);
+        $skip_slot = (int) ($_GET['skip_slot'] ?? 0);
+        $skip_warn = null;
+
+        if ($skip_dst > 0 && isset($candidates[$skip_dst])) {
+            $skip_warn = Link::skipWarning(
+                $role,
+                Setting::getRoleForType((int) ($candidates[$skip_dst][Setting::getTypeField()] ?? 0))
+            );
+        }
+
+        if ($skip_warn === null) {
+            $skip_dst = 0;
+        }
+        if ($skip_slot < 1 || $skip_slot > Port::MAX_ENTRIES) {
+            $skip_slot = 0;
+        }
+
         echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' data-dgoplus-link-form='1'>";
         echo Html::hidden('action', ['value' => 'propose_link']);
         echo Html::hidden('itemtype', ['value' => PassiveDCEquipment::class]);
@@ -3532,6 +3572,14 @@ class MapController
         // "todas" - vinculo entre localizacoes diferentes continua possivel.
         $dst_loc_initial = array_key_exists($locations_id, $loc_options) ? $locations_id : 0;
 
+        // Bloco 5d: no segundo tempo a localizacao inicial acompanha o
+        // DESTINO preservado - o JS poda o seletor de elemento pela
+        // localizacao escolhida, e um recorte incoerente esconderia a opcao
+        // pre-selecionada. Destino sem localizacao cai em "todas" (0).
+        if ($skip_dst > 0) {
+            $dst_loc_initial = (int) ($cand_scope[$skip_dst]['loc'] ?? 0);
+        }
+
         echo "<div class='row g-2 align-items-end'>";
 
         // Select nativo escrito a mao, como o dst_items_id e o dst_slot do 4c.
@@ -3585,7 +3633,10 @@ class MapController
                 ? $cand['name'] . $role_sfx . ' #' . $cid
                 : '#' . $cid . $role_sfx;
 
-            echo "<option value='" . $cid . "'>" . htmlescape($label) . "</option>";
+            // Bloco 5d: o segundo tempo abre com o destino do primeiro.
+            echo "<option value='" . $cid . "'"
+                . ($cid === $skip_dst ? " selected='selected'" : '')
+                . ">" . htmlescape($label) . "</option>";
         }
 
         echo "</select>";
@@ -3595,16 +3646,39 @@ class MapController
         echo "<label class='form-label mb-1'>" . __('Entrada', 'dgoplus') . "</label>";
         echo "<select name='dst_slot' class='form-select form-select-sm' data-dgoplus-link-slot='1'>";
         for ($slot = 1; $slot <= Port::MAX_ENTRIES; $slot++) {
-            echo "<option value='" . $slot . "'>" . htmlescape(Port::formatEntryLabel($slot)) . "</option>";
+            // Bloco 5d: a entrada do primeiro tempo tambem volta escolhida.
+            echo "<option value='" . $slot . "'"
+                . ($slot === $skip_slot ? " selected='selected'" : '')
+                . ">" . htmlescape(Port::formatEntryLabel($slot)) . "</option>";
         }
         echo "</select>";
         echo "</div>";
 
         echo "<div class='col-6 col-md-4'>";
-        echo Html::submit(__('Propor vínculo', 'dgoplus'), ['class' => 'btn btn-sm btn-outline-primary w-100']);
+        echo Html::submit(
+            $skip_warn !== null
+                ? __('Confirmar mesmo assim', 'dgoplus')
+                : __('Propor vínculo', 'dgoplus'),
+            ['class' => 'btn btn-sm btn-outline-primary w-100']
+        );
         echo "</div>";
 
         echo "</div>";
+
+        // Bloco 5d: o aviso do pulo, colado no botao que confirma. Classes
+        // ja provadas em tela pelo proprio plugin (badge bg-yellow-lt no
+        // "pendente", form-hint em toda dica) - nada de classe nao
+        // confirmada (licao 156). O hidden skip_ack=1 e' o marcador do
+        // segundo tempo; forjavel de proposito (limitacao aceita).
+        if ($skip_warn !== null) {
+            echo "<div class='d-flex align-items-start gap-2 mt-2'>";
+            echo "<span class='badge bg-yellow-lt'>" . htmlescape(__('pula degrau', 'dgoplus')) . "</span>";
+            echo "<span class='form-hint m-0'>" . htmlescape(
+                $skip_warn . ' ' . __('Revise o destino e a entrada e clique em "Confirmar mesmo assim" para gravar.', 'dgoplus')
+            ) . "</span>";
+            echo "</div>";
+            echo Html::hidden('skip_ack', ['value' => 1]);
+        }
 
         // JSON para o JS desabilitar as entradas ocupadas. HEX flags
         // obrigatorias: nome de elemento contendo </script> quebraria a
