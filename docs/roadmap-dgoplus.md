@@ -2,13 +2,13 @@
 
 > Companheiro do `contexto-dgoplus.md`. **Substituir**, nunca acumular.
 >
-> **Versão:** v23 — 05/09/2026 (2ª sessão do dia). Sucede o v22.
-> A mudança que justifica a versão nova: **BADGE-C e PAINEL-2/2b entregues e
-> validados** (contadores de grade e entradas no cabeçalho da grade — 1.3.25,
-> `e5d01fc`; entradas como pastilha nos cartões do painel, variante B —
-> 1.3.26, `bf8281b`). O cartão próprio "Entradas ocupadas" do PAINEL-2 viveu
-> um bloco e foi substituído pela variante B após o dono ver em tela —
-> origem da lição 167 (mockup antes de tela nova).
+> **Versão:** v24 — 05/09/2026 (3ª sessão do dia). Sucede o v23.
+> A mudança que justifica a versão nova: **os blocos de código da Fase 5
+> ACABARAM.** 5h-2 + 5i entregues em aplicação única e validados (1.3.27,
+> `c74e32a`); 5i-2 endpoint entregue e validado (1.3.28, `4923cab`); 5g-3
+> quitado sem código; PAINEL-1a já estava entregue; PAINEL-1b virou decisão
+> negativa. O 5i-2 versão "cadeado" foi preparado e descartado antes de
+> aplicar — origem da lição 168.
 
 ---
 
@@ -30,38 +30,37 @@ grep -rc 'PassiveDCEquipment::$rightname' src/ | grep -v ':0'     # nada
 
 | Bloco | O que fez | Versão / commit |
 |---|---|---|
-| 5a … 5d | Tudo do v22 (até confirmação em dois tempos) | até 1.3.24 |
-| docs v22 | Commit dos docs da 1ª sessão de 05/09 | `0ef7bf3` |
-| **BADGE-C (+PAINEL-2)** | **Dois contadores no cabeçalho da grade (`5/64 grade` azul · `1/4 entradas` verde, tooltips), "sem acoplador" intacto; `statsForDgo` vira ponto único incluindo entradas; cartão "Entradas ocupadas" no painel (substituído no bloco seguinte). Bloco único por decisão do dono** | **1.3.25, `e5d01fc`** ✅ |
-| **PAINEL-2b** | **Variante B: pastilhas `25/164 entradas ocupadas` (Ocupação geral) e `139/164 entradas livres` (Portas livres) via helper `entriesPill()`; cartão próprio removido; layout de 4 cartões restaurado (xl-4). Frações do 4d intocadas** | **1.3.26, `bf8281b`** ✅ |
+| 5a … PAINEL-2b | Tudo do v23 | até 1.3.26 |
+| docs v23 | Commit dos docs da 2ª sessão de 05/09 | `4358c98` |
+| **5h-2 + 5i** | **Aplicação única (decisão pontual do dono). 5h-2: `nosearch` da Localização caiu — relatório filtra por localização. 5i: anexo por formulário do PLUGIN — ação `attach_document`, direito = Atualizar do DGO+, `Document::add` com `_filename` (não checa direito nativo; tipo de arquivo continua validado pelo core); gates `Document::canView()` da lista caíram** | **1.3.27, `c74e32a`** ✅ |
+| **5i-2 endpoint** | **`front/document.send.php` do plugin (arquivo NOVO): ver/baixar anexo pelo mapa exige só o Ler do DGO+ — nada em Gerência → Documentos. Porteiro: Ler + `parentIsReachable` + vínculo doc↔elemento obrigatório. `documentUrl()` foi o único retarget (ponto único). Texto de anexos da aba de perfil reescrito** | **1.3.28, `4923cab`** ✅ |
 
-### ✅ Validado em tela nesta sessão (05/09, 2ª)
+### ✅ Validado em tela nesta sessão (05/09, 3ª)
 
 | Item | O que se provou | Evidência |
 |---|---|---|
-| BADGE-C badges | Contadores de grade e entradas no cabeçalho; AJAX preserva os dois; "outras validações ok" | Validação do usuário |
-| PAINEL-2 cartão | Renderizou correto (25 de 164) mas NÃO era o desenho desejado → substituído | Screenshot antes/depois |
-| PAINEL-2b | 4 cartões restaurados, pastilhas nos dois KPIs | "validado e ok" |
-| Paridade | `e5d01fc` e `bf8281b` publicados = entregues, md5 a md5 | Tarballs na sessão |
+| 5h-2 | Relatório filtra por Localização | Validação do usuário |
+| 5i | Anexar com direito do plugin; recusa falada no só-leitura; anexo visível fora do DGO+ | Screenshots (lista + frase do cadeado azul) |
+| 5i-2 | Miniatura carrega no perfil SEM Documentos · Ler | "validado e ok" |
+| Paridade | `4358c98`, `c74e32a`, `4923cab` publicados = entregues | Tarballs md5 na sessão |
 
-### Fatos novos colhidos de graça (05/09, 2ª)
+### Fechado sem código (05/09, 3ª)
 
-- **25 entradas ocupadas no escopo total** (25/164) — os técnicos criaram
-  ~dezenas de vínculos que nenhum doc conhecia. Quebra pendente×confirmado
-  **NÃO verificada** (SQL preparada, não rodada — retrato opcional p/ v24).
-- Grade: 43/2165 documentadas (era 42 em 04/09 — alguém documentou +1).
-- `cache:clear` rodou 2× sem o `glpi.CRITICAL` aparecer na SAÍDA do console
-  (log não inspecionado para isso) — candidato segue em observação.
+| Item | Motivo |
+|---|---|
+| **5g-3** | A nota de anexos JÁ EXISTIA no `ProfileTab.php` — roadmap estava desatualizado (lição 160 aplicada a código). Reescrita depois pelo 5i-2 |
+| **PAINEL-1a** | Já estava entregue (rodapé na Atividade recente, `Dashboard.php`) |
 
-### ☠️ Cancelado sem código
+### ☠️ Cancelado sem aplicar
 
 | Bloco | Motivo |
 |---|---|
 | 5e-2d-2 | Preparado e descartado antes de aplicar (03/09) |
+| **5i-2 "cadeado"** | Preparado e DESCARTADO antes de aplicar (05/09, 3ª) — decorava a exigência nativa em vez de eliminá-la; contrariava o objetivo declarado (lição 168) |
 
 ### ⚠️ Entregue mas NÃO exercitado
 
-**Nenhum.** (O cartão do PAINEL-2 foi exercitado E substituído — não é dívida.)
+**Nenhum.**
 
 ---
 
@@ -70,7 +69,8 @@ grep -rc 'PassiveDCEquipment::$rightname' src/ | grep -v ':0'     # nada
 | # | Pergunta | Situação |
 |---|---|---|
 | 16 | shopmap guarda vínculo por NOME ou `itemtype`+`id`? | ⚠️ **Bloqueada** — repositório privado. Única viva |
-| 20 | Dos 25 vínculos, quantos pendentes × confirmados? | Aberta, opcional — SQL pronta no contexto §7 |
+| 20 | Dos 25 vínculos, quantos pendentes × confirmados? | Aberta, opcional — SQL no contexto §7 |
+| 21 | Por que a rota `canViewFileFromItem` (READ do ativo) do send.php do core NÃO abriu neste ambiente? | Aberta, opcional — curiosidade de core, sem bloco. Dedução falseada em tela em 05/09 |
 
 ---
 
@@ -86,16 +86,18 @@ grep -rc 'PassiveDCEquipment::$rightname' src/ | grep -v ':0'     # nada
 
 ## Parte E — estacionamento
 
-Lista do v22 mantida integralmente (inclui PAINEL-1b, pendente que envelhece,
-medição 5e-3a/b com dezenas de abas etc.). Sem entrada nova.
+Lista do v22 mantida, MENOS o PAINEL-1b (promovido a decisão negativa — §8 do
+contexto). Segue: pendente que envelhece não avisa; medição 5e-3a/b com
+dezenas de abas; etc.
 
 ---
 
 ## Parte F — decisões negativas
 
-Ver seção 8 do `contexto-dgoplus.md`. **Nova (05/09, 2ª):** cartão PRÓPRIO de
-entradas no painel foi entregue, visto e REJEITADO pelo dono — não repropor;
-a forma vigente é a pastilha dentro dos dois KPIs (variante B).
+Ver seção 8 do `contexto-dgoplus.md`. **Novas (05/09, 3ª):** PAINEL-1b não
+será feito (sem alvo honesto); ver anexo no mapa nunca mais exige direito
+nativo (5i-2 cadeado descartado); exigência "Documento R+U+C + Data centers
+UPDATE" para anexar está morta.
 
 ---
 
@@ -103,23 +105,22 @@ a forma vigente é a pastilha dentro dos dois KPIs (variante B).
 
 | Bloco | Comportamento com escala |
 |---|---|
-| BADGE-C | Neutro — dois números por elemento, qualquer volume |
-| PAINEL-2b | Neutro-positivo — denominador acompanha 4×elementos |
-| 5h-2 | **Melhora com escala** — 427 localizações na produção |
+| 5h-2 | **Melhora com escala** — 427 localizações na produção agora filtram |
+| 5i / 5i-2 | Neutro — um formulário e um endpoint por elemento |
+| BADGE-C / PAINEL-2b | Neutro (v23) |
 | Deploy em produção | Piora com o tempo — reler a produção antes |
 
 ---
 
 ## Próximo passo imediato
 
-1. **Commit dos docs v23** (`docs/` → sem reinstalação). Código segue no
-   `bf8281b`.
-2. **5h-2** — remover `nosearch` da Localização no relatório (prioridade
-   elevada pelas 427 localizações da produção).
-3. **5g-3** (nota de permissões de anexo na aba de perfil), **5i** (anexo por
-   formulário próprio), **PAINEL-1** ("Ver todos" nos cartões), **deploy em
-   produção** (com rollback; começa relendo a produção em tela).
-4. **Frente shopmap** — bloqueada pela pendência 16.
+1. **Commit dos docs v24** (`docs/` → sem reinstalação). Código no `4923cab`.
+2. **Tag/Release da Fase 5** (candidata `v1.3.28`) — decisão do dono; deploy
+   sai da tag.
+3. **Deploy em produção** — bloco próprio com rollback; começa RELENDO a
+   produção em tela.
+4. **Frente shopmap** — bloqueada (pendência 16). Pendências 20 e 21 —
+   opcionais.
 5. **REV** — revisão competitiva, ao fim de tudo.
 
 > A numeração de fases do roadmap antigo não corresponde à numeração de blocos.

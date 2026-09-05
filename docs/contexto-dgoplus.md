@@ -3,35 +3,42 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v23 — 05/09/2026 (2ª sessão do dia). Substitui o
-> v22 integralmente. Versão **1.3.26**, `master` em **`bf8281b`**
-> (bloco PAINEL-2b, código + bump).
+> **Versão deste documento:** v24 — 05/09/2026 (3ª sessão do dia). Substitui o
+> v23 integralmente. Versão **1.3.28**, `master` em **`4923cab`**
+> (bloco 5i-2 endpoint, código + bump).
 >
-> **O que o v23 traz de novo em relação ao v22:**
+> **O que o v24 traz de novo em relação ao v23:**
 >
-> 1. **O commit dos docs v22 FOI FEITO** — `master` estava em `0ef7bf3` no
->    início da sessão, provado por tarball (docs = v22, md5 a md5 com a base).
-> 2. **Bloco BADGE-C (+PAINEL-2) entregue e validado** — 1.3.25, `e5d01fc`.
->    Cabeçalho da grade com DOIS contadores: `N/cap grade` (azul) e
->    `M/4 entradas` (verde, `bg-green-lt`), ambos com tooltip; "sem
->    acoplador" intacto. `Port::statsForDgo` virou o ponto único das DUAS
->    contagens (grade E entradas). Bloco único (badge + cartão de painel)
->    por decisão explícita do dono, contra a recomendação de dividir.
-> 3. **Bloco PAINEL-2b entregue e validado** — 1.3.26, `bf8281b`. O cartão
->    próprio "Entradas ocupadas" (nascido no PAINEL-2) foi visto em tela,
->    rejeitado pelo dono e substituído pela **variante B**: pastilha verde
->    no rodapé dos cartões "Ocupação geral" (`25/164 entradas ocupadas`) e
->    "Portas livres" (`139/164 entradas livres`), helper `entriesPill()`
->    como ponto único do estilo; layout de 4 cartões restaurado (xl-4).
->    Variante escolhida sobre mockup ANTES do código.
-> 4. **Fato novo do ambiente vivo:** o painel revelou **25 entradas ocupadas
->    em 164** — os técnicos criaram dezenas de vínculos que nenhum doc
->    conhecia. Quebra pendente×confirmado NÃO verificada (pendência 20,
->    opcional; SQL pronta na §7).
-> 5. **Lição nova numerada: 167** (mockup antes de tela nova — ver §4).
-> 6. `cache:clear` rodou 2× sem o `glpi.CRITICAL` aparecer na saída do
->    console; candidato do v22 segue em observação (log não inspecionado
->    especificamente para isso).
+> 1. **Docs v23 commitados** (`4358c98`), paridade por tarball md5 a md5.
+> 2. **Bloco 5h-2 + 5i entregue e validado em aplicação ÚNICA** (decisão do
+>    dono) — 1.3.27, `c74e32a`. 5h-2: o `nosearch` da Localização (search
+>    option 8) caiu; o relatório filtra por localização. 5i: gerenciador de
+>    anexos com formulário do PRÓPRIO plugin — anexar exige só o Atualizar
+>    do DGO+ (Document::add com `_filename` não checa direito nativo,
+>    provado no core; validação de tipo continua a nativa); ação
+>    `attach_document` no map.php com a trava do 5f-3b. Os gates
+>    `Document::canView()` da lista caíram.
+> 3. **5g-3 QUITADO sem código** — a nota de anexos já existia no
+>    `ProfileTab.php`; o roadmap estava desatualizado. **PAINEL-1a já estava
+>    entregue** (rodapé "Ver todas as portas por atualização" na Atividade
+>    recente); **PAINEL-1b virou decisão negativa** (§8).
+> 4. **Bloco 5i-2 versão "cadeado" preparado e DESCARTADO antes de aplicar**
+>    — decorava a exigência nativa em vez de eliminá-la; contrariava o
+>    objetivo declarado. Origem da lição 168 (§4).
+> 5. **Bloco 5i-2 endpoint entregue e validado** — 1.3.28, `4923cab`.
+>    `front/document.send.php` do PLUGIN (arquivo NOVO): ver/baixar anexo
+>    pelo mapa exige só o Ler do DGO+ — nenhum direito em Gerência →
+>    Documentos. Porteiro: Ler do plugin + parentIsReachable + vínculo
+>    doc↔elemento obrigatório (docid solto recusa falado). Serve por
+>    `Document::getAsResponse()`; o retorno de script legado vira a resposta
+>    HTTP (LegacyFileLoadController, lido na sessão). `documentUrl()` foi o
+>    único retarget — ponto único trocou o porteiro de miniatura, lista e
+>    clique de uma vez. Texto de anexos da aba de perfil reescrito.
+> 6. **Anexos 100% concentrados no plugin** (decisão de produto, §8):
+>    Atualizar anexa, Ler vê. Dedução FALSEADA em tela: a rota do
+>    `canViewFileFromItem` via READ do ativo NÃO abriu neste ambiente — o
+>    que abria no send.php do core era Documentos · Ler (investigação
+>    opcional, sem bloco).
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
 
@@ -90,12 +97,12 @@ abolido. Ruído conhecido:
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 05/09 (2ª) | commit **`bf8281b`** (PAINEL-2b), versão **1.3.26** — push visto na sessão |
-| Último commit de CÓDIGO | o próprio `bf8281b` (anterior: `e5d01fc`, BADGE-C) |
-| Versão em homologação | **1.3.26** — aplicada, reinstalada e ativada em 05/09 |
-| **Paridade** | ✅ Provada por md5 na sessão para os DOIS commits (`e5d01fc`: 5 arquivos; `bf8281b`: 2 arquivos) |
-| Arquivos no repositório | **31** (28 do plugin + 3 em `docs/`) |
-| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — nomes SEM versão. Conteúdo atual: **v22** (commit `0ef7bf3`); o v23 entra por cima |
+| `master` em 05/09 (3ª) | commit **`4923cab`** (5i-2 endpoint), versão **1.3.28** — push visto na sessão |
+| Último commit de CÓDIGO | o próprio `4923cab` (anterior: `c74e32a`, 5h-2+5i) |
+| Versão em homologação | **1.3.28** — aplicada, reinstalada e ativada em 05/09 |
+| **Paridade** | ✅ Provada por md5 na sessão para docs v23 (`4358c98`), `c74e32a` (3 arquivos) e `4923cab` (4 arquivos) |
+| Arquivos no repositório | **32** (29 do plugin + 3 em `docs/`) — `front/document.send.php` é o novo |
+| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — nomes SEM versão. Conteúdo atual: **v23** (commit `4358c98`); o v24 entra por cima |
 | GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data` |
 | **Homologação** | **`177.87.230.179`, porta SSH `2078`, usuário `resolutto`** |
 | URL externa do GLPI | `http://177.87.230.179:2077/` |
@@ -161,7 +168,7 @@ git status --short && git log -1 --oneline && grep PLUGIN_DGOPLUS_VERSION setup.
 
 ⚠️ Quando o HEAD é commit de `docs/`, o `git log -1` mostra o commit dos docs —
 o último commit de CÓDIGO pode ser anterior (lição 143). Após o commit dos
-docs v23, o HEAD será de docs e o código seguirá no `bf8281b`.
+docs v24, o HEAD será de docs e o código seguirá no `4923cab`.
 
 **Reverter:**
 
@@ -196,8 +203,9 @@ Apache 80/443 interno; externo por `177.87.230.179:2077`.
 
 `v1.3.8` publicada em 27/08 (zip 177 KB, sha256 `34e1fd…ef16`); `v1.3.2`
 continua publicada. Tags: `v1.0.0` … `v1.3.2`, `v1.3.8`. **As versões 1.3.3 a
-1.3.26 não têm tag** — degraus internos da Fase 5. Próxima tag quando a Fase 5
-fechar.
+1.3.28 não têm tag** — degraus internos da Fase 5. Com os blocos de código da
+Fase 5 fechados, a tag é candidata a sair ANTES do deploy em produção (deploy
+a partir da tag).
 
 ### Outros plugins na mesma base
 
@@ -266,7 +274,7 @@ zero retrabalho de dados.
 `Port-badgec.php`, `Dashboard-painel2b.php` etc. ⚠️ **`ajax/port.php` e
 `front/port.php` têm o MESMO nome-base** — a entrega usa nome desambiguado
 (`port-ajax-<bloco>.php`) e o `cp` leva o caminho completo. Docs versionam no
-nome ENTREGUE (`contexto-dgoplus-v23.md`); no repositório o `cp` grava sem
+nome ENTREGUE (`contexto-dgoplus-v24.md`); no repositório o `cp` grava sem
 versão (`docs/contexto-dgoplus.md`).
 
 ### O repositório é público — usar isso por padrão
@@ -438,7 +446,8 @@ de 05/09 tocou JS — o span de badges é reescrito com o HTML que o PHP manda.
 
 Para a porta, `itemtype_item_revert` + `specific_itemtype`. Search options do
 Port: 1 code, 2 name, 3 itemtype, 5 tube, 6 fiber, 7 comment, 8 Localização
-(`nosearch` — alvo do 5h-2), 9 no_coupler, 10 kind, 11 documentado por,
+(**pesquisável desde o 5h-2** — o `nosearch` caiu; join `itemtype_item_revert`
++ `specific_itemtype` intacto), 9 no_coupler, 10 kind, 11 documentado por,
 12 date_documented, 19 date_mod, 121 date_creation. `Port::getReportUrl()` é o
 ponto único da URL. A busca do mapa é GLOBAL e busca PORTAS.
 
@@ -452,22 +461,46 @@ inalterada (anexos = `document` R+U+C e `datacenter` UPDATE; papéis =
 ⚠️ **A Fase 5 ainda não chegou à produção.** Deploy com rollback — bloco
 próprio, sem data. Começa por RELER a produção em tela.
 
-### Anexos
+### Anexos — 100% do plugin (5i + 5i-2, 1.3.27/1.3.28)
 
-Cartão usa formulário do core → exige `datacenter` UPDATE (lição 134). Mas
-`CommonDBTM::add()` não checa direito (lição 148) — candidato **5i**.
+**Nenhum direito nativo entra na conta dentro do DGO+.** Anexar = Atualizar
+do DGO+; ver/baixar = Ler do DGO+ (o mesmo do mapa).
+
+- **Anexar:** formulário do plugin no gerenciador → ação `attach_document`
+  do `map.php` → `actionAttachDocument()`: `checkRight(UPDATE)` +
+  `parentIsReachable` (trava 5f-3b) → arquivo vai a `GLPI_TMP_DIR` com
+  prefixo único → `Document::add()` com `_filename`/`_prefix_filename` +
+  `itemtype`/`items_id` (o `post_addItem` cria o `Document_Item` sozinho —
+  um add() faz o par). O caminho NÃO checa direito nativo (lição 148,
+  provado no core 11.0.6); a validação de TIPO continua a nativa
+  (`isValidDoc` × `glpi_documenttypes`). Toda saída tem frase.
+- **Ver/baixar:** `front/document.send.php` do PLUGIN (arquivo novo).
+  Porteiro: Ler do DGO+ + `parentIsReachable` + vínculo doc↔elemento
+  obrigatório — docid solto recusa falado ("O anexo não pertence a este
+  elemento."). Serve por `Document::getAsResponse()`; o retorno do script
+  legado vira a resposta HTTP (`LegacyFileLoadController`).
+  `MapController::documentUrl()` é o ponto único do link — miniaturas,
+  lista do gerenciador e cliques passam todos por ele.
+- **Fora do DGO+** (ficha do ativo, Gerência → Documentos) valem os
+  direitos nativos — o send.php do core não foi tocado.
+- ⚠️ Dedução falseada em tela (05/09, 3ª): a rota `canViewFileFromItem`
+  (READ no ativo) do send.php do CORE não abriu neste ambiente; quem abria
+  era Documentos · Ler. Investigação opcional, sem bloco.
 
 ### Arquivos
 
-**31 no repositório** (28 + 3 em `docs/`).
+**32 no repositório** (29 + 3 em `docs/`) — `front/document.send.php` nasceu
+no 5i-2.
 
-**Impressões digitais do 1.3.26** (commit `bf8281b`; os alterados nas duas
-entregas conferidos por md5 contra o publicado; demais herdados do 1.3.24):
+**Impressões digitais do 1.3.28** (commit `4923cab`; os alterados nas duas
+entregas de 05/09 3ª conferidos por md5 contra o publicado; demais herdados):
 
 ```
-8e64bd1e984db5a9a3948948b4241238  setup.php                    (269 linhas)
-5d35c9af8851c633286a378bedd5489c  src/Port.php                 (1142 linhas)
-04eb0026d8c52f580e7cdf1876b862b6  src/MapController.php        (3729 linhas)
+a2bc8ec846e155c4dcff4103089e5d72  setup.php                    (269 linhas)
+b7b83e65d39fb94a7bb1c62c56209a18  src/Port.php                 (1145 linhas)
+f3ad281c9cbc3c220e9def5a584b4607  src/MapController.php        (3881 linhas)
+c4d807b2d89e3ed82748ceabe152728d  src/ProfileTab.php           (186 linhas)
+25ecbfedf29adcb4ce6f3b6f069eba8e  front/document.send.php       (58 linhas)
 1a1f77115c954785cec105bf3227094a  src/Dashboard.php            (1352 linhas)
 2597d942e15dae5d5ff02a9308a7c0db  ajax/port.php                (125 linhas)
 3d9daa717ad679a9091fbd548ad92191  public/dgoplus.js            (475 linhas)
@@ -475,7 +508,6 @@ d58fdb6b783801190a79eb1ace005fca  public/dgoplus-identity.js   (362 linhas)
 f8d60d99db81dc8958e67424a844351f  src/ItemLabel.php            (166 linhas)
 b61cb5d74230088b7e7c02ffb35ddff2  src/Link.php                 (1310 linhas)
 36ecd197f374c180a42ef7bbccc47b8c  src/DgoIdentity.php          (381 linhas)
-f4d2f1d2773e81bfb6486e15371ef816  src/ProfileTab.php           (184 linhas)
 dae5e817600bfdb6db3345cfa0383ea0  ajax/dgocomment.php           (52 linhas)
 4b1c3380384313d07614738dbc52bbd5  front/port.php                (26 linhas)
 9e68cde24dfd0694f1bf4bc4fdbffd9f  README.md                    (165 linhas)
@@ -485,19 +517,22 @@ dae5e817600bfdb6db3345cfa0383ea0  ajax/dgocomment.php           (52 linhas)
 
 ## 4. Lições aprendidas
 
-⚠️ Lacuna 1–113 mantida (dívida 3). Tabela 3–166 integralmente válida.
-**Lição nova de 05/09 (2ª sessão):**
+⚠️ Lacuna 1–113 mantida (dívida 3). Tabela 3–167 integralmente válida.
+**Lições recentes e a nova de 05/09 (3ª sessão):**
 
 | # | Lição |
 |---|---|
 | 165 | Bump de versão no `setup.php` faz PARTE do bloco de código |
 | 166 | Antes de afirmar a consequência de uma alternativa, escrever o resultado por extenso |
-| **167** | **Elemento visual NOVO no produto pede mockup aprovado ANTES do bloco.** O badge do cabeçalho (com mockup) passou de primeira; o cartão do painel (sem mockup) renderizou correto e mesmo assim foi rejeitado e substituído no bloco seguinte — "certo" tecnicamente não é "o que o dono queria ver" |
+| 167 | Elemento visual NOVO no produto pede mockup aprovado ANTES do bloco |
+| **168** | **Objetivo de produto declarado não se rebaixa diante de obstáculo técnico sem perguntar.** A meta era "permissão 100% no plugin"; quando a miniatura quebrou, a primeira proposta decorou o recuo (cadeado + exigir direito nativo) em vez de buscar o caminho que preservava a meta (endpoint próprio — que existia e era MENOR). O bloco errado foi preparado e descartado antes de aplicar (custo zero em código); a causa foi tratar a própria recomendação anterior como teto do possível |
 
-Reforços sem número novo: lição 166 aplicada 2× (frases simuladas por extenso
-com casos zerado e `0/0`); lição 160 rendeu de novo (25 entradas ocupadas que
-nenhum doc conhecia); lição 156 quitada por evidência (screenshot provou
-`bg-green-lt` renderizado ANTES do uso).
+Reforços sem número novo (05/09, 3ª): lição 160 rendeu 2× (a nota do 5g-3 já
+existia no código — roadmap desatualizado; PAINEL-1a já entregue); lição 147
+aplicada a fundo (caminho inteiro do upload e do download lidos no core antes
+de qualquer afirmação); o princípio "bloco preparado descarta a custo zero"
+exercido no 5i-2 cadeado; dedução declarada como dedução foi FALSEADA em tela
+(rota via READ do ativo) e o registro corrigiu na hora.
 
 **Armadilhas permanentes do GLPI 11**: lista integral mantida.
 
@@ -505,12 +540,16 @@ nenhum doc conhecia); lição 156 quitada por evidência (screenshot provou
 
 ## 5. Estado por bloco
 
-Blocos 1 a 5d: fechados e validados (até 1.3.24). **BADGE-C fechado e
-validado (1.3.25, `e5d01fc`)** — badges de grade+entradas no cabeçalho, AJAX
-preservando os dois. **PAINEL-2b fechado e validado (1.3.26, `bf8281b`)** —
-pastilhas nos dois KPIs, cartão próprio removido, layout restaurado.
+Blocos 1 a PAINEL-2b: fechados e validados (até 1.3.26). **5h-2 + 5i
+fechados e validados em aplicação única (1.3.27, `c74e32a`)** — filtro de
+Localização no relatório; anexo por formulário do plugin. **5i-2 endpoint
+fechado e validado (1.3.28, `4923cab`)** — ver anexo só com o Ler do DGO+.
+**5g-3 quitado sem código** (nota já existia). **5i-2 "cadeado": preparado e
+descartado antes de aplicar** (lição 168). **PAINEL-1a: já estava entregue;
+PAINEL-1b: decisão negativa.**
 
-**Nenhum bloco no estado "entregue e não exercitado".**
+**Nenhum bloco no estado "entregue e não exercitado". Não há bloco de código
+pendente na Fase 5.**
 
 ---
 
@@ -569,6 +608,12 @@ FROM glpi_plugin_dgoplus_links;"
 
 Perfil de teste: `Tecnicos N1, ID 12`, usuário `teste.001`.
 
+⚠️ **Estado do perfil N1 após 05/09 (3ª): dado a RELER em tela.** Os testes
+do 5i/5i-2 mexeram nos direitos do N1 (só-leitura temporário; Documentos
+zerado na Gerência). O esperado é que tenha voltado a Ler+Atualizar do DGO+
+e Gerência limpa — mas isso se confere na tela, não aqui (lição 160). Há
+pelo menos 1 anexo de teste (`001.png`) no `TESTE 5e2d2 B #42`.
+
 ---
 
 ## 8. Decisões negativas registradas
@@ -579,6 +624,18 @@ será trocada). **Nova (05/09, 2ª):**
 - **Cartão PRÓPRIO "Entradas ocupadas" no painel: REJEITADO após visto em
   tela.** A forma vigente é a pastilha dentro dos dois KPIs (variante B do
   PAINEL-2b). Não repropor cartão próprio sem fato novo.
+
+**Novas (05/09, 3ª):**
+
+- **PAINEL-1b ("Ver todos" em Equipamentos mais ocupados): NÃO FAZER.** O
+  relatório lista portas, não elementos — não existe alvo honesto para o
+  link; o cartão fica como top-5. Não repropor sem fato novo.
+- **5i-2 versão "cadeado" (aceitar Documentos · Ler + decorar a recusa):
+  DESCARTADA antes de aplicar.** Contrariava o objetivo de concentração
+  total. A forma vigente é o endpoint próprio. Não repropor exigência de
+  direito nativo para VER anexo no mapa.
+- **Exigência "Documento R+U+C + Data centers UPDATE" para anexar: MORTA**
+  — substituída pelos direitos do plugin (5i/5i-2).
 
 ### Decisões de produto vigentes
 
@@ -592,7 +649,11 @@ será trocada). **Nova (05/09, 2ª):**
   nos cartões Ocupação geral e Portas livres; frações do 4d intocáveis;
   layout de 4 cartões.
 - **Bloco único BADGE-C+PAINEL-2 foi decisão pontual do dono** — não vira
-  padrão; o método continua um-bloco-uma-mudança.
+  padrão; o método continua um-bloco-uma-mudança. (Exercida de novo em
+  05/09 3ª: 5h-2+5i em aplicação única, também pontual.)
+- **Anexos 100% no plugin (05/09, 3ª)** — anexar = Atualizar do DGO+;
+  ver/baixar pelo mapa = Ler do DGO+; nada em Gerência → Documentos. Fora
+  do DGO+ valem os direitos nativos (core intocado).
 - **Abas sempre, rolagem horizontal** · **Filtro de piso só com pisos
   ocupados** · **Elementos de treinamento `#37`, `#41`, `#42` permanentes.**
 
@@ -600,27 +661,31 @@ será trocada). **Nova (05/09, 2ª):**
 
 ## 9. Próximo passo imediato
 
-1. **Commit dos docs v23** (`docs/` → sem reinstalação). Código no `bf8281b`.
-2. **5h-2** — remover `nosearch` da Localização no relatório (427 localizações
-   na produção).
-3. **5g-3** (nota de permissões na aba de perfil), **5i** (anexo por
-   formulário próprio), **PAINEL-1** ("Ver todos" nos cartões), **deploy em
-   produção** (com rollback; reler a produção antes).
+**Os blocos de código da Fase 5 acabaram.** O que resta:
+
+1. **Commit dos docs v24** (`docs/` → sem reinstalação). Código no `4923cab`.
+2. **Tag/Release da Fase 5** (candidata: `v1.3.28`) — antes do deploy, para
+   o deploy sair da tag. Decisão do dono.
+3. **Deploy em produção** — bloco próprio com rollback; começa por RELER a
+   produção em tela (retratos de 28/08–04/09 estão velhos).
 4. **Frente shopmap** — bloqueada (pendência 16). **Pendência 20** (SQL dos
-   25) — opcional, quando conveniente.
+   25) — opcional. Investigação opcional nova: por que a rota via READ do
+   ativo do `canViewFile` não abriu (sem bloco; só curiosidade de core).
 5. **REV** — revisão competitiva, ao fim de tudo.
 
 ---
 
 ## 10. O que correu mal do lado do assistente
 
-**Zero erro em código gravado — os dois blocos aplicaram de primeira**, md5 e
-`git diff --stat` exatos, paridade provada 2×. O que custou um bloco extra:
-o cartão do PAINEL-2 nasceu sem mockup dentro do bloco único e foi rejeitado
-ao ser visto — tecnicamente correto, produto errado. Virou a lição 167 e o
-PAINEL-2b (com mockup e variante escolhida antes do código) passou de
-primeira. Acerto de processo a registrar: diante do "não está certo" sobre o
-25, a resposta foi declarar a dedução como dedução e oferecer a SQL de
-conferência — e a divergência real era de DESENHO, não de número. Deslize de
-ambiente sem consequência: o sandbox nasceu com repositório apt quebrado
-(nodesource 403); removido antes do update, php-cli instalado, preparo normal.
+**Zero erro em código APLICADO — as duas aplicações da sessão passaram de
+primeira**, md5 e `git diff --stat` exatos, paridade provada 3× (docs v23,
+`c74e32a`, `4923cab`). O erro da sessão foi de LEITURA DE OBJETIVO: diante da
+miniatura quebrada no perfil só-leitura, a primeira proposta de 5i-2 aceitou
+a exigência nativa e a decorou com cadeado — o contrário da meta declarada
+("permissão 100% no plugin"). O dono barrou antes da aplicação; o bloco foi
+descartado a custo zero e o 5i-2 endpoint (menor que o descartado: +70/−5 em
+4 arquivos) passou de primeira. Virou a lição 168. Acertos de processo: a
+expectativa sobre a rota de download foi declarada como expectativa na
+entrega do 5i e, quando a tela a falseou, o registro corrigiu na hora sem
+defender a dedução; todo o caminho core (upload, download, roteador legado)
+foi lido antes de qualquer afirmação (lição 147).
