@@ -407,6 +407,9 @@ class MapController
             case 'dismantle_link':
                 self::actionDismantleLink();
                 break;
+            case 'attach_document':
+                self::actionAttachDocument();
+                break;
         }
     }
 
@@ -971,6 +974,109 @@ class MapController
         }
 
         Panel::setCommentForItem($item, $obs);
+
+        self::redirectTo($params);
+    }
+
+    /**
+     * Anexa um arquivo ao ativo do elemento pelo formulario do PLUGIN. Bloco 5i.
+     *
+     * O direito exigido e' o do DGO+ (UPDATE) - o mesmo que grava porta. A
+     * trava de pai e' a do 5f-3b (parentIsReachable), pela mesma razao do
+     * save_entry_obs: items_id forjado nao pode anexar em elemento de outra
+     * entidade. O arquivo entra por GLPI_TMP_DIR + _filename, o unico caminho
+     * que Document::moveDocument aceita; o prefixo unico evita colisao em
+     * /files/_tmp e e' removido do nome final via _prefix_filename. Com
+     * itemtype/items_id no input, post_addItem cria o Document_Item sozinho -
+     * um add() faz o par inteiro. Recusa nunca e' muda: cada saida tem frase.
+     *
+     * @return void
+     */
+    private static function actionAttachDocument(): void
+    {
+        Session::checkRight(Port::$rightname, UPDATE);
+
+        $items_id     = (int) ($_POST['items_id'] ?? 0);
+        $locations_id = (int) ($_POST['locations_id'] ?? 0);
+        $floors_id    = (int) ($_POST['floor'] ?? 0);
+        $edit_key     = (string) ($_POST['edit'] ?? '');
+
+        // Volta com o gerenciador ABERTO: e' onde o resultado aparece.
+        $params = self::scope($locations_id, $floors_id, ['dgo' => $items_id, 'docs' => 1]);
+        if ($edit_key !== '') {
+            $params['edit'] = $edit_key;
+        }
+
+        $item = new PassiveDCEquipment();
+
+        if ($items_id <= 0 || !$item->getFromDB($items_id) || !Port::parentIsReachable($item)) {
+            Session::addMessageAfterRedirect(
+                __('Ativo não encontrado ou sem permissão de acesso.', 'dgoplus'),
+                false,
+                ERROR
+            );
+            self::redirectTo($params);
+            return;
+        }
+
+        $file = $_FILES['dgoplus_file'] ?? null;
+
+        if (!is_array($file) || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            Session::addMessageAfterRedirect(
+                __('Escolha um arquivo antes de anexar.', 'dgoplus'),
+                false,
+                ERROR
+            );
+            self::redirectTo($params);
+            return;
+        }
+
+        if ((int) $file['error'] !== UPLOAD_ERR_OK) {
+            Session::addMessageAfterRedirect(
+                __('Não foi possível receber o arquivo — o limite de tamanho do servidor é o suspeito usual.', 'dgoplus'),
+                false,
+                ERROR
+            );
+            self::redirectTo($params);
+            return;
+        }
+
+        $prefix   = uniqid('', true);
+        $safename = preg_replace('#[/\\\\]+#', '_', basename((string) $file['name']));
+        $tmpname  = $prefix . $safename;
+
+        if (!move_uploaded_file((string) $file['tmp_name'], GLPI_TMP_DIR . '/' . $tmpname)) {
+            Session::addMessageAfterRedirect(
+                __('Não foi possível preparar o arquivo para o GLPI.', 'dgoplus'),
+                false,
+                ERROR
+            );
+            self::redirectTo($params);
+            return;
+        }
+
+        $doc = new Document();
+        $ok  = $doc->add([
+            'name'             => $safename,
+            'entities_id'      => $item->getEntityID(),
+            'is_recursive'     => (int) ($item->fields['is_recursive'] ?? 0),
+            'itemtype'         => PassiveDCEquipment::class,
+            'items_id'         => $items_id,
+            '_filename'        => [$tmpname],
+            '_prefix_filename' => [$prefix],
+        ]);
+
+        if ($ok !== false) {
+            Session::addMessageAfterRedirect(__('Anexo enviado.', 'dgoplus'));
+        } else {
+            // O motivo especifico (tipo de arquivo nao permitido etc.) o core
+            // ja pos na fila de mensagens; esta frase garante a recusa falada.
+            Session::addMessageAfterRedirect(
+                __('Não foi possível anexar o arquivo.', 'dgoplus'),
+                false,
+                ERROR
+            );
+        }
 
         self::redirectTo($params);
     }
@@ -2845,10 +2951,12 @@ class MapController
         /** @var \DBmysql $DB */
         global $DB;
 
-        if (!Document::canView()) {
-            return [];
-        }
-
+        // Bloco 5i: o gate Document::canView() caiu. A pagina inteira ja
+        // exige o direito do PLUGIN (front/map.php); condicionar a lista a um
+        // direito nativo de Documento obrigava o perfil a carregar direitos
+        // fora do DGO+ so para ENXERGAR o que o mapa mesmo criou. O download
+        // continua com o core (document.send.php + canViewFile), que aceita
+        // autor do upload ou leitura no ATIVO via itemtype/items_id do link.
         $criteria = Document_Item::getDocumentForItemRequest($dgo, ['assocdate DESC']);
 
         // Chave distinta das que o core ja pos no WHERE - nao sobrescreve nada.
@@ -3030,15 +3138,8 @@ class MapController
         echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>"
             . "<i class='ti ti-files'></i>" . __('Anexos do elemento', 'dgoplus') . "</h3>";
 
-        if (!Document::canView()) {
-            echo "</div><div class='card-body'>";
-            echo "<div class='text-muted small'>"
-                . htmlescape(__('Seu perfil não tem direito de ver Documentos.', 'dgoplus'))
-                . "</div>";
-            echo "</div></div>";
-            return;
-        }
-
+        // Bloco 5i: sem gate nativo - quem ve o mapa ve a lista (a razao
+        // esta em getDocumentsForDgo).
         $documents = self::getDocumentsForDgo($dgo);
 
         echo "<span class='badge bg-blue-lt'>" . count($documents) . "</span>";
@@ -3099,13 +3200,18 @@ class MapController
     }
 
     /**
-     * Bloco nativo de anexo, em largura total, abaixo da grade.
+     * Gerenciador de anexos do plugin, em largura total, abaixo da grade.
      *
-     * Document_Item::showForItem() = formulario de envio + "associar existente"
-     * + tabela completa. O envio posta em front/document.form.php levando
-     * itemtype/items_id escondidos, e por isso o core termina em Html::back()
-     * (11.0.6, front/document.form.php:83) - o usuario volta exatamente para
-     * esta pagina, com localizacao e DGO ainda selecionadas.
+     * Bloco 5i: o formulario nativo (Document_Item::showForItem) saiu. Ele
+     * exigia Documento R+U+C e Data centers UPDATE no perfil - e "Data
+     * centers UPDATE" entrega ao tecnico o ativo inteiro so para anexar
+     * (licao 134). Aqui o formulario e' do plugin, posta no attach_document
+     * do mapa e o direito exigido e' o do DGO+ (UPDATE), o mesmo que grava
+     * porta. A criacao passa por Document::add() com _filename, caminho que
+     * nao checa direito nativo (licao 148, provado no core 11.0.6:
+     * prepareInputForAdd -> moveDocument -> post_addItem cria o
+     * Document_Item sozinho). A validacao de TIPO de arquivo continua a do
+     * core (isValidDoc contra glpi_documenttypes).
      *
      * @param PassiveDCEquipment $dgo
      * @param int                $locations_id
@@ -3140,11 +3246,52 @@ class MapController
 
         echo "<div class='card-body'>";
 
-        // Devolve false sem imprimir nada se faltar direito de Documento ou de
-        // leitura no ativo - sem este aviso a area ficaria em branco (licao 16).
-        if (!Document_Item::showForItem($dgo)) {
-            echo "<div class='alert alert-info py-2' role='alert'>"
-                . htmlescape(__('Seu perfil não permite ver ou anexar Documentos neste ativo.', 'dgoplus'))
+        $documents = self::getDocumentsForDgo($dgo);
+
+        if ($documents === []) {
+            // Estado vazio mudo parece defeito (licao 16).
+            echo "<div class='text-muted mb-3'>" . htmlescape(__('Nenhum anexo.', 'dgoplus')) . "</div>";
+        } else {
+            echo "<div class='table-responsive mb-3'><table class='table table-vcenter card-table mb-0'><tbody>";
+            foreach ($documents as $doc) {
+                $doc_id = (int) $doc['id'];
+                $label  = (string) ($doc['name'] ?: ($doc['filename'] ?? '#' . $doc_id));
+                echo "<tr>";
+                echo "<td style='width:28px'><i class='ti ti-file'></i></td>";
+                echo "<td><a href='" . htmlescape(self::documentUrl($doc_id, $items_id)) . "'"
+                    . " target='_blank' rel='noopener'>" . htmlescape($label) . "</a></td>";
+                echo "<td class='text-end text-muted text-nowrap'>"
+                    . htmlescape(Html::convDateTime((string) ($doc['assocdate'] ?? ''))) . "</td>";
+                echo "</tr>";
+            }
+            echo "</tbody></table></div>";
+        }
+
+        if (Session::haveRight(Port::$rightname, UPDATE)) {
+            echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "'"
+                . " enctype='multipart/form-data'>";
+            echo Html::hidden('action', ['value' => 'attach_document']);
+            echo Html::hidden('items_id', ['value' => $items_id]);
+            echo Html::hidden('locations_id', ['value' => $locations_id]);
+            echo Html::hidden('floor', ['value' => $floors_id]);
+            if ($edit_key !== '') {
+                echo Html::hidden('edit', ['value' => $edit_key]);
+            }
+            echo "<div class='d-flex align-items-center gap-2 flex-wrap'>";
+            echo "<input type='file' name='dgoplus_file' class='form-control form-control-sm'"
+                . " style='max-width:340px'>";
+            echo Html::submit(__('Anexar', 'dgoplus'), ['class' => 'btn btn-sm btn-primary']);
+            echo "</div>";
+            echo "<div class='text-muted small mt-1'>"
+                . htmlescape(__('O anexo entra no ativo do elemento, visível também fora do DGO+.', 'dgoplus'))
+                . "</div>";
+            Html::closeForm();
+        } else {
+            // alert-info e nao alert-warning: e' a variante que o plugin ja
+            // imprime em tela (licao 156); a frase carrega o aviso.
+            echo "<div class='alert alert-info py-2 mb-0' role='alert'>"
+                . "<i class='ti ti-lock me-1'></i>"
+                . htmlescape(__('Sem permissão para anexar. É necessário o direito Atualizar do DGO+.', 'dgoplus'))
                 . "</div>";
         }
 

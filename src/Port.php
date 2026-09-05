@@ -250,6 +250,10 @@ class Port extends CommonDBChild
         // 'itemtype_item_revert'. O 'specific_itemtype' e' obrigatorio: sem
         // ele o core usa o itemtype da busca (PluginDgoplusPort) na condicao
         // do ON, e a coluna voltaria vazia em todas as linhas.
+        //
+        // Bloco 5h-2: o 'nosearch' caiu. Com 427 localizacoes na producao, um
+        // relatorio sem filtro de Localizacao devolve centenas de linhas
+        // alheias ao que o operador procura.
         $tab[] = [
             'id'            => 8,
             'table'         => 'glpi_locations',
@@ -267,7 +271,6 @@ class Port extends CommonDBChild
                 ],
             ],
             'forcegroupby'  => true,
-            'nosearch'      => true,
         ];
 
         // Bloco 3s: as duas unicas opcoes que o relatorio nao tinha e que a
