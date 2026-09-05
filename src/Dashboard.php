@@ -338,13 +338,14 @@ class Dashboard
             ] + Port::gridCriteria()));
         }
 
-        // Bloco PAINEL-2: entradas ocupadas no escopo, MESMA definicao da
+        // Bloco PAINEL-2/2b: entradas ocupadas no escopo, MESMA definicao da
         // faixa E1-E4 e do badge da grade (vinculo apontando para a entrada
-        // ocupa; pendente incluso). De proposito FORA de Ocupacao geral e
-        // Portas livres: a decisao do 4d (gridCriteria nas fracoes) permanece
-        // - grade tem capacidade por layout, entrada tem teto fixo de
-        // MAX_ENTRIES por elemento. Misturar recriaria o defeito que o 4d
-        // matou.
+        // ocupa; pendente incluso). O numero viaja em pastilha PROPRIA dentro
+        // dos cartoes Ocupacao geral e Portas livres (variante B do 2b), mas
+        // NUNCA entra nas fracoes deles: a decisao do 4d (gridCriteria nas
+        // fracoes) permanece - grade tem capacidade por layout, entrada tem
+        // teto fixo de MAX_ENTRIES por elemento. Misturar recriaria o defeito
+        // que o 4d matou.
         $entries_occupied = 0;
         if ($item_ids !== []) {
             $entry_rows = $port_model->find([
@@ -553,7 +554,7 @@ class Dashboard
             : __('nenhum na lixeira', 'dgoplus');
 
         self::card(
-            'col-12 col-lg-6 col-xl-3',
+            'col-12 col-lg-6 col-xl-4',
             sprintf(__('%s cadastrados', 'dgoplus'), self::ucfirstLabel(self::roleNoun($role, 2))),
             (string) $d['total_items'],
             $subtitle,
@@ -570,7 +571,7 @@ class Dashboard
         // na cor de alerta: num cartao de pendencia, o que salta e' o que falta
         // fazer, nao o que ja esta feito.
         self::card(
-            'col-12 col-lg-6 col-xl-3',
+            'col-12 col-lg-6 col-xl-4',
             sprintf(__('%s sem documentação', 'dgoplus'), self::ucfirstLabel(self::roleNoun($role, 2))),
             (string) $d['items_sem_doc'],
             $d['items_sem_doc'] > 0
@@ -595,6 +596,18 @@ class Dashboard
                 'bar_pct'     => (float) $d['occupancy'],
                 'value_color' => self::ACCENT,
                 'compact'     => true,
+                'footer'      => self::entriesPill(
+                    sprintf(
+                        __('%1$d/%2$d entradas ocupadas', 'dgoplus'),
+                        $d['entries_occupied'],
+                        $d['entries_total']
+                    ),
+                    sprintf(
+                        __('%1$d de %2$d entradas ocupadas por vínculo, pendentes inclusos', 'dgoplus'),
+                        $d['entries_occupied'],
+                        $d['entries_total']
+                    )
+                ),
             ]
         );
 
@@ -608,21 +621,21 @@ class Dashboard
                 : __('nenhuma na lixeira', 'dgoplus'),
             'ti ti-plug',
             'bg-green-lt',
-            ['compact' => true]
-        );
-
-        // --- 5. Entradas ocupadas (numero unico, encolhe) --- Bloco PAINEL-2.
-        // Cartao PROPRIO, nunca dentro das fracoes de grade (decisao do 4d).
-        // Ocupada = vinculo apontando para a entrada, pendente incluso -
-        // mesma definicao da faixa E1-E4 e do badge do cabecalho (BADGE-C).
-        self::card(
-            'col-6 col-lg-3 col-xl-2',
-            __('Entradas ocupadas', 'dgoplus'),
-            (string) $d['entries_occupied'],
-            sprintf(__('de %d entradas', 'dgoplus'), $d['entries_total']),
-            'ti ti-link',
-            'bg-green-lt',
-            ['compact' => true]
+            [
+                'compact' => true,
+                'footer'  => self::entriesPill(
+                    sprintf(
+                        __('%1$d/%2$d entradas livres', 'dgoplus'),
+                        max(0, $d['entries_total'] - $d['entries_occupied']),
+                        $d['entries_total']
+                    ),
+                    sprintf(
+                        __('%1$d de %2$d entradas ainda sem vínculo', 'dgoplus'),
+                        max(0, $d['entries_total'] - $d['entries_occupied']),
+                        $d['entries_total']
+                    )
+                ),
+            ]
         );
 
         echo "</div>";
@@ -1217,6 +1230,23 @@ class Dashboard
 
         echo "</div></div>";
         echo "</div>";
+    }
+
+    /**
+     * Pastilha de entradas para o rodape dos cartoes de numero unico
+     * (bloco PAINEL-2b, variante B). PONTO UNICO do estilo: os dois cartoes
+     * consomem daqui, e a mesma familia visual do badge verde do cabecalho
+     * da grade (BADGE-C). A fracao de entradas so' compartilha o CARTAO com
+     * a fracao de grade - nunca a conta (decisao do 4d).
+     *
+     * @param string $text
+     * @param string $title
+     * @return string
+     */
+    private static function entriesPill(string $text, string $title): string
+    {
+        return "<div class='mt-2'><span class='badge bg-green-lt' title='"
+            . htmlescape($title) . "'>" . htmlescape($text) . "</span></div>";
     }
 
     /**
