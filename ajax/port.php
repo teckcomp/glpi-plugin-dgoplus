@@ -17,6 +17,7 @@
  */
 
 use Glpi\Exception\Http\BadRequestHttpException;
+use GlpiPlugin\Dgoplus\Box;
 use GlpiPlugin\Dgoplus\Link;
 use GlpiPlugin\Dgoplus\MapController;
 use GlpiPlugin\Dgoplus\Panel;
@@ -100,6 +101,10 @@ $layout   = Panel::getLayoutForItem($dgo);
 $capacity = $layout['tubes'] * $layout['fibers_per_tube'];
 $stats    = Port::statsForDgo($itemtype, $items_id);
 
+$host   = Box::hostOf($itemtype, $items_id);
+$box_id = $host !== null ? $host['items_id'] : (Box::isHost($dgo) ? $items_id : 0);
+$box    = $box_id > 0 ? Box::statsForBox($itemtype, $box_id) : [];
+
 echo json_encode([
     'ok'          => true,
     'state'       => $result['state'],
@@ -122,4 +127,17 @@ echo json_encode([
         $stats['entries_occupied'],
         $stats['entries_total']
     ),
+    // Bloco 6c: quando o elemento e' funcao (ou e' a caixa), a soma da
+    // caixa tambem volta - o cabecalho "soma das funcoes" nao pode ficar
+    // velho depois de gravar uma porta. Mesmo Box::statsForBox da carga.
+    'box_items_id'    => $box_id,
+    'box_badges_html' => $box_id > 0
+        ? MapController::renderBadges(
+            $box['documented'],
+            $box['capacity'],
+            $box['no_coupler'],
+            $box['entries_occupied'],
+            $box['entries_total']
+        )
+        : '',
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);

@@ -83,6 +83,15 @@ class Box extends CommonDBChild
             return null;
         }
 
+        // Bloco 6c: memorizado por requisicao. getPageUrl() pergunta por
+        // CADA URL montada (uma por celula, 64+ por grade); sem cache seriam
+        // centenas de consultas identicas na mesma pagina. attach()/detach()
+        // limpam o cache, entao a resposta nunca fica velha dentro do POST.
+        $key = $itemtype . '#' . $items_id;
+        if (array_key_exists($key, self::$host_cache)) {
+            return self::$host_cache[$key];
+        }
+
         $rows = $DB->request([
             'SELECT' => ['itemtype_host', 'items_id_host', 'position'],
             'FROM'   => self::getTable(),
@@ -93,15 +102,120 @@ class Box extends CommonDBChild
             'LIMIT'  => 1,
         ]);
 
+        $found = null;
         foreach ($rows as $row) {
-            return [
+            $found = [
                 'itemtype' => (string) $row['itemtype_host'],
                 'items_id' => (int) $row['items_id_host'],
                 'position' => (int) $row['position'],
             ];
+            break;
         }
 
-        return null;
+        self::$host_cache[$key] = $found;
+
+        return $found;
+    }
+
+    /**
+     * Cache de hostOf() por requisicao (bloco 6c). Chave "itemtype#id".
+     *
+     * @var array<string, array|null>
+     */
+    private static array $host_cache = [];
+
+    /**
+     * Esquece o cache de hostOf(). Chamado por attach()/detach().
+     *
+     * @return void
+     */
+    public static function forgetCache(): void
+    {
+        self::$host_cache = [];
+    }
+
+    /**
+     * Somas da caixa (bloco 6c) - PONTO UNICO dos badges "soma das funcoes".
+     * A pagina da caixa e o ajax/port.php consomem daqui; duas contas
+     * divergiriam em silencio (mesma regra do Port::statsForDgo).
+     *
+     * Soma hospedeira + membros: documented, no_coupler, capacity (grade),
+     * entries_occupied, entries_total. Membro que nao existe mais no banco
+     * (lixeira nativa, purge sem passar pelo PurgeCleaner) NAO entra na
+     * soma e e' listado em 'missing' - a tela acusa, nunca some.
+     *
+     * @param string $itemtype_host
+     * @param int    $items_id_host
+     * @return array{documented:int, no_coupler:int, capacity:int, entries_occupied:int, entries_total:int, functions:int, missing:int[]}
+     */
+    public static function statsForBox(string $itemtype_host, int $items_id_host): array
+    {
+        $sum = [
+            'documented'       => 0,
+            'no_coupler'       => 0,
+            'capacity'         => 0,
+            'entries_occupied' => 0,
+            'entries_total'    => 0,
+            'functions'        => 0,
+            'missing'          => [],
+        ];
+
+        $ids = [$items_id_host];
+        foreach (self::membersOf($itemtype_host, $items_id_host) as $m) {
+            $ids[] = $m['items_id'];
+        }
+
+        foreach ($ids as $id) {
+            $item = new $itemtype_host();
+            if (!($item instanceof CommonDBTM) || !$item->getFromDB($id) || (int) ($item->fields['is_deleted'] ?? 0) === 1) {
+                $sum['missing'][] = $id;
+                continue;
+            }
+            $layout = Panel::getLayoutForItem($item);
+            $stats  = Port::statsForDgo($itemtype_host, $id);
+
+            $sum['documented']       += (int) $stats['documented'];
+            $sum['no_coupler']       += (int) $stats['no_coupler'];
+            $sum['capacity']         += (int) $layout['tubes'] * (int) $layout['fibers_per_tube'];
+            $sum['entries_occupied'] += (int) $stats['entries_occupied'];
+            $sum['entries_total']    += (int) $stats['entries_total'];
+            $sum['functions']++;
+        }
+
+        return $sum;
+    }
+
+    /**
+     * Tira uma funcao da caixa (bloco 6c, "Remover funcao"). Apaga a linha
+     * de _boxes com historico. NAO mexe no elemento: quem decide o destino
+     * dele (lixeira) e' a acao chamadora. '' = removida; frase = recusa.
+     *
+     * @param CommonDBTM $member
+     * @return string
+     */
+    public static function detach(CommonDBTM $member): string
+    {
+        $member_id = (int) $member->getID();
+        $current   = self::hostOf($member->getType(), $member_id);
+
+        if ($current === null) {
+            return __('Este elemento não é função de caixa nenhuma.', 'dgoplus');
+        }
+
+        $box = new self();
+        if (!$box->getFromDBByCrit(['itemtype' => $member->getType(), 'items_id' => $member_id])) {
+            self::forgetCache();
+            return __('A linha do agrupamento não foi encontrada no banco.', 'dgoplus');
+        }
+
+        $ok = $box->delete(['id' => (int) $box->getID()], true);
+        self::forgetCache();
+
+        if (!$ok) {
+            return __('O banco recusou desfazer o agrupamento — veja o php-errors.log.', 'dgoplus');
+        }
+
+        return '';
     }
 
     /**
@@ -286,6 +400,8 @@ class Box extends CommonDBChild
             'entities_id'   => (int) ($member->fields['entities_id'] ?? 0),
             'is_recursive'  => 0,
         ]);
+
+        self::forgetCache();
 
         if (!$id) {
             return __('O banco recusou o agrupamento — veja o php-errors.log.', 'dgoplus');

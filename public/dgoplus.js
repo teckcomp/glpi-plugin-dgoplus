@@ -67,6 +67,12 @@
             return;
         }
 
+        // Bloco 6c: a pagina da caixa tem N grades; celula e badges sao
+        // achados pelo id do elemento que este formulario edita, nunca pelo
+        // primeiro da pagina.
+        var itemsField = form.querySelector('[name="items_id"]');
+        var itemsId = itemsField ? itemsField.value : '';
+
         var code = form.querySelector('[name="code"]');
         var comment = form.querySelector('[name="comment"]');
         var noCoupler = form.querySelector('input[type="checkbox"][name="is_no_coupler"]');
@@ -88,15 +94,27 @@
         }
 
         function replaceCell(html) {
-            var cell = document.querySelector('[data-dgoplus-cell="' + cellKey + '"]');
+            var cell = document.querySelector(
+                '[data-dgoplus-cell="' + cellKey + '"][data-dgoplus-item="' + itemsId + '"]'
+            );
             if (cell !== null && html) {
                 cell.outerHTML = html;
             }
         }
 
         function replaceBadges(html) {
-            var badges = document.getElementById('dgoplus-badges');
+            var badges = document.querySelector('[data-dgoplus-badges="' + itemsId + '"]');
             if (badges !== null && html) {
+                badges.innerHTML = html;
+            }
+        }
+
+        function replaceBoxBadges(boxId, html) {
+            if (!boxId || !html) {
+                return;
+            }
+            var badges = document.querySelector('[data-dgoplus-box-badges="' + boxId + '"]');
+            if (badges !== null) {
                 badges.innerHTML = html;
             }
         }
@@ -159,6 +177,7 @@
                 lastSaved = current;
                 replaceCell(data.cell_html);
                 replaceBadges(data.badges_html);
+                replaceBoxBadges(data.box_items_id, data.box_badges_html);
                 setFlag('Salvo ✓', 'text-success');
             }).catch(function (error) {
                 inFlight = false;
@@ -533,5 +552,35 @@
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
+    }
+})();
+
+/**
+ * Bloco 6c - pagina da caixa composta aberta numa FUNCAO (?fn=<id>): rola
+ * ate a grade dela. So' quando a URL nao tem ancora propria (#dgoplus-panel,
+ * #dgoplus-entry-card), que ja levam ao lugar certo. Sem JS, a pagina abre
+ * no topo - a caixa inteira continua visivel.
+ */
+(function () {
+    'use strict';
+
+    function scrollToFunction() {
+        if (window.location.hash) {
+            return;
+        }
+        var match = /[?&]fn=(\d+)/.exec(window.location.search);
+        if (match === null) {
+            return;
+        }
+        var section = document.querySelector('[data-dgoplus-fn="' + match[1] + '"]');
+        if (section !== null && typeof section.scrollIntoView === 'function') {
+            section.scrollIntoView({ block: 'start' });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', scrollToFunction);
+    } else {
+        scrollToFunction();
     }
 })();

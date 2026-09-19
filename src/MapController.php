@@ -105,7 +105,36 @@ class MapController
 
         $dgos = self::getDgosAtLocation($locations_id, $floors_id);
 
-        self::displayDgoTabs($locations_id, $dgos, $dgo_id, $floors_id);
+        // Bloco 6c: resolve caixa/funcao. URL antiga ou colada com
+        // dgo=<funcao> vira dgo=<caixa>&fn=<funcao>; fn que nao e' funcao
+        // desta caixa e' descartado (URL editada a mao nao abre painel de
+        // elemento estranho). Sem fn, a funcao "corrente" e' a hospedeira.
+        $fn_id = (int) ($_GET['fn'] ?? 0);
+        $host  = $dgo_id > 0 ? Box::hostOf(PassiveDCEquipment::class, $dgo_id) : null;
+        if ($host !== null) {
+            $fn_id  = $dgo_id;
+            $dgo_id = $host['items_id'];
+        }
+        $members = $dgo_id > 0 ? Box::membersOf(PassiveDCEquipment::class, $dgo_id) : [];
+        if ($fn_id > 0 && $fn_id !== $dgo_id) {
+            $is_member = false;
+            foreach ($members as $m) {
+                if ($m['items_id'] === $fn_id) {
+                    $is_member = true;
+                    break;
+                }
+            }
+            if (!$is_member) {
+                $fn_id = 0;
+            }
+        }
+        if ($fn_id === $dgo_id) {
+            $fn_id = 0;
+        }
+
+        // A aba ativa e' a da funcao aberta (cada funcao e' achada no grupo
+        // do SEU papel - decisao do dono, 19/09), nao a da caixa.
+        self::displayDgoTabs($locations_id, $dgos, $fn_id > 0 ? $fn_id : $dgo_id, $floors_id);
 
         if ($dgos === []) {
             self::displayEmptyState(
@@ -116,18 +145,67 @@ class MapController
             return;
         }
 
-        if ($dgo_id <= 0 || !isset($dgos[$dgo_id])) {
+        // Bloco 6c: a caixa pode estar fora da lista filtrada (filtro de
+        // papel = DGO e a caixa e' DIO; filtro de piso onde so' a funcao esta).
+        // So' a CAIXA ganha esse caminho alternativo, e so' quando o que se
+        // pediu foi uma funcao ou uma caixa - elemento simples fora do filtro
+        // continua recebendo o "Selecione um elemento" de sempre.
+        $dgo = $dgos[$dgo_id] ?? null;
+        if ($dgo === null && $dgo_id > 0 && ($members !== [] || $fn_id > 0)) {
+            $dgo = self::loadBoxHost($dgo_id, $locations_id);
+            if ($dgo === null) {
+                self::displayEmptyState(sprintf(
+                    __('A caixa #%d desta função não está nesta localização ou não está ao seu alcance. Abra a caixa pela localização dela.', 'dgoplus'),
+                    $dgo_id
+                ));
+                return;
+            }
+        }
+
+        if ($dgo === null) {
             self::displayEmptyState(
                 __('Selecione um elemento acima para abrir a grade de portas.', 'dgoplus')
             );
             return;
         }
 
-        $dgo = $dgos[$dgo_id];
+        if ($members !== []) {
+            self::displayBoxPage($dgo, $members, $locations_id, $edit_key, $search, $floors_id, $entry_slot, $fn_id);
+            return;
+        }
 
         self::displayGrid($dgo, $locations_id, $edit_key, $search, $floors_id, $entry_slot);
         self::displayDocumentsManager($dgo, $locations_id, $edit_key, $floors_id);
         self::displayEditPanel($dgo, $locations_id, $edit_key, $floors_id);
+    }
+
+    /**
+     * Carrega a caixa hospedeira quando ela nao esta na lista filtrada da
+     * localizacao (bloco 6c). Exige: existe, nao esta na lixeira, e' desta
+     * localizacao e esta ao alcance (Port::parentIsReachable, a mesma trava
+     * do applyInput). Qualquer falha devolve null - a tela diz por que.
+     *
+     * @param int $items_id
+     * @param int $locations_id
+     * @return PassiveDCEquipment|null
+     */
+    private static function loadBoxHost(int $items_id, int $locations_id): ?PassiveDCEquipment
+    {
+        $item = new PassiveDCEquipment();
+        if (!$item->getFromDB($items_id)) {
+            return null;
+        }
+        if ((int) ($item->fields['is_deleted'] ?? 0) === 1) {
+            return null;
+        }
+        if ((int) ($item->fields['locations_id'] ?? 0) !== $locations_id) {
+            return null;
+        }
+        if (!Port::parentIsReachable($item)) {
+            return null;
+        }
+
+        return $item;
     }
 
     /**
@@ -150,6 +228,20 @@ class MapController
         global $CFG_GLPI;
 
         $url = ($CFG_GLPI['root_doc'] ?? '') . '/plugins/dgoplus/front/map.php';
+
+        // Bloco 6c: a pagina de uma FUNCAO e' a pagina da CAIXA dela, rolada
+        // ate a grade da funcao. A reescrita mora aqui, no ponto unico de
+        // montagem de URL (licao 13): toda celula, entrada, aba e redirect
+        // que diga "dgo=<funcao>" chega em "dgo=<caixa>&fn=<funcao>" sem
+        // que nenhum chamador precise saber que a funcao esta agrupada.
+        // Box::hostOf e' memorizado por requisicao.
+        if (isset($params['dgo']) && (int) $params['dgo'] > 0 && !isset($params['fn'])) {
+            $host = Box::hostOf(PassiveDCEquipment::class, (int) $params['dgo']);
+            if ($host !== null) {
+                $params['fn']  = (int) $params['dgo'];
+                $params['dgo'] = $host['items_id'];
+            }
+        }
 
         if ($params !== []) {
             $url .= '?' . http_build_query($params);
@@ -370,6 +462,9 @@ class MapController
                 break;
             case 'add_function':
                 self::actionAddFunction();
+                break;
+            case 'remove_function':
+                self::actionRemoveFunction();
                 break;
             case 'set_floor':
                 self::actionSetFloor();
@@ -620,6 +715,82 @@ class MapController
         }
 
         self::redirectTo(self::scope($locations_id, $filter, ['dgo' => $id]));
+    }
+
+    /**
+     * "Remover funcao" (bloco 6c): desfaz o agrupamento (Box::detach, ponto
+     * unico) e manda o elemento para a LIXEIRA nativa - decisao do dono:
+     * "Remover funcao" = lixeira do membro. Nunca purga: as portas e os
+     * vinculos dele continuam no banco, restauraveis pela lixeira do core
+     * (restaurado, ele volta como elemento SIMPLES - o agrupamento nao volta).
+     *
+     * Direito: DELETE do DGO+, a mesma trava de "Remover fileira". O core
+     * nao checa direito nativo dentro de delete() (lido em CommonDBTM 11.0.6,
+     * como o add() que o createElement usa).
+     *
+     * Recusas faladas, nunca mudas: nao e' funcao; caixa do POST nao bate
+     * com a caixa real (POST forjado); fora do alcance.
+     *
+     * @return void
+     */
+    private static function actionRemoveFunction(): void
+    {
+        Session::checkRight(Port::$rightname, DELETE);
+
+        $items_id     = (int) ($_POST['items_id'] ?? 0);
+        $host_id      = (int) ($_POST['items_id_host'] ?? 0);
+        $locations_id = (int) ($_POST['locations_id'] ?? 0);
+        $floors_id    = (int) ($_POST['floor'] ?? 0);
+
+        $member = new PassiveDCEquipment();
+        if (!$member->getFromDB($items_id) || !Port::parentIsReachable($member)) {
+            Session::addMessageAfterRedirect(
+                __('A função não foi encontrada ou não está ao seu alcance.', 'dgoplus'),
+                false,
+                ERROR
+            );
+            self::redirectTo(self::scope($locations_id, $floors_id, $host_id > 0 ? ['dgo' => $host_id] : []));
+            return;
+        }
+
+        $host = Box::hostOf(PassiveDCEquipment::class, $items_id);
+        if ($host === null || $host['items_id'] !== $host_id) {
+            Session::addMessageAfterRedirect(
+                sprintf(__('%s não é função desta caixa.', 'dgoplus'), ItemLabel::shortForRow($member->fields, $items_id)),
+                false,
+                ERROR
+            );
+            self::redirectTo(self::scope($locations_id, $floors_id, $host_id > 0 ? ['dgo' => $host_id] : []));
+            return;
+        }
+
+        $label   = ItemLabel::shortForRow($member->fields, $items_id);
+        $refusal = Box::detach($member);
+        if ($refusal !== '') {
+            Session::addMessageAfterRedirect($refusal, false, ERROR);
+            self::redirectTo(self::scope($locations_id, $floors_id, ['dgo' => $host_id]));
+            return;
+        }
+
+        // Agrupamento ja desfeito. Se a lixeira falhar, o elemento fica
+        // SIMPLES e vivo - e a frase diz exatamente isso (nunca "removido"
+        // quando so' metade aconteceu).
+        if (!$member->delete(['id' => $items_id])) {
+            Session::addMessageAfterRedirect(
+                sprintf(__('%s saiu da caixa, mas NÃO foi para a lixeira — está como elemento simples. Veja o php-errors.log.', 'dgoplus'), $label),
+                false,
+                WARNING
+            );
+            self::redirectTo(self::scope($locations_id, $floors_id, ['dgo' => $host_id]));
+            return;
+        }
+
+        Session::addMessageAfterRedirect(
+            sprintf(__('Função %s removida da caixa e enviada à lixeira.', 'dgoplus'), $label),
+            false,
+            INFO
+        );
+        self::redirectTo(self::scope($locations_id, $floors_id, ['dgo' => $host_id]));
     }
 
     /**
@@ -2290,6 +2461,7 @@ class MapController
         // AJAX encontra a celula a substituir. Sem JS, e' atributo inerte.
         $html = "<a href='" . htmlescape($url) . "' class='text-decoration-none' title='" . htmlescape($title) . "'"
             . " data-dgoplus-cell='" . htmlescape($key) . "'"
+            . " data-dgoplus-item='" . $items_id . "'"
             . " style='display:block;width:64px;flex:0 0 auto;padding:4px 5px;border-radius:6px;color:inherit;"
             . "background:" . $bg . ";border:" . $border . ";" . $extra . "'>";
 
@@ -2432,7 +2604,7 @@ class MapController
             . self::renderDuplicateMark($dgo->fields, $locations_id, false)
             // O span de id fixo e' o alvo do AJAX; o conteudo vem do mesmo
             // renderBadges que o endpoint usa.
-            . "<span id='dgoplus-badges' class='d-flex align-items-center gap-2'>"
+            . "<span data-dgoplus-badges='" . $items_id . "' class='d-flex align-items-center gap-2'>"
             . self::renderBadges(
                 $stats['documented'],
                 $capacity,
@@ -2460,6 +2632,65 @@ class MapController
         // overflow-x:auto de dentro nunca entra em acao (a grade empurra a
         // coluna de anexos para fora do card).
         echo "<div style='flex:1 1 520px;min-width:0'>";
+        self::displayGridColumn($dgo, $layout, $byKey, $origin_links, $locations_id, $edit_key, $search, $floors_id, $entry_slot);
+        echo "</div>"; // coluna da grade
+
+        // Bloco 3t: a coluna da direita passou a ter tres cards - QR de
+        // identidade, anexos e comentario do ativo. A <div> da coluna e'
+        // aberta AQUI, e nao mais dentro do displayAttachmentsSidebar, para os
+        // tres empilharem juntos.
+        echo "<div style='flex:1 1 280px;min-width:0;max-width:420px'>";
+        DgoIdentity::displayQrCard($dgo);
+        // Bloco 4e (ajuste na validacao): anexos ACIMA do "Alimenta" - ordem
+        // apontada pelo usuario na propria captura. O card "Alimenta" fecha a
+        // parte de topologia da coluna, antes dos comentarios.
+        self::displayAttachmentsSidebar($dgo, $locations_id, $edit_key, $floors_id);
+        self::displayFeedsCard($dgo);
+        DgoIdentity::displayCommentCard($dgo, $locations_id, $edit_key, $floors_id);
+        echo "</div>"; // coluna da direita
+
+        echo "</div>"; // linha de duas colunas
+        echo "</div>"; // card-body
+        echo "</div>"; // card
+
+        // O modal fica FORA do card de proposito: modal dentro de elemento com
+        // overflow/transform e' cortado ou perde o fundo escuro.
+        if ($box_state === 'can_add') {
+            self::displayAddFunctionModal($dgo, $locations_id, $floors_id);
+        }
+    }
+
+
+    /**
+     * Miolo da coluna da grade: linha Piso + E1-E4 + OBS, card da entrada
+     * aberta, a grade em si e a fileira de botoes. Extraido do displayGrid
+     * no bloco 6c SEM mudar regra, para a pagina da caixa imprimir um por
+     * funcao. $byKey e $origin_links vem de fora porque quem chama ja fez
+     * as duas consultas (uma por grade, nunca uma por celula).
+     *
+     * @param PassiveDCEquipment $dgo
+     * @param array              $layout       Panel::getLayoutForItem
+     * @param array              $byKey        portas de grade indexadas por "t-f"
+     * @param array              $origin_links Link::findByOrigins das portas
+     * @param int                $locations_id
+     * @param string             $edit_key
+     * @param string             $search
+     * @param int                $floors_id
+     * @param int                $entry_slot
+     * @return void
+     */
+    private static function displayGridColumn(
+        PassiveDCEquipment $dgo,
+        array $layout,
+        array $byKey,
+        array $origin_links,
+        int $locations_id,
+        string $edit_key,
+        string $search,
+        int $floors_id,
+        int $entry_slot
+    ): void {
+        $items_id = (int) $dgo->getID();
 
         // Bloco 4b-2: Piso e entradas dividem a MESMA linha (desenho do
         // usuario). align-items:flex-end alinha o seletor com as caixas, que
@@ -2564,31 +2795,279 @@ class MapController
             echo "</div>";
         }
 
-        echo "</div>"; // coluna da grade
+    }
 
-        // Bloco 3t: a coluna da direita passou a ter tres cards - QR de
-        // identidade, anexos e comentario do ativo. A <div> da coluna e'
-        // aberta AQUI, e nao mais dentro do displayAttachmentsSidebar, para os
-        // tres empilharem juntos.
+    /**
+     * Pagina da CAIXA COMPOSTA (bloco 6c) - tela 3 do mockup aprovado em
+     * 19/09: um card so', com as funcoes EMPILHADAS na coluna da esquerda
+     * (hospedeira primeiro, depois os membros na ordem de position) e a
+     * coluna da direita UMA vez, da hospedeira (QR, anexos, comentario) -
+     * so' o "Alimenta" agrega as funcoes, dizendo de qual sai cada vinculo.
+     *
+     * Cada funcao e' uma grade completa e editavel (Piso, E1-E4, OBS,
+     * celulas, fileira/coluna) - o mesmo displayGridColumn da tela simples,
+     * sem regra nova. O que muda e' so' a ancoragem: badges e celulas levam
+     * o id do elemento (data-dgoplus-badges / data-dgoplus-item) para o
+     * AJAX acertar a grade certa com N grades na pagina.
+     *
+     * Painel de edicao e card de entrada valem para UMA funcao por vez: a
+     * do ?fn= (ou a hospedeira sem fn). edit/entry de outra funcao nao
+     * "vazam" para as demais.
+     *
+     * Membro que sumiu do banco (lixeira nativa por fora do plugin) NAO
+     * some da tela: vira uma faixa que diz o que aconteceu (licao 16).
+     *
+     * @param PassiveDCEquipment $host
+     * @param array              $members  Box::membersOf
+     * @param int                $locations_id
+     * @param string             $edit_key
+     * @param string             $search
+     * @param int                $floors_id
+     * @param int                $entry_slot
+     * @param int                $fn_id   funcao aberta (0 = hospedeira)
+     * @return void
+     */
+    private static function displayBoxPage(
+        PassiveDCEquipment $host,
+        array $members,
+        int $locations_id,
+        string $edit_key,
+        string $search,
+        int $floors_id,
+        int $entry_slot,
+        int $fn_id
+    ): void {
+        $host_id = (int) $host->getID();
+
+        $functions = [['item' => $host, 'is_member' => false]];
+        $missing   = [];
+        foreach ($members as $m) {
+            $item = new PassiveDCEquipment();
+            if (!$item->getFromDB($m['items_id']) || (int) ($item->fields['is_deleted'] ?? 0) === 1) {
+                $missing[] = $m;
+                continue;
+            }
+            $functions[] = ['item' => $item, 'is_member' => true];
+        }
+
+        $current = $host;
+        if ($fn_id > 0) {
+            foreach ($functions as $fn) {
+                if ((int) $fn['item']->getID() === $fn_id) {
+                    $current = $fn['item'];
+                    break;
+                }
+            }
+        }
+        $current_id = (int) $current->getID();
+
+        $sum = Box::statsForBox(PassiveDCEquipment::class, $host_id);
+
+        echo "<div class='card mb-3'>";
+
+        echo "<div class='card-header d-flex align-items-center justify-content-between flex-wrap gap-2'>";
+        echo "<div class='d-flex align-items-center gap-2 flex-wrap'>";
+        echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>"
+            . "<i class='ti ti-grid-dots'></i>" . htmlescape(ItemLabel::shortForRow($host->fields, $host_id))
+            . self::renderDuplicateMark($host->fields, $locations_id, false)
+            . "<span class='badge bg-secondary-lt' title='"
+            . htmlescape(__('Uma etiqueta, um QR, várias funções: cada função é um elemento próprio, no papel dela.', 'dgoplus'))
+            . "'>⇄ " . htmlescape(sprintf(
+                _n('Caixa composta · %d função', 'Caixa composta · %d funções', $sum['functions'], 'dgoplus'),
+                $sum['functions']
+            )) . "</span>"
+            // Soma das funcoes: mesmo renderBadges, numeros do Box::statsForBox
+            // (ponto unico, o mesmo que o ajax/port.php reescreve).
+            . "<span data-dgoplus-box-badges='" . $host_id . "' class='d-flex align-items-center gap-2'>"
+            . self::renderBadges(
+                $sum['documented'],
+                $sum['capacity'],
+                $sum['no_coupler'],
+                $sum['entries_occupied'],
+                $sum['entries_total']
+            )
+            . "</span>"
+            . "<span class='text-muted small'>" . htmlescape(__('soma das funções', 'dgoplus')) . "</span>";
+        echo "</h3>";
+        $box_state = self::displayBoxControl($host, $locations_id, $floors_id);
+        echo "</div>";
+        echo self::gridLegend();
+        echo "</div>";
+
+        echo "<div class='card-body'>";
+        echo "<div class='d-flex flex-wrap align-items-start gap-3'>";
+
+        echo "<div style='flex:1 1 520px;min-width:0'>";
+
+        $n = 0;
+        foreach ($functions as $fn) {
+            $n++;
+            $item    = $fn['item'];
+            $item_id = (int) $item->getID();
+            self::displayFunctionSection(
+                $item,
+                $n,
+                $fn['is_member'],
+                $host,
+                $locations_id,
+                $item_id === $current_id ? $edit_key : '',
+                $search,
+                $floors_id,
+                $item_id === $current_id ? $entry_slot : 0
+            );
+        }
+
+        foreach ($missing as $m) {
+            $n++;
+            echo "<div class='alert alert-warning py-2 mt-3' role='alert'>"
+                . htmlescape(sprintf(
+                    __('Função %1$d · #%2$d está na lixeira ou não existe mais. Ela continua agrupada nesta caixa; restaure-a pela lixeira de Dispositivos passivos ou purgue-a para soltar o agrupamento.', 'dgoplus'),
+                    $n,
+                    $m['items_id']
+                ))
+                . "</div>";
+        }
+
+        echo "</div>"; // coluna da esquerda
+
         echo "<div style='flex:1 1 280px;min-width:0;max-width:420px'>";
-        DgoIdentity::displayQrCard($dgo);
-        // Bloco 4e (ajuste na validacao): anexos ACIMA do "Alimenta" - ordem
-        // apontada pelo usuario na propria captura. O card "Alimenta" fecha a
-        // parte de topologia da coluna, antes dos comentarios.
-        self::displayAttachmentsSidebar($dgo, $locations_id, $edit_key, $floors_id);
-        self::displayFeedsCard($dgo);
-        DgoIdentity::displayCommentCard($dgo, $locations_id, $edit_key, $floors_id);
+        DgoIdentity::displayQrCard($host);
+        self::displayAttachmentsSidebar($host, $locations_id, $edit_key, $floors_id);
+        $items = [];
+        foreach ($functions as $fn) {
+            $items[] = $fn['item'];
+        }
+        self::displayFeedsCard($host, $items);
+        DgoIdentity::displayCommentCard($host, $locations_id, $edit_key, $floors_id);
         echo "</div>"; // coluna da direita
 
         echo "</div>"; // linha de duas colunas
         echo "</div>"; // card-body
         echo "</div>"; // card
 
-        // O modal fica FORA do card de proposito: modal dentro de elemento com
-        // overflow/transform e' cortado ou perde o fundo escuro.
         if ($box_state === 'can_add') {
-            self::displayAddFunctionModal($dgo, $locations_id, $floors_id);
+            self::displayAddFunctionModal($host, $locations_id, $floors_id);
         }
+
+        self::displayDocumentsManager($host, $locations_id, $edit_key, $floors_id);
+        self::displayEditPanel($current, $locations_id, $edit_key, $floors_id);
+    }
+
+    /**
+     * Uma funcao empilhada na pagina da caixa (bloco 6c): sub-cabecalho
+     * ("Funcao N · PAPEL · nome · #id", badges proprios, avisos de
+     * divergencia, "Remover funcao" nos membros) + a coluna da grade.
+     *
+     * Divergencia de piso ou de localizacao em relacao a caixa ACUSA em
+     * tela, nunca fica muda (regra do modelo, 19/09) - a funcao nasce
+     * herdando, mas pode ser mudada depois por fora.
+     *
+     * @param PassiveDCEquipment $item
+     * @param int                $index     1 = hospedeira
+     * @param bool               $is_member
+     * @param PassiveDCEquipment $host
+     * @param int                $locations_id
+     * @param string             $edit_key  '' quando o painel e' de outra funcao
+     * @param string             $search
+     * @param int                $floors_id
+     * @param int                $entry_slot 0 quando o card e' de outra funcao
+     * @return void
+     */
+    private static function displayFunctionSection(
+        PassiveDCEquipment $item,
+        int $index,
+        bool $is_member,
+        PassiveDCEquipment $host,
+        int $locations_id,
+        string $edit_key,
+        string $search,
+        int $floors_id,
+        int $entry_slot
+    ): void {
+        $items_id = (int) $item->getID();
+        $host_id  = (int) $host->getID();
+        $layout   = Panel::getLayoutForItem($item);
+        $role     = Setting::getRoleOfItem($item);
+
+        $port = new Port();
+        $rows = $port->find([
+            'itemtype'   => PassiveDCEquipment::class,
+            'items_id'   => $items_id,
+            'is_deleted' => 0,
+        ] + Port::gridCriteria());
+
+        $byKey   = [];
+        $row_ids = [];
+        foreach ($rows as $row) {
+            $byKey[$row['tube_num'] . '-' . $row['fiber_num']] = $row;
+            $row_ids[] = (int) $row['id'];
+        }
+        $origin_links = Link::findByOrigins($row_ids);
+
+        $capacity = $layout['tubes'] * $layout['fibers_per_tube'];
+        $stats    = Port::statsForDgo(PassiveDCEquipment::class, $items_id);
+
+        // A ancora e' o alvo do "abre a caixa rolada ate a funcao" (?fn=).
+        echo "<div id='dgoplus-fn-" . $items_id . "' data-dgoplus-fn='" . $items_id . "'"
+            . " class='d-flex align-items-center gap-2 flex-wrap mb-3" . ($index > 1 ? " border-top pt-3 mt-4" : "") . "'>";
+        echo "<span class='badge bg-secondary-lt'>" . htmlescape(sprintf(__('Função %d', 'dgoplus'), $index)) . "</span>";
+        if ($role !== null) {
+            echo "<span class='badge bg-blue-lt'>" . htmlescape(Setting::getRoleLabel($role)) . "</span>";
+        } else {
+            echo "<span class='badge bg-yellow-lt'>" . htmlescape(__('sem papel', 'dgoplus')) . "</span>";
+        }
+        echo "<strong>" . htmlescape(ItemLabel::shortForRow($item->fields, $items_id)) . "</strong>";
+        echo self::renderDuplicateMark($item->fields, $locations_id, false);
+        echo "<span data-dgoplus-badges='" . $items_id . "' class='d-flex align-items-center gap-2'>"
+            . self::renderBadges(
+                $stats['documented'],
+                $capacity,
+                $stats['no_coupler'],
+                $stats['entries_occupied'],
+                $stats['entries_total']
+            )
+            . "</span>";
+
+        if ($is_member) {
+            if ((int) ($item->fields['locations_id'] ?? 0) !== (int) ($host->fields['locations_id'] ?? 0)) {
+                echo "<span class='badge bg-yellow-lt' title='"
+                    . htmlescape(__('A função nasce na localização da caixa; alguém a mudou por fora. Corrija na ficha do ativo.', 'dgoplus'))
+                    . "'><i class='ti ti-alert-triangle'></i> "
+                    . htmlescape(sprintf(
+                        __('localização diferente da caixa: %s', 'dgoplus'),
+                        Dropdown::getDropdownName('glpi_locations', (int) ($item->fields['locations_id'] ?? 0))
+                    ))
+                    . "</span>";
+            }
+            if (Panel::getFloorForItem($item) !== Panel::getFloorForItem($host)) {
+                echo "<span class='badge bg-yellow-lt' title='"
+                    . htmlescape(__('A função nasce no piso da caixa; o piso desta função foi mudado. Alinhe no seletor de Piso abaixo.', 'dgoplus'))
+                    . "'><i class='ti ti-alert-triangle'></i> "
+                    . htmlescape(__('piso diferente da caixa', 'dgoplus'))
+                    . "</span>";
+            }
+
+            if (Session::haveRight(Port::$rightname, DELETE)) {
+                $confirm = sprintf(
+                    __('Remover a função %s desta caixa? O elemento vai para a lixeira (portas e vínculos ficam no banco; restaurado, ele volta como elemento simples).', 'dgoplus'),
+                    ItemLabel::shortForRow($item->fields, $items_id)
+                );
+                echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' class='ms-auto'"
+                    . " data-dgoplus-confirm='" . htmlescape($confirm) . "'"
+                    . " onsubmit='return confirm(this.getAttribute(\"data-dgoplus-confirm\"));'>";
+                echo Html::hidden('action', ['value' => 'remove_function']);
+                echo Html::hidden('items_id', ['value' => $items_id]);
+                echo Html::hidden('items_id_host', ['value' => $host_id]);
+                echo Html::hidden('locations_id', ['value' => $locations_id]);
+                echo Html::hidden('floor', ['value' => $floors_id]);
+                echo Html::submit(__('Remover função', 'dgoplus'), ['class' => 'btn btn-sm btn-outline-danger']);
+                Html::closeForm();
+            }
+        }
+
+        echo "</div>";
+
+        self::displayGridColumn($item, $layout, $byKey, $origin_links, $locations_id, $edit_key, $search, $floors_id, $entry_slot);
     }
 
     /**
@@ -2824,7 +3303,10 @@ class MapController
             return;
         }
 
-        echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' id='dgoplus-setfloor-form'>";
+        // Bloco 6c: id por elemento - a pagina da caixa imprime um seletor
+        // por funcao, e id repetido faria o on_change enviar o primeiro.
+        $form_id = 'dgoplus-setfloor-form-' . $items_id;
+        echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' id='" . $form_id . "'>";
         echo Html::hidden('action', ['value' => 'set_floor']);
         echo Html::hidden('itemtype', ['value' => PassiveDCEquipment::class]);
         echo Html::hidden('items_id', ['value' => $items_id]);
@@ -2835,7 +3317,7 @@ class MapController
             'width'               => '180px',
             'display_emptychoice' => true,
             'emptylabel'          => __('não atribuído', 'dgoplus'),
-            'on_change'           => 'document.getElementById("dgoplus-setfloor-form").submit();',
+            'on_change'           => 'document.getElementById("' . $form_id . '").submit();',
         ]);
         Html::closeForm();
 
@@ -3400,33 +3882,90 @@ class MapController
      * @param PassiveDCEquipment $dgo
      * @return void
      */
-    private static function displayFeedsCard(PassiveDCEquipment $dgo): void
+    private static function displayFeedsCard(PassiveDCEquipment $dgo, array $functions = []): void
     {
-        $role  = Setting::getRoleOfItem($dgo);
-        $roles = Setting::getRoles();
-        $pos   = $role !== null ? array_search($role, $roles, true) : false;
+        // Bloco 6c: na caixa, $functions = [hospedeira, membros...] e o card
+        // agrega os vinculos que saem de CADA funcao, dizendo de qual. Fora
+        // da caixa, $functions vazio = so' o elemento, como sempre.
+        if ($functions === []) {
+            $functions = [$dgo];
+        }
 
-        if ($pos === false || array_slice($roles, (int) $pos + 1) === []) {
+        $roles   = Setting::getRoles();
+        $sources = [];
+        foreach ($functions as $fn) {
+            $role = Setting::getRoleOfItem($fn);
+            $pos  = $role !== null ? array_search($role, $roles, true) : false;
+            if ($pos === false || array_slice($roles, (int) $pos + 1) === []) {
+                // Ultimo degrau (PTO) ou sem papel: nao alimenta ninguem.
+                continue;
+            }
+            $sources[] = [
+                'item'   => $fn,
+                'role'   => $role,
+                'groups' => Link::downstreamOf(PassiveDCEquipment::class, (int) $fn->getID()),
+            ];
+        }
+
+        if ($sources === []) {
             return;
         }
 
-        $groups = Link::downstreamOf(PassiveDCEquipment::class, (int) $dgo->getID());
+        $total = 0;
+        foreach ($sources as $src) {
+            $total += count($src['groups']);
+        }
 
         echo "<div class='card mb-3'>";
 
         echo "<div class='card-header d-flex align-items-center gap-2'>";
         echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>"
             . "<i class='ti ti-plug'></i>" . __('Alimenta', 'dgoplus') . "</h3>";
-        echo "<span class='badge bg-secondary-lt ms-auto'>" . count($groups) . "</span>";
+        echo "<span class='badge bg-secondary-lt ms-auto'>" . $total . "</span>";
         echo "</div>";
 
         echo "<div class='card-body py-2'>";
 
-        if ($groups === []) {
+        if ($total === 0) {
             // Estado vazio explicito (licao 16: vazio mudo parece defeito).
             echo "<span class='text-muted'>" . __('Nenhum vínculo de saída.', 'dgoplus') . "</span>";
         }
 
+        $printed = 0;
+        foreach ($sources as $src) {
+            if ($src['groups'] === []) {
+                continue;
+            }
+            if (count($sources) > 1) {
+                // So' na caixa: de qual funcao saem os vinculos abaixo.
+                if ($printed > 0) {
+                    echo "<hr class='my-2'>";
+                }
+                echo "<div class='text-muted small'>"
+                    . htmlescape(sprintf(
+                        __('de %1$s · %2$s', 'dgoplus'),
+                        Setting::getRoleLabel((string) $src['role']),
+                        ItemLabel::shortForRow($src['item']->fields, (int) $src['item']->getID())
+                    ))
+                    . "</div>";
+            }
+            self::displayFeedGroups($src['groups']);
+            $printed++;
+        }
+
+        echo "</div>"; // card-body
+        echo "</div>"; // card
+    }
+
+    /**
+     * Os grupos de um "Alimenta" (o miolo que era do displayFeedsCard, sem
+     * mudar regra - bloco 6c).
+     *
+     * @param array $groups Link::downstreamOf
+     * @return void
+     */
+    private static function displayFeedGroups(array $groups): void
+    {
         foreach ($groups as $i => $group) {
             if ($i > 0) {
                 echo "<hr class='my-2'>";
@@ -3459,9 +3998,6 @@ class MapController
                 echo "</div>";
             }
         }
-
-        echo "</div>"; // card-body
-        echo "</div>"; // card
     }
 
     private static function displayAttachmentsSidebar(PassiveDCEquipment $dgo, int $locations_id, string $edit_key, int $floors_id = 0): void
