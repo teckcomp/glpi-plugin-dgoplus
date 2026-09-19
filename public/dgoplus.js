@@ -473,3 +473,65 @@
         init();
     }
 })();
+
+/* Bloco 6b-1: modal "Adicionar funcao" (caixa composta). O servidor ja' manda
+ * o nome sugerido do papel pre-escolhido e o JSON com a sugestao de CADA
+ * papel; aqui so' se troca a sugestao e o texto do botao quando o papel muda.
+ * Nome que o usuario digitou nunca e' sobrescrito: so' se troca o que ainda
+ * e' sugestao (vazio ou igual a sugestao anterior). Sem JS, o formulario
+ * funciona com o que o servidor imprimiu. */
+(function () {
+    'use strict';
+
+    function mount(form) {
+        var role = form.querySelector('select[data-dgoplus-fn-role]');
+        var name = form.querySelector('input[data-dgoplus-fn-name]');
+        var submit = form.querySelector('[data-dgoplus-fn-submit]');
+        var dataEl = form.querySelector('script[data-dgoplus-fn-names]');
+        if (!role || !name || !submit || !dataEl) {
+            return;
+        }
+
+        var names;
+        try {
+            names = JSON.parse(dataEl.textContent || '{}');
+        } catch (e) {
+            // JSON podre: fica o que o servidor imprimiu; o POST valida tudo.
+            return;
+        }
+        if (!names || typeof names !== 'object') {
+            return;
+        }
+
+        var base = submit.getAttribute('data-dgoplus-fn-base') || submit.textContent;
+        var lastSuggestion = names[role.value] || '';
+
+        role.addEventListener('change', function () {
+            var next = names[role.value] || '';
+            var current = name.value.trim();
+
+            if (current === '' || current === lastSuggestion) {
+                name.value = next;
+            }
+            lastSuggestion = next;
+
+            var label = role.options[role.selectedIndex] && role.value !== ''
+                ? role.options[role.selectedIndex].text
+                : '';
+            submit.textContent = label !== '' ? base + ' ' + label : base;
+        });
+    }
+
+    function init() {
+        var forms = document.querySelectorAll('form[data-dgoplus-fn-form]');
+        for (var i = 0; i < forms.length; i++) {
+            mount(forms[i]);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();

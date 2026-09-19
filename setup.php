@@ -22,7 +22,7 @@ use GlpiPlugin\Dgoplus\ProfileTab;
 use GlpiPlugin\Dgoplus\PurgeCleaner;
 use GlpiPlugin\Dgoplus\Setting;
 
-define('PLUGIN_DGOPLUS_VERSION', '1.3.29');
+define('PLUGIN_DGOPLUS_VERSION', '1.3.30');
 define('PLUGIN_DGOPLUS_MIN_GLPI', '11.0.0');
 define('PLUGIN_DGOPLUS_MAX_GLPI', '11.9.99');
 

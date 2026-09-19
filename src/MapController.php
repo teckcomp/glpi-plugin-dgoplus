@@ -368,6 +368,9 @@ class MapController
             case 'create_dgo':
                 self::actionCreateDgo();
                 break;
+            case 'add_function':
+                self::actionAddFunction();
+                break;
             case 'set_floor':
                 self::actionSetFloor();
                 break;
@@ -428,28 +431,62 @@ class MapController
 
         $locations_id = (int) ($_POST['locations_id'] ?? 0);
         $floors_id    = (int) ($_POST['floor'] ?? 0);
-        $name         = trim($_POST['name'] ?? '');
 
-        // Bloco 4a-3: papel obrigatorio, validado contra o registro. Valor
-        // forjado como array ou papel inexistente recebe o mesmo tratamento
-        // do vazio - a recusa e' dura, como a do nome, sem "tem certeza?".
-        $raw_role = $_POST['role'] ?? '';
-        $role     = is_string($raw_role) ? trim($raw_role) : '';
+        $created = self::createElement($_POST['role'] ?? '', $_POST['name'] ?? '', $locations_id);
 
-        if ($locations_id <= 0 || $name === '') {
-            Session::addMessageAfterRedirect(__('Preencha o nome do novo elemento.', 'dgoplus'), false, ERROR);
+        if ($created['error'] !== '') {
+            Session::addMessageAfterRedirect($created['error'], false, ERROR);
             self::redirectTo(self::scope($locations_id, $floors_id));
             return;
         }
 
+        $id = $created['id'];
+
+        // Heranca do contexto: DGO criada com um piso filtrado nasce nele.
+        if ($id > 0 && $floors_id > 0 && array_key_exists($floors_id, Floor::getForLocation($locations_id))) {
+            Panel::setFloorForItem($created['item'], $floors_id);
+        }
+
+        self::redirectTo(self::scope($locations_id, $floors_id, ['dgo' => $id]));
+    }
+
+    /**
+     * PONTO UNICO de criacao de elemento pelo mapa.
+     *
+     * Bloco 6b-1: extraido do actionCreateDgo, sem mudar uma regra, para que
+     * o "Novo elemento" e o "Adicionar funcao" criem o ativo do MESMO jeito -
+     * papel validado contra o registro, Tipo vindo do papel, entidade ativa.
+     * Regra de criacao em dois lugares divergiria em silencio.
+     *
+     * 'error' preenchido = nada foi gravado. 'id' = 0 sem 'error' e' o add()
+     * do core que recusou (ele poe a propria mensagem na fila) - o mesmo
+     * comportamento de antes da extracao.
+     *
+     * @param mixed  $raw_role valor cru do POST
+     * @param mixed  $raw_name valor cru do POST
+     * @param int    $locations_id
+     * @return array{id:int, error:string, item:PassiveDCEquipment}
+     */
+    private static function createElement($raw_role, $raw_name, int $locations_id): array
+    {
+        $item = new PassiveDCEquipment();
+        $name = is_string($raw_name) ? trim($raw_name) : '';
+
+        // Bloco 4a-3: papel obrigatorio, validado contra o registro. Valor
+        // forjado como array ou papel inexistente recebe o mesmo tratamento
+        // do vazio - a recusa e' dura, como a do nome, sem "tem certeza?".
+        $role = is_string($raw_role) ? trim($raw_role) : '';
+
+        if ($locations_id <= 0 || $name === '') {
+            return ['id' => 0, 'error' => __('Preencha o nome do novo elemento.', 'dgoplus'), 'item' => $item];
+        }
+
         if (!Setting::isRole($role)) {
-            Session::addMessageAfterRedirect(
-                sprintf(__('Escolha o papel do novo elemento (%s).', 'dgoplus'), Setting::getRoleListLabel()),
-                false,
-                ERROR
-            );
-            self::redirectTo(self::scope($locations_id, $floors_id));
-            return;
+            return [
+                'id'    => 0,
+                'error' => sprintf(__('Escolha o papel do novo elemento (%s).', 'dgoplus'), Setting::getRoleListLabel()),
+                'item'  => $item,
+            ];
         }
 
         $input = [
@@ -470,27 +507,119 @@ class MapController
         if ($type_id > 0) {
             $input[Setting::getTypeField()] = $type_id;
         } elseif (Setting::isTypeFilterEnabled()) {
-            Session::addMessageAfterRedirect(
-                sprintf(
+            return [
+                'id'    => 0,
+                'error' => sprintf(
                     __('O papel %s não tem nenhum Tipo configurado — revise a configuração do DGO+ antes de criar.', 'dgoplus'),
                     Setting::getRoleLabel($role)
+                ),
+                'item'  => $item,
+            ];
+        }
+
+        $id = (int) $item->add($input);
+
+        return ['id' => max(0, $id), 'error' => '', 'item' => $item];
+    }
+
+    /**
+     * Bloco 6b-1: acrescenta uma FUNCAO a uma caixa (caixa composta).
+     *
+     * A funcao e' um elemento comum (PassiveDCEquipment proprio, #id proprio,
+     * no papel escolhido), criado pelo MESMO createElement do "Novo
+     * elemento", e agrupado na caixa pelo Box::attach(). Localizacao e piso
+     * vem da CAIXA, nunca do POST: o formulario so' os mostra travados.
+     *
+     * Direito: o mesmo CREATE do "Novo elemento" - o que se cria aqui e' um
+     * elemento, e o botao espelha esta trava (displayGrid).
+     *
+     * @return void
+     */
+    private static function actionAddFunction(): void
+    {
+        Session::checkRight(Port::$rightname, CREATE);
+
+        $host_id   = (int) ($_POST['host_items_id'] ?? 0);
+        $filter    = (int) ($_POST['floor'] ?? 0);
+        $back_loc  = (int) ($_POST['locations_id'] ?? 0);
+
+        $host = new PassiveDCEquipment();
+        if ($host_id > 0) {
+            $host->getFromDB($host_id);
+        }
+
+        // Recusa ANTES de criar: sem isto, hospedeira invalida deixaria um
+        // elemento novo orfao gravado e uma mensagem de erro ao lado dele.
+        $refusal = Box::hostRefusal($host);
+        if ($refusal !== '') {
+            Session::addMessageAfterRedirect($refusal, false, ERROR);
+            self::redirectTo(self::scope($back_loc, $filter, $host_id > 0 ? ['dgo' => $host_id] : []));
+            return;
+        }
+
+        $locations_id = (int) $host->fields['locations_id'];
+        $host_label   = ItemLabel::shortForRow($host->fields, $host_id);
+
+        $created = self::createElement($_POST['role'] ?? '', $_POST['name'] ?? '', $locations_id);
+
+        if ($created['error'] !== '') {
+            Session::addMessageAfterRedirect($created['error'], false, ERROR);
+            self::redirectTo(self::scope($locations_id, $filter, ['dgo' => $host_id]));
+            return;
+        }
+
+        $id = $created['id'];
+        if ($id <= 0) {
+            Session::addMessageAfterRedirect(
+                sprintf(__('A nova função da caixa %s não foi criada.', 'dgoplus'), $host_label),
+                false,
+                ERROR
+            );
+            self::redirectTo(self::scope($locations_id, $filter, ['dgo' => $host_id]));
+            return;
+        }
+
+        $member = $created['item'];
+
+        // Piso herdado da caixa. Piso 0 (nao atribuido) nao grava nada: a
+        // funcao nasce igual a caixa, sem linha de painel.
+        $host_floor = Panel::getFloorForItem($host);
+        if ($host_floor > 0) {
+            Panel::setFloorForItem($member, $host_floor);
+        }
+
+        $member_label = ItemLabel::shortForRow($member->fields, $id);
+
+        $attach_error = Box::attach($host, $member);
+        if ($attach_error !== '') {
+            // O elemento existe; o agrupamento nao. A tela diz as duas coisas
+            // - calar aqui deixaria um elemento solto que o usuario acredita
+            // estar dentro da caixa.
+            Session::addMessageAfterRedirect(
+                sprintf(
+                    __('%1$s foi criado, mas NÃO entrou na caixa %2$s: %3$s Ele ficou como elemento simples.', 'dgoplus'),
+                    $member_label,
+                    $host_label,
+                    $attach_error
                 ),
                 false,
                 ERROR
             );
-            self::redirectTo(self::scope($locations_id, $floors_id));
-            return;
+        } else {
+            Session::addMessageAfterRedirect(
+                sprintf(__('Função %1$s adicionada à caixa %2$s.', 'dgoplus'), $member_label, $host_label),
+                false,
+                INFO
+            );
         }
 
-        $item = new PassiveDCEquipment();
-        $id   = $item->add($input);
-
-        // Heranca do contexto: DGO criada com um piso filtrado nasce nele.
-        if ($id && $floors_id > 0 && array_key_exists($floors_id, Floor::getForLocation($locations_id))) {
-            Panel::setFloorForItem($item, $floors_id);
+        // Filtro de piso em vigor que a funcao nao atende: segue a funcao,
+        // como no set_floor, em vez de abrir uma lista onde ela nao aparece.
+        if ($filter > 0 && $filter !== $host_floor) {
+            $filter = $host_floor;
         }
 
-        self::redirectTo(self::scope($locations_id, $floors_id, ['dgo' => $id ?: 0]));
+        self::redirectTo(self::scope($locations_id, $filter, ['dgo' => $id]));
     }
 
     /**
@@ -2292,6 +2421,9 @@ class MapController
         echo "<div class='card mb-3'>";
 
         echo "<div class='card-header d-flex align-items-center justify-content-between flex-wrap gap-2'>";
+        // Bloco 6b-1: titulo + controle da caixa no mesmo grupo a esquerda, a
+        // legenda sozinha a direita (posicao do mockup aprovado).
+        echo "<div class='d-flex align-items-center gap-2 flex-wrap'>";
         echo "<h3 class='card-title mb-0 d-flex align-items-center gap-2'>"
             . "<i class='ti ti-grid-dots'></i>" . htmlescape(ItemLabel::shortForRow($dgo->fields, $items_id))
             // Bloco 5e-2d: fora do span dos badges de proposito - aquele span e'
@@ -2310,6 +2442,10 @@ class MapController
             )
             . "</span>";
         echo "</h3>";
+        // Bloco 6b-1: botao da caixa composta, na posicao do mockup aprovado
+        // (depois dos badges, antes da legenda).
+        $box_state = self::displayBoxControl($dgo, $locations_id, $floors_id);
+        echo "</div>";
         echo self::gridLegend();
         echo "</div>";
 
@@ -2447,6 +2583,201 @@ class MapController
         echo "</div>"; // linha de duas colunas
         echo "</div>"; // card-body
         echo "</div>"; // card
+
+        // O modal fica FORA do card de proposito: modal dentro de elemento com
+        // overflow/transform e' cortado ou perde o fundo escuro.
+        if ($box_state === 'can_add') {
+            self::displayAddFunctionModal($dgo, $locations_id, $floors_id);
+        }
+    }
+
+    /**
+     * Controle da caixa composta no cabecalho da grade (bloco 6b-1).
+     *
+     * Tres estados, e nenhum deles mudo:
+     * - o elemento e' FUNCAO de uma caixa: no lugar do botao, a marca
+     *   "⇄ Função de <caixa>" com link - explica por que nao ha botao aqui
+     *   (sem caixa dentro de caixa) e leva a caixa;
+     * - pode receber funcao e o usuario tem CREATE: botao "⇄ Adicionar
+     *   função", que abre o modal;
+     * - sem CREATE: nada (mesma trava do "Novo elemento", 5f-2b).
+     *
+     * A marca de funcao aparece com ou sem direito: e' informacao, nao acao.
+     *
+     * @param PassiveDCEquipment $dgo
+     * @param int                $locations_id
+     * @param int                $floors_id
+     * @return string 'member' | 'can_add' | 'none'
+     */
+    private static function displayBoxControl(PassiveDCEquipment $dgo, int $locations_id, int $floors_id): string
+    {
+        $host = Box::hostOf($dgo->getType(), (int) $dgo->getID());
+
+        if ($host !== null) {
+            $host_item = new PassiveDCEquipment();
+            $label     = '#' . $host['items_id'];
+            if ($host_item->getFromDB($host['items_id'])) {
+                $label = ItemLabel::shortForRow($host_item->fields, $host['items_id']);
+            }
+            $url = self::getPageUrl(self::scope($locations_id, $floors_id, ['dgo' => $host['items_id']]));
+
+            echo "<span class='badge bg-secondary-lt d-flex align-items-center gap-1'"
+                . " title='" . htmlescape(__('Este elemento é uma função de caixa composta. Funções se acrescentam na caixa.', 'dgoplus')) . "'>"
+                . "⇄ " . htmlescape(__('Função de', 'dgoplus')) . " "
+                . "<a href='" . htmlescape($url) . "'>" . htmlescape($label) . "</a>"
+                . "</span>";
+
+            return 'member';
+        }
+
+        if (!Session::haveRight(Port::$rightname, CREATE)) {
+            return 'none';
+        }
+
+        echo "<button type='button' class='btn btn-sm btn-outline-primary'"
+            . " data-bs-toggle='modal' data-bs-target='#dgoplus-add-function'>"
+            . "⇄&nbsp;" . htmlescape(__('Adicionar função', 'dgoplus'))
+            . "</button>";
+
+        return 'can_add';
+    }
+
+    /**
+     * Modal "Adicionar função" (bloco 6b-1) - tela 2 do mockup aprovado em
+     * 19/09, sem a caixa "criar vinculo interno" (fica no 6b-2).
+     *
+     * Select e input NATIVOS, nao Dropdown::showFromArray: select2 dentro de
+     * modal do Bootstrap abre a lista atras do modal e perde o foco da busca.
+     * Localizacao e piso sao so' exibidos, travados - o POST nem os envia
+     * como dado de criacao; o servidor le da caixa.
+     *
+     * Sem JS o formulario funciona inteiro: o nome vem preenchido com a
+     * sugestao do papel pre-escolhido. O JS (dgoplus.js, modulo 6b-1) so'
+     * refaz a sugestao e o texto do botao quando o papel muda.
+     *
+     * @param PassiveDCEquipment $dgo a caixa (hospedeira)
+     * @param int                $locations_id
+     * @param int                $floors_id filtro em vigor na barra
+     * @return void
+     */
+    private static function displayAddFunctionModal(PassiveDCEquipment $dgo, int $locations_id, int $floors_id): void
+    {
+        $host_id    = (int) $dgo->getID();
+        $host_label = ItemLabel::shortForRow($dgo->fields, $host_id);
+        $host_role  = Setting::getRoleOfItem($dgo);
+        $default    = Box::suggestRole($host_role);
+        $host_name  = (string) ($dgo->fields['name'] ?? '');
+
+        $suggestions = [];
+        foreach (Setting::getRoles() as $role_key) {
+            $suggestions[$role_key] = Box::suggestName($host_name, $host_role, $role_key);
+        }
+
+        $host_loc_id = (int) ($dgo->fields['locations_id'] ?? 0);
+        $loc_label   = '#' . $host_loc_id;
+        $location    = new Location();
+        if ($host_loc_id > 0 && $location->getFromDB($host_loc_id)) {
+            $loc_label = (string) ($location->fields['completename'] ?: ($location->fields['name'] ?? $loc_label));
+        }
+
+        $host_floor  = Panel::getFloorForItem($dgo);
+        $floor_label = __('não atribuído', 'dgoplus');
+        if ($host_floor > 0) {
+            $floors      = Floor::getForLocation($host_loc_id);
+            $floor_label = $floors[$host_floor] ?? ('#' . $host_floor);
+        }
+
+        $inherited = sprintf(__('Herdado da caixa (#%d)', 'dgoplus'), $host_id);
+        $submit    = __('Criar função', 'dgoplus');
+
+        echo "<div class='modal fade' id='dgoplus-add-function' tabindex='-1' aria-hidden='true'>";
+        echo "<div class='modal-dialog modal-lg'>";
+        echo "<div class='modal-content'>";
+
+        echo "<form method='post' action='" . htmlescape(self::getPostUrl()) . "' data-dgoplus-fn-form='1'>";
+        echo Html::hidden('action', ['value' => 'add_function']);
+        echo Html::hidden('host_items_id', ['value' => $host_id]);
+        echo Html::hidden('locations_id', ['value' => $locations_id]);
+        echo Html::hidden('floor', ['value' => $floors_id]);
+
+        echo "<div class='modal-header'>";
+        echo "<h5 class='modal-title'>⇄ "
+            . htmlescape(sprintf(__('Adicionar função à caixa %s', 'dgoplus'), $host_label))
+            . "</h5>";
+        echo "<button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='"
+            . htmlescape(__('Fechar', 'dgoplus')) . "'></button>";
+        echo "</div>";
+
+        echo "<div class='modal-body'>";
+        echo "<p class='text-muted'>"
+            . htmlescape(__('A nova função nasce como elemento próprio (novo #id) no papel escolhido, com grade e entradas próprias. Localização e piso são herdados da caixa.', 'dgoplus'))
+            . "</p>";
+
+        echo "<div class='row g-3'>";
+
+        // Papel
+        echo "<div class='col-md-6'>";
+        echo "<label class='form-label' for='dgoplus-fn-role'>" . htmlescape(__('Papel da nova função', 'dgoplus')) . "</label>";
+        echo "<select class='form-select' name='role' id='dgoplus-fn-role' data-dgoplus-fn-role='1'>";
+        echo "<option value=''" . ($default === '' ? ' selected' : '') . ">"
+            . htmlescape(__('Papel', 'dgoplus')) . "</option>";
+        foreach (Setting::getRoles() as $role_key) {
+            echo "<option value='" . htmlescape($role_key) . "'" . ($role_key === $default ? ' selected' : '') . ">"
+                . htmlescape(Setting::getRoleLabel($role_key)) . "</option>";
+        }
+        echo "</select>";
+        echo "<div class='form-hint'>" . htmlescape(sprintf(
+            __('Papel = Tipo nativo do ativo. %s', 'dgoplus'),
+            Setting::getRoleChainLabel()
+        )) . "</div>";
+        echo "</div>";
+
+        // Nome
+        echo "<div class='col-md-6'>";
+        echo "<label class='form-label' for='dgoplus-fn-name'>" . htmlescape(__('Nome', 'dgoplus')) . "</label>";
+        echo "<input type='text' class='form-control' name='name' id='dgoplus-fn-name' data-dgoplus-fn-name='1'"
+            . " value='" . htmlescape($default !== '' ? $suggestions[$default] : '') . "'>";
+        echo "<div class='form-hint'>" . htmlescape(__('Sugerido a partir do papel + nome da caixa', 'dgoplus')) . "</div>";
+        echo "</div>";
+
+        // Localizacao e piso: travados
+        echo "<div class='col-md-6'>";
+        echo "<label class='form-label'>" . htmlescape(__('Localização', 'dgoplus')) . "</label>";
+        echo "<div class='form-control bg-light d-flex align-items-center gap-2'>"
+            . "<span class='flex-grow-1'>" . htmlescape($loc_label) . "</span><i class='ti ti-lock text-muted'></i></div>";
+        echo "<div class='form-hint'>" . htmlescape(sprintf(__('Herdada da caixa (#%d)', 'dgoplus'), $host_id)) . "</div>";
+        echo "</div>";
+
+        echo "<div class='col-md-6'>";
+        echo "<label class='form-label'>" . htmlescape(Floor::getTypeName(1)) . "</label>";
+        echo "<div class='form-control bg-light d-flex align-items-center gap-2'>"
+            . "<span class='flex-grow-1'>" . htmlescape($floor_label) . "</span><i class='ti ti-lock text-muted'></i></div>";
+        echo "<div class='form-hint'>" . htmlescape($inherited) . "</div>";
+        echo "</div>";
+
+        echo "</div>"; // row
+        echo "</div>"; // modal-body
+
+        echo "<div class='modal-footer'>";
+        echo "<button type='button' class='btn btn-link link-secondary' data-bs-dismiss='modal'>"
+            . htmlescape(__('Cancelar', 'dgoplus')) . "</button>";
+        echo "<button type='submit' class='btn btn-primary' data-dgoplus-fn-submit='1'"
+            . " data-dgoplus-fn-base='" . htmlescape($submit) . "'>"
+            . htmlescape($default !== '' ? $submit . ' ' . Setting::getRoleLabel($default) : $submit)
+            . "</button>";
+        echo "</div>";
+
+        // Sugestoes por papel para o JS. Nome de ativo e' texto de usuario:
+        // flags HEX obrigatorias (um </script> no nome quebraria a pagina).
+        echo "<script type='application/json' data-dgoplus-fn-names='1'>"
+            . json_encode($suggestions, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE)
+            . "</script>";
+
+        Html::closeForm();
+
+        echo "</div>"; // modal-content
+        echo "</div>"; // modal-dialog
+        echo "</div>"; // modal
     }
 
     /**
