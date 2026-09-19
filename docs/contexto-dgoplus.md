@@ -3,46 +3,39 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v26 — 19/09/2026 (caixa composta: modelo aprovado,
-> mockup aprovado, bloco 6a fechado). Substitui o v25 integralmente. Versão
-> **1.3.29**, `master` em **`82990e6`** (código do 6a — paridade md5 provada).
-> Produção continua em **1.3.28** (tag `v1.3.28`); a 1.3.29 NÃO foi deployada.
+> **Versão deste documento:** v27 — 19/09/2026 (bloco 6b-1 fechado). Substitui
+> o v26 integralmente. Versão **1.3.30**, `master` em **`dc33df9`** (código do
+> 6b-1 — paridade provada: tarball publicado = cópia validada, `diff -rq` vazio).
+> Produção continua em **1.3.28** (tag `v1.3.28`); 1.3.29 e 1.3.30 NÃO deployadas.
 >
-> **O que o v26 traz de novo em relação ao v25:**
+> **O que o v27 traz de novo em relação ao v26:**
 >
-> 1. **Nova frente: CAIXA COMPOSTA** (§3-A, novidade). Em campo há central de
->    fibra que faz DIO + DGO + CTO na mesma carcaça. Modelo aprovado pelo
->    dono em 19/09: **4 papéis + agrupamento** — cada função é um
->    `PassiveDCEquipment` próprio (#id, grade e E1–E4 próprios, no papel
->    dele); a caixa é um agrupamento (`_boxes`) e "composta" é **selo
->    derivado**, nunca papel. `Setting::ROLES` não muda. Alternativas
->    descartadas na §8.
-> 2. **Mockup aprovado** (lição 167 cumprida) em
->    https://claude.ai/artifact/99PzctwaUoCGz55m4Ueohy — 3 telas: elemento
->    simples com botão "Adicionar função"; modal; caixa com DIO/DGO/CTO
->    empilhados. ⚠️ A faixa E1–E4 do mockup NÃO é fiel: a real é uma fileira
->    de botões pequenos ao lado do Piso + campo OBS + Salvar (lido em tela
->    no `#58`). Ajustar no 6c.
-> 3. **Bloco 6a FECHADO** (1.3.29, `82990e6`): tabela
->    `glpi_plugin_dgoplus_boxes`, classe `src/Box.php`, `PurgeCleaner`
->    limpando agrupamento. Roteiro 6/6 ✅ (chave `unicity` provada por 1062;
->    purga do `#58` levou só a linha dele; evento "1 agrupamento(s) de
->    caixa"). Primeira mudança de `Install.php` desde a 1.3.1 — **o próximo
->    deploy em produção volta a ter DDL.**
-> 4. **Fato corrigido: o banco da HOMOLOGAÇÃO é `glpidb`**, não `glpi`
->    (lido em `config/config_db.php`). Os dois ambientes usam o mesmo nome.
->    O "banco `glpi`" dos docs anteriores era suposição nunca executada
->    (lição 170).
-> 5. **Lição 171**: comando entregue não leva placeholder (`<id>`, `61` de
->    exemplo) — foi executado literal duas vezes; o valor sai de outro
->    comando com guarda contra vazio.
-> 6. **Fato medido**: elemento recém-criado pelo mapa tem **0 portas e 0
->    painéis** no banco até a primeira gravação (grade virtual). A previsão
->    "64 portas, 1 painel" no roteiro estava errada.
-> 7. Sessão consumiu 4 rodadas de descompasso terminal × navegador (passo de
->    tela pulado, comando rodado em lote). Regra nova em §2: **passo de
->    navegador é entregue SOZINHO e o terminal seguinte só sai depois da
->    confirmação.**
+> 1. **Bloco 6b-1 FECHADO** (1.3.30, `dc33df9`): botão `⇄ Adicionar função`
+>    no cabeçalho da grade + modal (tela 2 do mockup, SEM a caixa "vínculo
+>    interno") → ação `add_function`. `Box::attach()` é o **ponto único de
+>    gravação de `_boxes`**; `Box::hostRefusal()` recusa hospedeira inválida
+>    ANTES de criar (nunca nasce função órfã). `MapController::createElement()`
+>    é o **ponto único de criação de elemento pelo mapa** (extraído do
+>    `actionCreateDgo`, sem mudar regra). Detalhes em §3-A.
+> 2. **Decisão reafirmada pelo dono (19/09): cada função é achada no grupo do
+>    SEU papel, independente de ser composta.** As abas `#60`/`#61` ficam em
+>    DGO/CTO; a caixa mostra as funções empilhadas (6c) SEM tirá-las dos grupos.
+> 3. **Lacuna de modelo aberta** (sem decisão): "Adicionar função" só CRIA
+>    elemento. Não há tela para **agrupar elemento que já existe** — caso
+>    provável em produção (185 elementos; DIO e DGO de uma mesma central já
+>    cadastradas separadas, com portas e vínculos). `Box::attach()` já aceita
+>    qualquer membro; falta só tela. Proposta: aba "Agrupar existente" no
+>    mesmo modal. **O dono escolheu fazer o 6c antes.**
+> 4. **Validação do 6b-1 com 4 itens NÃO verificados** (declarados, não
+>    travaram o fechamento): valores de `position` em `_boxes`; log pós-teste;
+>    mensagem verde de sucesso; linha do Histórico do membro. A ordem
+>    (`position`) fica provada no roteiro do 6c (DGO antes da CTO na pilha).
+> 5. **Dados de teste novos na homologação** (`Outlet Porto Belo`): caixa
+>    `DIO Teste6b · #59` com funções `DGO Teste6b · #60` (pos. esperada 1) e
+>    `CTO Teste6b · #61` (pos. esperada 2), as três no piso `MALL - PORTO BELO`.
+>    Servem de base para o roteiro do 6c.
+> 6. **Lições 172 e 173** (§4): pergunta de confirmação nomeia tela+controle;
+>    entrega de tela nova diz o que o bloco AINDA NÃO mostra.
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
 
@@ -101,12 +94,12 @@ abolido. Ruído conhecido:
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 19/09 | **`82990e6`** (1.3.29, bloco 6a — código). Docs v26 entram por cima |
+| `master` em 19/09 | **`dc33df9`** (1.3.30, bloco 6b-1 — código). Docs v27 entram por cima. Docs v26 = `977a584` |
 | **Tag/Release** | **`v1.3.28` PUBLICADA** (tag anotada `e59a338` → `f30e931`); anexo `dgoplus-v1.3.28.zip` 187 KB, sha256 `673bf2863776caeb02ce59e3469ebfeb87f2a6608c4a1917a453283bc40048fe` |
-| Versão em homologação | **1.3.29** — 6a aplicado, reinstalado e ativado em 19/09 |
+| Versão em homologação | **1.3.30** — 6b-1 aplicado, reinstalado e ativado em 19/09 |
 | **Paridade** | ✅ Provada na 4ª sessão: tarball da tag = tarball `f30e931` (`diff -rq`); zip do Release = tarball da tag (conteúdo) e sha256 idêntico em 4 fontes |
 | Arquivos no repositório | **33** (30 do plugin + 3 em `docs/`) — `src/Box.php` é novo |
-| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — nomes SEM versão. Conteúdo atual: **v25** (commit `eb9c540`); o v26 entra por cima |
+| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — nomes SEM versão. Conteúdo atual: **v26** (commit `977a584`, md5 conferido = base do projeto); o v27 entra por cima |
 | GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data`, **banco `glpidb`** (lido em `config/config_db.php`, 19/09) |
 | **Homologação** | **`177.87.230.179`, porta SSH `2078`, usuário `resolutto`** |
 | URL externa do GLPI | `http://177.87.230.179:2077/` |
@@ -124,7 +117,7 @@ O shell do servidor está logado como **root**. Console do GLPI sempre com
 | Host | **Mesmo IP da homologação: `177.87.230.179`** — o que muda é a porta |
 | **SSH** | **porta `2022`**, usuário `resolutto`, MESMA chave: `ssh -i %USERPROFILE%\.ssh\id_ed25519 -p 2022 resolutto@177.87.230.179` (prompt: `root@glpi`) |
 | GLPI | **11.0.6** (console confirmou), `/var/www/html/glpi`, banco **`glpidb`** |
-| **DGO+** | **1.3.28, ativo** — deploy de 05/09. **A 1.3.29 (6a) NÃO está em produção**; quando for, é o primeiro deploy com DDL desde a 1.3.1 |
+| **DGO+** | **1.3.28, ativo** — deploy de 05/09. **1.3.29 (6a) e 1.3.30 (6b-1) NÃO estão em produção**; quando forem, é o primeiro deploy com DDL desde a 1.3.1 |
 | **Forma de implantação** | **Pasta solta, SEM git.** Deploy = zip da Release → `/tmp` → backup → unzip → chown → reinstalação. NÃO existe `git pull` na produção |
 | Outros plugins lá | `mod`, `projectplus`, `qrservice`, `taskplus` (+ tarball `glpi-mod-11.0.5.tar.gz` solto na pasta — nome NÃO indica a versão do GLPI) |
 | `mysqldump` | Presente (`/usr/bin/mysqldump`) |
@@ -216,8 +209,8 @@ cd /var/www/html/glpi/plugins/dgoplus
 git status --short && git log -1 --oneline && grep PLUGIN_DGOPLUS_VERSION setup.php
 ```
 
-⚠️ Após o commit dos docs v26 o HEAD é commit de `docs/`; o último commit de
-CÓDIGO é o `82990e6` (1.3.29). Lição 143.
+⚠️ Após o commit dos docs v27 o HEAD é commit de `docs/`; o último commit de
+CÓDIGO é o `dc33df9` (1.3.30). Lição 143.
 
 **Reverter (homologação):**
 
@@ -384,7 +377,7 @@ nativo; o plugin acrescenta grade, escopo e vínculos. O core não conhece as
 tabelas do plugin — daí o `PurgeCleaner`. Escopo: **Localização (nativa) →
 Piso (intitulado do plugin)**.
 
-### 3-A. CAIXA COMPOSTA — a frente aberta em 19/09 (6a fechado; 6b–6d abertos)
+### 3-A. CAIXA COMPOSTA — a frente aberta em 19/09 (6a e 6b-1 fechados; 6c próximo)
 
 **O fato de campo:** central de fibra com bandejas de emenda em cima
 (função DIO), splitter primário 1/16 e distribuição CX 01–08 embaixo
@@ -403,6 +396,8 @@ etiqueta, um QR, até três funções.
   `items_id_host`.
 - **Manobra interna** entre metades = vínculo comum (`Link::propose`),
   validado pela hierarquia, com selo "vínculo interno" na tela.
+- **Cada função é achada no grupo do SEU papel, independente de ser
+  composta** (reafirmado pelo dono em 19/09, depois de ver o 6b-1).
 - **Rótulo/aba: opção (a)** — `DIO Renner · #201` / `DGO Renner · #202` /
   `CTO Renner · #203`: o #id de CADA função, no grupo do papel dela, com
   marca ⇄; abre a tela da caixa rolada até a grade dela. (O `#45` repetido
@@ -429,17 +424,47 @@ apaga histórico e linhas; evento conta "agrupamento(s) de caixa". Purgar a
 hospedeira SOLTA os membros (viram elementos simples); purgar um membro
 apaga só a linha dele.
 
-**Invariantes a garantir no 6b** (ainda não codificados): hospedeira não é
-membro de outra; membro não hospeda (sem caixa dentro de caixa);
-`items_id_host` tem que existir (6a não valida — a semente `99999` passou
-de propósito).
+**6b-1 (1.3.30) — o que existe:**
 
-**Blocos:** 6a ✅ · **6b** = modal "Adicionar função" → `actionCreateDgo()`
-(linha 419 do MapController, já lida: valida papel, `getTypeForNewItem`,
-`add()`, herda piso por `Panel::setFloorForItem`) com hospedeira + opção
-"criar vínculo interno" · **6c** = tela empilhada (selo, badges somados,
-seções, "Remover função") — refazer a faixa E1–E4 fiel à tela real ·
-**6d** = abas ⇄, busca/QR de função abrindo a caixa rolada.
+- `Box::hostRefusal(CommonDBTM $host): string` — `''` = pode hospedar.
+  Recusa com frase: não existe; na lixeira; fora das entidades
+  (`Port::parentIsReachable`); sem localização; já é membro de outra
+  caixa. Chamado pela ação ANTES de criar e de novo dentro do `attach()`.
+- `Box::attach($host, $member): string` — **ponto único de gravação de
+  `_boxes`**. Invariantes: hospedeira válida; membro existe e ≠
+  hospedeira; membro não está em caixa; membro não hospeda (sem caixa em
+  caixa); `position` = `nextPosition()` (hospedeira = 0 implícita, 1º
+  membro = 1); `entities_id` = do membro; `is_recursive` 0. UNIQUE do 6a
+  segue como última barreira.
+- `Box::suggestRole()` (degrau logo abaixo; PTO/sem papel → sem padrão) e
+  `Box::suggestName()` (troca a sigla do papel da caixa no começo do nome —
+  `DIO Renner`→`DGO Renner`; sem sigla, prefixa — `Tecnicos`→`DGO Tecnicos`).
+- `MapController::createElement($raw_role, $raw_name, $locations_id)` —
+  **ponto único de criação de elemento pelo mapa**, usado por `create_dgo`
+  e `add_function`. Papel validado no registro, Tipo pelo papel, **entidade
+  ativa** (trava 5f-2b — a função NÃO herda a entidade da caixa; reabrível).
+- `actionAddFunction()` (`add_function`): `checkRight(CREATE)`; localização
+  e piso lidos **da caixa**, nunca do POST; falha do agrupamento depois de
+  criar = frase dupla ("foi criado, mas NÃO entrou na caixa…"); redireciona
+  para a função.
+- Cabeçalho da grade (`displayBoxControl`): elemento que é função mostra
+  `⇄ Função de <caixa · #id>` com link (com ou sem direito); os demais, com
+  CREATE, mostram o botão `⇄ Adicionar função`. Modal `displayAddFunctionModal`
+  fica FORA do card; select e input NATIVOS (select2 em modal do Bootstrap
+  quebra); localização/piso exibidos travados; JSON das sugestões com flags
+  HEX. JS: módulo 6b-1 no fim do `dgoplus.js` (troca sugestão/botão ao mudar
+  papel; nome digitado nunca é sobrescrito).
+- **Ainda NÃO existe:** agrupar elemento existente; vínculo interno; selo na
+  caixa; grades empilhadas; badges somados; "Remover função"; ⇄ nas abas.
+
+**Blocos:** 6a ✅ · 6b-1 ✅ · **6c (PRÓXIMO)** = tela empilhada na caixa
+(selo `⇄ Caixa composta · N funções`, badges somados rotulados como soma,
+seções "Função N · PAPEL" na ordem de `position`, "Remover função" só nos
+membros) — refazer a faixa E1–E4 fiel à tela real (fileira de botões ao lado
+do Piso + OBS + Salvar, confirmada de novo nos prints de 19/09) · **"Agrupar
+existente"** (a decidir — proposto como aba do mesmo modal) · **vínculo
+interno** (checkbox do modal) · **6d** = abas ⇄, busca/QR de função abrindo
+a caixa rolada.
 
 **Fato medido (19/09):** elemento recém-criado pelo mapa tem 0 portas e 0
 painéis no banco até a primeira gravação — a grade é virtual.
@@ -553,7 +578,7 @@ negativa, §8).
 
 ### Auto-save — os dois JS
 
-`public/dgoplus.js` (475) e `public/dgoplus-identity.js` (362).
+`public/dgoplus.js` (537 — módulo 6b-1 do modal no fim) e `public/dgoplus-identity.js` (362).
 
 ### Busca e relatório — tabela polimórfica
 
@@ -596,21 +621,21 @@ do DGO+; ver/baixar = Ler do DGO+ (o mesmo do mapa).
 
 **33 no repositório** (30 + 3 em `docs/`).
 
-**Impressões digitais do 1.3.29** (commit `82990e6`; os quatro do 6a
-provados no tarball publicado, os demais herdados do 1.3.28):
+**Impressões digitais do 1.3.30** (commit `dc33df9`; os quatro do 6b-1
+provados no tarball publicado nesta sessão, os demais herdados):
 
 ```
-d7f03a9afe4801cd34b2e78c9b88fafe  setup.php                    (269 linhas)  6a
-aeb7f9dfd3911973b4425687c7360d27  src/Box.php                  (193 linhas)  6a NOVO
+8a20b962e76ea1a3f0bea14271c7de78  setup.php                    (269 linhas)  6b-1
+19be817ff3cd5080e478761188b12e8e  src/Box.php                  (370 linhas)  6b-1
+1d44d6d7006e5a1f30b88604ff280389  src/MapController.php        (4212 linhas) 6b-1
+ed56036dc0f040f3df5301570a9fa54c  public/dgoplus.js            (537 linhas)  6b-1
 14c99e133322a38e0c23ab0fc8d350d4  src/Install.php              (382 linhas)  6a
 a3d71553961cb019c2f1cd5c1e4d655b  src/PurgeCleaner.php         (239 linhas)  6a
 b7b83e65d39fb94a7bb1c62c56209a18  src/Port.php                 (1145 linhas)
-f3ad281c9cbc3c220e9def5a584b4607  src/MapController.php        (3881 linhas)
 c4d807b2d89e3ed82748ceabe152728d  src/ProfileTab.php           (186 linhas)
 25ecbfedf29adcb4ce6f3b6f069eba8e  front/document.send.php       (58 linhas)
 1a1f77115c954785cec105bf3227094a  src/Dashboard.php            (1352 linhas)
 2597d942e15dae5d5ff02a9308a7c0db  ajax/port.php                (125 linhas)
-3d9daa717ad679a9091fbd548ad92191  public/dgoplus.js            (475 linhas)
 d58fdb6b783801190a79eb1ace005fca  public/dgoplus-identity.js   (362 linhas)
 f8d60d99db81dc8958e67424a844351f  src/ItemLabel.php            (166 linhas)
 b61cb5d74230088b7e7c02ffb35ddff2  src/Link.php                 (1310 linhas)
@@ -637,6 +662,9 @@ dae5e817600bfdb6db3345cfa0383ea0  ajax/dgocomment.php           (52 linhas)
 | **170** | **Dado de ambiente nos docs só vale com o comando que o provou.** O "banco `glpi`" da homologação atravessou v20–v25 como fato e era suposição: `mysql glpi` deu 1049 na primeira execução. O nome real (`glpidb`, igual à produção) está em `config/config_db.php` — é de lá que se lê |
 | **171** | **Comando entregue não leva placeholder.** `<id>` e o `61` "de exemplo" foram executados literais (1064 e semente apontando para ativo inexistente). O valor sai de OUTRO comando (`ID=$(mysql -N ...)`) com guarda `[ -n "$ID" ]`, e o passo de navegador que gera o valor é entregue SOZINHO, antes |
 
+| **172** | **Pergunta de confirmação nomeia a TELA e o CONTROLE, não só o número do passo.** "(a) No passo 2, trocar o papel…" foi lida como "trocar papel na tela da função" — que não existe — e custou uma rodada. Certo: "no MODAL Adicionar função, campo 'Papel da nova função'" |
+| **173** | **Entrega de tela nova diz o que o bloco AINDA NÃO mostra.** O 6b-1 criou funções sem nenhuma mudança visível na caixa (as grades empilhadas são 6c); o dono esperou vê-las e perguntou duas vezes. A seção (1) passa a ter a linha "o que você NÃO vai ver ainda" quando o bloco é parte de uma tela maior |
+
 Reforço (19/09): lição 166 de novo — previ "64 porta(s), 1 painel(eis)" no
 evento do purge sem ler `Port`/`Panel` para saber quando a grade é gravada;
 saiu 0/0. A grade é virtual até a primeira gravação (fato agora medido).
@@ -661,12 +689,16 @@ Fase 5: **todos os blocos fechados, validados e EM PRODUÇÃO** (1.3.28,
 deploy validado em 05/09).
 
 **Fase 6 — caixa composta (19/09):** 6a ✅ fechado (1.3.29, `82990e6`,
-roteiro 6/6, homologação). 6b, 6c, 6d abertos — ver §3-A. Marcos da 4ª sessão: docs v24 commitados
+roteiro 6/6, homologação). **6b-1 ✅ fechado** (1.3.30, `dc33df9`,
+harness 55/55 + jsdom 5/5; em tela: botão, modal com troca de papel,
+criação de `#60`/`#61`, marca de função, piso herdado nas três; 4 itens
+não verificados — ver cabeçalho item 4). 6b, 6c, 6d abertos — ver §3-A. Marcos da 4ª sessão: docs v24 commitados
 (`f30e931`); tag `v1.3.28` + Release publicadas; deploy 1.3.1 → 1.3.28
 aprovado nos 6 passos, linha de base exata, rollback não usado.
 
-**Bloco de código pendente: 6b (próximo). Nenhum bloco "entregue e não
-exercitado".**
+**Bloco de código pendente: 6c (próximo). Nenhum bloco "entregue e não
+exercitado"** (o 6b-1 foi exercitado; os 4 itens não verificados estão
+declarados).
 
 ---
 
@@ -725,6 +757,13 @@ Tabela do v24 mantida: `#39 DIO 001` (F1.02 confirmado → `#41 E1`), `#33`,
 `#34`/`#37` (par, #37 FICA — treinamento), `#35`/`#38` (par), `#41`/`#42`
 (treinamento, FICAM; `#42` tem anexo de teste `001.png`).
 
+**Caixa de teste do 6b-1 (19/09, lida em tela):** `DIO Teste6b · #59`
+(hospedeira) com `DGO Teste6b · #60` e `CTO Teste6b · #61`; as três em
+`Outlet Porto Belo`, piso `MALL - PORTO BELO`, grade 0/64, 0/4 entradas.
+O grupo DGO da localização mostrava 3 abas, o CTO 2 (com as de teste).
+Não são permanentes: purgar quando o dono mandar (o `PurgeCleaner` leva
+`_boxes`).
+
 Perfil de teste: `Tecnicos N1, ID 12`, usuário `teste.001`.
 ⚠️ **Estado do perfil N1: dado a RELER em tela** (mexido nos testes 5i/5i-2).
 
@@ -761,6 +800,10 @@ para anexar morta).
 - **Anexos 100% no plugin** — anexar = Atualizar; ver/baixar = Ler.
 - **Caixa composta = 4 papéis + agrupamento; "composto" é selo** (19/09).
 - **Aba/rótulo da função com o #id próprio, no grupo do papel dela** (19/09).
+  **Reafirmado depois do 6b-1: todo elemento é achado no seu grupo,
+  composto ou não.**
+- **Função nasce na entidade ATIVA** (trava 5f-2b), não na da caixa —
+  padrão do 6b-1, reabrível.
 - **Deploy sai da tag/Release, nunca do master solto** (exercida no 1.3.28).
 - **Backups do deploy só saem por ordem do dono** (janela de estabilização).
 - **Abas sempre, rolagem horizontal** · **Filtro de piso só com pisos
@@ -772,35 +815,41 @@ para anexar morta).
 
 ## 9. Próximo passo imediato
 
-1. **Commit dos docs v26** (`docs/` na homologação → sem reinstalação).
-2. **Bloco 6b — "Adicionar função"**: modal (tela 2 do mockup) → ação nova
-   do `map.php` reaproveitando `actionCreateDgo()` com `host_items_id`;
-   grava `_boxes` (`position` = próxima), herda localização + piso; opção
-   "criar vínculo interno" (pode ficar para 6b-2 se o roteiro passar de 8
-   passos). Invariantes: hospedeira não é membro; membro não hospeda;
-   hospedeira tem que existir e ser alcançável (`parentIsReachable`).
-   Roteiro: criar DGO em cima do `#41` (treinamento) e conferir `_boxes`,
-   localização, piso e histórico.
-3. **6c** tela empilhada (refazer a faixa E1–E4 fiel) · **6d** abas ⇄ e
-   busca/QR.
-4. **Deploy da Fase 6 em produção** só ao fim de 6d, pela tag — e desta vez
-   COM DDL: o roteiro de deploy ganha conferência de `SHOW CREATE TABLE`.
-5. Janela de estabilização/limpeza de backups (dívida 9), REV, shopmap,
-   pendências 20 e 21 — como no v25.
+1. **Commit dos docs v27** (`docs/` na homologação → sem reinstalação).
+2. **Bloco 6c — tela empilhada na caixa.** Antes de codar: ler
+   `displayEntryStrip`/`renderEntryBox`/`displayEntryObs` para a faixa E1–E4
+   fiel (a do mockup não é); decidir o que fica UMA vez por caixa (QR,
+   anexos, comentário — da hospedeira) e o que se repete por função (grade,
+   Piso, E1–E4, OBS, botões de fileira/coluna, "Alimenta"?); cuidado com
+   ids fixos que hoje são únicos na página (`#dgoplus-badges`,
+   `#dgoplus-setfloor-form`, `data-dgoplus-cell`) — N grades na mesma tela
+   colidem; o AJAX do `ajax/port.php` reescreve o span de badges por id.
+   Frases novas simuladas por extenso (lição 166), incluindo caixa com 1
+   membro. Roteiro sobre a caixa `#59` (ordem DGO→CTO prova `position`).
+   Provável divisão 6c-1 (render só-leitura empilhado) / 6c-2 (edição por
+   função + "Remover função").
+3. **Decidir "Agrupar existente"** (lacuna do item 3 do cabeçalho) — antes
+   do deploy da Fase 6, porque a produção já tem as caixas cadastradas
+   separadas.
+4. Vínculo interno (checkbox do modal) · **6d** abas ⇄ e busca/QR.
+5. **Deploy da Fase 6 em produção** só ao fim de 6d, pela tag, COM DDL:
+   roteiro ganha `SHOW CREATE TABLE`.
+6. Janela de estabilização/limpeza de backups (dívida 9), REV, shopmap,
+   pendências 20 e 21 — como no v25. Purgar `#59/#60/#61` quando o dono
+   mandar.
 
 ## 10. O que correu mal do lado do assistente
 
-**Código: zero defeito** — 6a passou de primeira nos 6 passos, `--stat` e
-md5 exatos, paridade provada no publicado. **Processo: quatro rodadas
-perdidas**, todas por escrita minha: (a) `mysql glpi` com nome de banco
-tirado dos docs, nunca executado antes → 1049 (lição 170); (b) `<id>`
-literal no comando → 1064; (c) "ex.: `#61`" executado como valor → semente
-apontando para ativo inexistente; (d) terminal entregue no mesmo texto que
-o passo de navegador → comandos rodados antes do clique, duas vezes. (b)–(d)
-viraram a lição 171 e a regra "passo de navegador sai sozinho". Também errei
-a previsão do evento do purge (64/1 × 0/0 real) por não ter lido quando a
-grade é gravada — reforço da 166, sem lição nova. Acertos: código lido antes
-de opinar (schema, `getRoleOfItem`, `hierarchyAllows`, `actionCreateDgo`,
-`PurgeCleaner`) e as duas alternativas rejeitadas com motivo mensurável;
-mockup antes do código; guarda `[ -n "$ID" ]` corrigiu o descompasso na
-última rodada.
+**Código: zero defeito no 6b-1** — `--stat` 595/25 exato, md5 e paridade
+provados, tela conforme. **Processo: duas rodadas perdidas por escrita
+minha.** (a) A pergunta de validação "no passo 2, trocar o papel…" não
+dizia que o controle está no MODAL; o dono procurou na tela da função
+(lição 172). (b) A entrega não disse que as grades empilhadas não
+apareceriam ainda; o dono esperou vê-las (lição 173). Também deixei o
+fechamento depender de terminal que o dono não rodou — resolvido
+declarando 4 itens não verificados em vez de travar. **Acertos:** li o
+mockup aprovado, o core (`CommonDBChild::prepareInputForAdd`/`post_addItem`,
+modal Bootstrap do notepad) e o código antes de escrever; recusa antes de
+criar (sem órfão); extração do `createElement` com regressão testada; a
+lacuna "agrupar existente" levantada antes do 6c em vez de descoberta em
+produção.
