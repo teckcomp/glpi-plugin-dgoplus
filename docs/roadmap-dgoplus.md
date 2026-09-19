@@ -2,11 +2,11 @@
 
 > Companheiro do `contexto-dgoplus.md`. **Substituir**, nunca acumular.
 >
-> **Versão:** v27 — 19/09/2026. Sucede o v26. A mudança que justifica a
-> versão nova: **bloco 6b-1 fechado** (1.3.30 / `dc33df9` — "Adicionar
-> função" cria função nova agrupada na caixa). Decisão reafirmada: cada
-> função fica no grupo do seu papel. Lacuna aberta: agrupar elemento
-> EXISTENTE. Próximo: 6c. Produção segue em 1.3.28. Lições 172 e 173.
+> **Versão:** v28 — 19/09/2026. Sucede o v27. A mudança que justifica a
+> versão nova: **bloco 6c fechado** (1.3.31 / `7e69608` — caixa empilhada,
+> editável, Remover função, Alimenta agregado; bloco único por decisão do
+> dono). `position` do 6b-1 provado. Próximo: decidir "Agrupar existente".
+> Produção segue em 1.3.28. Lição 174.
 
 ---
 
@@ -66,15 +66,15 @@ aprovado: https://claude.ai/artifact/99PzctwaUoCGz55m4Ueohy
 |---|---|---|
 | **6a** | Tabela `_boxes`, `src/Box.php`, `PurgeCleaner` limpando agrupamento | ✅ **Fechado** — 1.3.29, `82990e6`, roteiro 6/6 (homologação) |
 | **6b-1** | Botão `⇄ Adicionar função` + modal → `add_function`; `Box::attach` (ponto único de `_boxes`) e `Box::hostRefusal`; `createElement` (ponto único de criação); herança de localização/piso da caixa; marca `⇄ Função de…` no membro | ✅ **Fechado** — 1.3.30, `dc33df9`. 4 itens não verificados em tela (position, log, mensagem verde, Histórico) — position se prova no 6c |
-| **6c** | Tela empilhada na caixa: selo `⇄ Caixa composta · N funções`, badges somados, seções por função na ordem de `position`, "Remover função"; faixa E1–E4 fiel à tela real; resolver ids fixos únicos por página (`#dgoplus-badges`, setfloor, células) | **PRÓXIMO** (provável 6c-1 só-leitura / 6c-2 edição + remover) |
-| Agrupar existente | Aba "Agrupar existente" no modal — elemento já cadastrado entra na caixa via `Box::attach` | **A decidir** — antes do deploy F6 (produção tem as metades cadastradas separadas) |
-| Vínculo interno | Checkbox do modal → `Link::propose` entre caixa e função nova | Aberto |
-| 6d | Abas ⇄ no grupo do papel (as abas FICAM nos grupos — reafirmado); busca/QR de função abrem a caixa rolada | Aberto |
+| **6c** | Página da caixa: selo `⇄ Caixa composta · N funções`, soma dos badges (`Box::statsForBox`), seções por função na ordem de `position`, cada uma editável (Piso, E1–E4, OBS, células, fileira/coluna), "Remover função" (= detach + lixeira nativa), "Alimenta" agregado; URL de função reescrita para a caixa (`fn=`); ids únicos por página; AJAX devolve a soma | ✅ **Fechado** — 1.3.31, `7e69608`, **bloco único por decisão do dono**; roteiro 7/7 + SQL exata; harness 42/42 + jsdom 8/8 |
+| **Agrupar existente** | Aba "Agrupar existente" no modal — elemento já cadastrado entra na caixa via `Box::attach` (pronto; falta tela + mockup) | **PRÓXIMO — A DECIDIR** (antes do deploy F6: produção tem as metades cadastradas separadas) |
+| Vínculo interno | Selo "vínculo interno" (Alimenta/célula/E quando os dois lados são da mesma caixa) + checkbox do modal → `Link::propose` | Aberto — caso real `#47`/`#48` na caixa `#59` |
+| 6d | Marca ⇄ nas abas do grupo do papel (a aba JÁ abre a caixa, pela reescrita do 6c); busca/QR de função abrem a caixa rolada | Aberto (parcial) |
 | Deploy F6 | Pela tag, ao fim de 6d. **Primeiro deploy com DDL desde a 1.3.1** — roteiro ganha `SHOW CREATE TABLE` | Aguarda 6d |
 
 ### ⚠️ Entregue mas NÃO exercitado
 
-**Nenhum.** (6a exercitado nos 6 passos; 6b-1 exercitado em tela, com 4 itens declarados como não verificados.)
+**Nenhum.** (6c exercitado em 7 passos + SQL; do 6b-1 restam só mensagem verde e linha do Histórico como não verificados, e o `position` foi provado no 6c.)
 
 ## Parte C — pendências de investigação
 
@@ -110,7 +110,9 @@ medição formal segue estacionada); etc.
 Ver seção 8 do `contexto-dgoplus.md`. **Reafirmada em 19/09 (pós-6b-1): cada função no grupo do seu papel.** **Três novas em 19/09:** grade
 duplicada no mesmo ativo; quinto papel "COMPOSTO"; #id da caixa nas abas. **Novas
 decisões POSITIVAS registradas:** deploy sai da tag/Release, nunca do master
-solto; backups do deploy só saem por ordem do dono.
+solto; backups do deploy só saem por ordem do dono; **6c em bloco único
+(pontual, não vira padrão); "Remover função" = lixeira nativa; página da
+função = página da caixa.**
 
 ---
 
@@ -118,7 +120,7 @@ solto; backups do deploy só saem por ordem do dono.
 
 | | Homologação | Produção |
 |---|---|---|
-| Versão DGO+ | **1.3.30** (6b-1) | **1.3.28** (Fase 5) |
+| Versão DGO+ | **1.3.31** (6c) | **1.3.28** (Fase 5) |
 | Acesso SSH | `-p 2078` | `-p 2022` (mesmo IP, mesma chave) |
 | Implantação | clone git no plugin | **pasta solta, zip da Release** |
 | Banco | `glpidb` (lido 19/09) | `glpidb` |
@@ -128,11 +130,11 @@ solto; backups do deploy só saem por ordem do dono.
 
 ## Próximo passo imediato
 
-1. **Commit dos docs v27** (`docs/` na homologação → sem reinstalação).
-2. **Bloco 6c** — grades empilhadas na caixa `#59` (Parte B-2; plano no contexto §9).
-3. Decidir "Agrupar existente" → vínculo interno → 6d → deploy da Fase 6 pela tag (com DDL).
-4. Estabilização/limpeza de backups (dívida 9), **REV**, shopmap
+1. **Commit dos docs v28** (`docs/` na homologação → sem reinstalação).
+2. **Decidir "Agrupar existente"** (mockup antes do código) → vínculo
+   interno → 6d → deploy da Fase 6 pela tag (com DDL; plano no contexto §9).
+3. Estabilização/limpeza de backups (dívida 9), **REV**, shopmap
    (pendência 16 bloqueada), pendências 20 e 21 — inalterados. Purgar a
-   caixa de teste `#59/#60/#61` por ordem do dono.
+   caixa de teste `#59/#60` e o `#61` da lixeira por ordem do dono.
 
 > A numeração de fases do roadmap antigo não corresponde à numeração de blocos.
