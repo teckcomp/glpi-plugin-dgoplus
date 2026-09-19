@@ -3,37 +3,46 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v25 — 05/09/2026 (4ª sessão do dia — release +
-> deploy). Substitui o v24 integralmente. Versão **1.3.28**, `master` em
-> **`f30e931`** (docs v24; último commit de CÓDIGO: `4923cab`). Tag
-> **`v1.3.28`** publicada. **PRODUÇÃO RODANDO 1.3.28 — deploy validado.**
+> **Versão deste documento:** v26 — 19/09/2026 (caixa composta: modelo aprovado,
+> mockup aprovado, bloco 6a fechado). Substitui o v25 integralmente. Versão
+> **1.3.29**, `master` em **`82990e6`** (código do 6a — paridade md5 provada).
+> Produção continua em **1.3.28** (tag `v1.3.28`); a 1.3.29 NÃO foi deployada.
 >
-> **O que o v25 traz de novo em relação ao v24:**
+> **O que o v26 traz de novo em relação ao v25:**
 >
-> 1. **Docs v24 commitados** (`f30e931`), paridade provada por tarball md5.
-> 2. **Release `v1.3.28` publicada no GitHub** — tag anotada `e59a338`
->    apontando para `f30e931`; anexo `dgoplus-v1.3.28.zip` (187 KB, sha256
->    `673bf286…48fe`) com o MESMO hash em 4 lugares independentes (servidor,
->    PC, cálculo do GitHub, download do publicado). Conteúdo do zip provado
->    idêntico ao tarball da tag por `diff -rq`.
-> 3. **DEPLOY EM PRODUÇÃO FEITO E VALIDADO** — 1.3.1 → 1.3.28, aplicação
->    passou de primeira, roteiro de 6 passos aprovado integralmente. Linha
->    de base do painel EXATA antes/depois (o deploy não mexeu em nenhum
->    número). Detalhes do ambiente de produção na §1-B (novidade do v25).
-> 4. **Fatos novos da produção**: rodava **1.3.1** (não 1.3.8 como os docs
->    supunham); plugin lá é **pasta solta, SEM git**; mesmo host da
->    homologação com **porta SSH 2022**; banco **`glpidb`**; GLPI 11.0.6 ✅.
->    Painel relido em tela: **185 elementos, 2556/5712 portas (44,7%),
->    10 localizações, 45/740 entradas ocupadas** (§7).
-> 5. **Salto 1.3.1 → 1.3.28 medido por tarball**: 13 arquivos alterados +
->    2 novos + `docs/`; **`src/Install.php` IDÊNTICO desde a 1.3.1** e zero
->    DDL fora dele (grep provado) — schema e direitos da produção já eram
->    os atuais; deploy foi troca de arquivos + reinstalação por bump.
-> 6. **Lição 169** (§4): no cmd do Windows, destino de `scp` entre aspas
->    não pode terminar em `\`.
-> 7. **Ruído promovido a conhecido**: `glpi.CRITICAL` do `CacheClearCommand`
->    após `cache:clear` — visto nos DOIS ambientes, sempre com saída de
->    sucesso e sistema íntegro.
+> 1. **Nova frente: CAIXA COMPOSTA** (§3-A, novidade). Em campo há central de
+>    fibra que faz DIO + DGO + CTO na mesma carcaça. Modelo aprovado pelo
+>    dono em 19/09: **4 papéis + agrupamento** — cada função é um
+>    `PassiveDCEquipment` próprio (#id, grade e E1–E4 próprios, no papel
+>    dele); a caixa é um agrupamento (`_boxes`) e "composta" é **selo
+>    derivado**, nunca papel. `Setting::ROLES` não muda. Alternativas
+>    descartadas na §8.
+> 2. **Mockup aprovado** (lição 167 cumprida) em
+>    https://claude.ai/artifact/99PzctwaUoCGz55m4Ueohy — 3 telas: elemento
+>    simples com botão "Adicionar função"; modal; caixa com DIO/DGO/CTO
+>    empilhados. ⚠️ A faixa E1–E4 do mockup NÃO é fiel: a real é uma fileira
+>    de botões pequenos ao lado do Piso + campo OBS + Salvar (lido em tela
+>    no `#58`). Ajustar no 6c.
+> 3. **Bloco 6a FECHADO** (1.3.29, `82990e6`): tabela
+>    `glpi_plugin_dgoplus_boxes`, classe `src/Box.php`, `PurgeCleaner`
+>    limpando agrupamento. Roteiro 6/6 ✅ (chave `unicity` provada por 1062;
+>    purga do `#58` levou só a linha dele; evento "1 agrupamento(s) de
+>    caixa"). Primeira mudança de `Install.php` desde a 1.3.1 — **o próximo
+>    deploy em produção volta a ter DDL.**
+> 4. **Fato corrigido: o banco da HOMOLOGAÇÃO é `glpidb`**, não `glpi`
+>    (lido em `config/config_db.php`). Os dois ambientes usam o mesmo nome.
+>    O "banco `glpi`" dos docs anteriores era suposição nunca executada
+>    (lição 170).
+> 5. **Lição 171**: comando entregue não leva placeholder (`<id>`, `61` de
+>    exemplo) — foi executado literal duas vezes; o valor sai de outro
+>    comando com guarda contra vazio.
+> 6. **Fato medido**: elemento recém-criado pelo mapa tem **0 portas e 0
+>    painéis** no banco até a primeira gravação (grade virtual). A previsão
+>    "64 portas, 1 painel" no roteiro estava errada.
+> 7. Sessão consumiu 4 rodadas de descompasso terminal × navegador (passo de
+>    tela pulado, comando rodado em lote). Regra nova em §2: **passo de
+>    navegador é entregue SOZINHO e o terminal seguinte só sai depois da
+>    confirmação.**
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
 
@@ -92,13 +101,13 @@ abolido. Ruído conhecido:
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 05/09 (4ª) | **`f30e931`** (docs v24); último commit de CÓDIGO: **`4923cab`** (1.3.28) |
+| `master` em 19/09 | **`82990e6`** (1.3.29, bloco 6a — código). Docs v26 entram por cima |
 | **Tag/Release** | **`v1.3.28` PUBLICADA** (tag anotada `e59a338` → `f30e931`); anexo `dgoplus-v1.3.28.zip` 187 KB, sha256 `673bf2863776caeb02ce59e3469ebfeb87f2a6608c4a1917a453283bc40048fe` |
-| Versão em homologação | **1.3.28** — aplicada, reinstalada e ativada em 05/09 (3ª) |
+| Versão em homologação | **1.3.29** — 6a aplicado, reinstalado e ativado em 19/09 |
 | **Paridade** | ✅ Provada na 4ª sessão: tarball da tag = tarball `f30e931` (`diff -rq`); zip do Release = tarball da tag (conteúdo) e sha256 idêntico em 4 fontes |
-| Arquivos no repositório | **32** (29 do plugin + 3 em `docs/`) |
-| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — nomes SEM versão. Conteúdo atual: **v24** (commit `f30e931`); o v25 entra por cima |
-| GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data` |
+| Arquivos no repositório | **33** (30 do plugin + 3 em `docs/`) — `src/Box.php` é novo |
+| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — nomes SEM versão. Conteúdo atual: **v25** (commit `eb9c540`); o v26 entra por cima |
+| GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data`, **banco `glpidb`** (lido em `config/config_db.php`, 19/09) |
 | **Homologação** | **`177.87.230.179`, porta SSH `2078`, usuário `resolutto`** |
 | URL externa do GLPI | `http://177.87.230.179:2077/` |
 | **Autenticação SSH** | **Chave** (`%USERPROFILE%\.ssh\id_ed25519`). O servidor **recusa senha** (lição 139) |
@@ -115,7 +124,7 @@ O shell do servidor está logado como **root**. Console do GLPI sempre com
 | Host | **Mesmo IP da homologação: `177.87.230.179`** — o que muda é a porta |
 | **SSH** | **porta `2022`**, usuário `resolutto`, MESMA chave: `ssh -i %USERPROFILE%\.ssh\id_ed25519 -p 2022 resolutto@177.87.230.179` (prompt: `root@glpi`) |
 | GLPI | **11.0.6** (console confirmou), `/var/www/html/glpi`, banco **`glpidb`** |
-| **DGO+** | **1.3.28, ativo** — deploy de 05/09 (antes: 1.3.1, de 22/08) |
+| **DGO+** | **1.3.28, ativo** — deploy de 05/09. **A 1.3.29 (6a) NÃO está em produção**; quando for, é o primeiro deploy com DDL desde a 1.3.1 |
 | **Forma de implantação** | **Pasta solta, SEM git.** Deploy = zip da Release → `/tmp` → backup → unzip → chown → reinstalação. NÃO existe `git pull` na produção |
 | Outros plugins lá | `mod`, `projectplus`, `qrservice`, `taskplus` (+ tarball `glpi-mod-11.0.5.tar.gz` solto na pasta — nome NÃO indica a versão do GLPI) |
 | `mysqldump` | Presente (`/usr/bin/mysqldump`) |
@@ -207,8 +216,8 @@ cd /var/www/html/glpi/plugins/dgoplus
 git status --short && git log -1 --oneline && grep PLUGIN_DGOPLUS_VERSION setup.php
 ```
 
-⚠️ O HEAD é commit de `docs/` (`f30e931`) — o último commit de CÓDIGO é o
-`4923cab` (lição 143). Após o commit dos docs v25, idem.
+⚠️ Após o commit dos docs v26 o HEAD é commit de `docs/`; o último commit de
+CÓDIGO é o `82990e6` (1.3.29). Lição 143.
 
 **Reverter (homologação):**
 
@@ -292,6 +301,10 @@ com md5 esperados; **(3)** comandos de aplicar com `git diff` como conferência;
 ⚠️ **Bloco sem cenário de teste não é entregue.**
 ⚠️ **Decisão vigente pode ser REABERTA pelo usuário.**
 ⚠️ **Tela NOVA pede mockup aprovado antes do código** (lição 167).
+⚠️ **Passo de NAVEGADOR sai sozinho**: o terminal seguinte só é entregue
+depois de o usuário confirmar a tela (19/09: quatro rodadas perdidas por
+comando rodado antes do clique). Todo comando que depende de um id lê o id
+por comando e tem guarda `[ -n "$ID" ]` (lição 171).
 ⚠️ **Deploy em produção**: começa por RELER a produção (tela E terminal),
 mede o salto por tarball das duas versões, faz backup duplo, aplica do zip
 da Release e valida contra linha de base capturada ANTES. Roteiro de deploy
@@ -355,7 +368,10 @@ DEPLOY ele é o padrão); nome final em vez de `<Arquivo>-<bloco>`; JS sem
 versão; remontar arquivo de memória; caminho abreviado; roteiro sem conferir
 contra o código; dado de homologação OU produção sem reler em tela; bloco sem
 bump; tela nova sem mockup aprovado; **deploy sem levantamento prévio e sem
-backup duplo**; **`scp` com destino terminando em `\"`** (169).
+backup duplo**; **`scp` com destino terminando em `\"`** (169); **nome de
+banco (ou qualquer dado de ambiente) nos docs sem comando que o provou**
+(170); **placeholder em comando entregue** (171); **entregar terminal e
+navegador no mesmo bloco de texto**.
 
 ---
 
@@ -367,6 +383,66 @@ A DGO **não é um itemtype do plugin**. Cada elemento é um `PassiveDCEquipment
 nativo; o plugin acrescenta grade, escopo e vínculos. O core não conhece as
 tabelas do plugin — daí o `PurgeCleaner`. Escopo: **Localização (nativa) →
 Piso (intitulado do plugin)**.
+
+### 3-A. CAIXA COMPOSTA — a frente aberta em 19/09 (6a fechado; 6b–6d abertos)
+
+**O fato de campo:** central de fibra com bandejas de emenda em cima
+(função DIO), splitter primário 1/16 e distribuição CX 01–08 embaixo
+(função DGO, às vezes CTO), cordões brancos ligando as metades. Uma
+etiqueta, um QR, até três funções.
+
+**O modelo (decisão do dono, 19/09):**
+
+- **Papel continua sendo o Tipo nativo.** `Setting::ROLES` = 4 papéis,
+  intocado. "Composto" **não é papel** — é selo derivado de "tem membros".
+- **Cada função é um `PassiveDCEquipment` próprio**, com #id, grade e
+  E1–E4 próprios, no papel dela. `Link::hierarchyAllows`, `gridCriteria`,
+  painel, relatório e seletor de destino **não mudam**.
+- **A caixa é a primeira função** (hospedeira) — dona da etiqueta, do QR e
+  dos anexos. Ela NÃO tem linha em `_boxes`; é hospedeira por aparecer em
+  `items_id_host`.
+- **Manobra interna** entre metades = vínculo comum (`Link::propose`),
+  validado pela hierarquia, com selo "vínculo interno" na tela.
+- **Rótulo/aba: opção (a)** — `DIO Renner · #201` / `DGO Renner · #202` /
+  `CTO Renner · #203`: o #id de CADA função, no grupo do papel dela, com
+  marca ⇄; abre a tela da caixa rolada até a grade dela. (O `#45` repetido
+  do exemplo do dono foi ilustrativo; decidido explicitamente.)
+- Localização e piso da função nascem **herdados** da hospedeira;
+  divergência **acusa em tela**, nunca fica muda.
+- Badges do cabeçalho da caixa = **soma** das funções, rotulada como soma.
+- "Remover função" só nas funções adicionadas; = lixeira nativa do membro.
+- Painel conta **N elementos** por caixa (um por função). Sem cartão novo.
+
+**Schema (6a, 1.3.29):** `glpi_plugin_dgoplus_boxes` — `itemtype`/`items_id`
+= função (membro); `itemtype_host`/`items_id_host` = caixa; `position`;
+`entities_id`, `is_recursive`, `comment`, `date_*`. **UNIQUE `unicity`
+(`itemtype`,`items_id`)** — uma função pertence a no máximo uma caixa
+(provado por 1062). KEY `host`. Sem `is_deleted`.
+
+**Classe `src/Box.php`** (193 linhas, `CommonDBChild` da FUNÇÃO,
+`dohistory`): `hostOf()`, `membersOf()` (ordem `position`), `isHost()`,
+`idsTouchingItem()` (membro OU hospedeira — `WHERE OR` do Iterator, provado
+no purge). Nenhuma tela grava ainda.
+
+**`PurgeCleaner`**: colhe `Box::idsTouchingItem()` junto dos outros ids,
+apaga histórico e linhas; evento conta "agrupamento(s) de caixa". Purgar a
+hospedeira SOLTA os membros (viram elementos simples); purgar um membro
+apaga só a linha dele.
+
+**Invariantes a garantir no 6b** (ainda não codificados): hospedeira não é
+membro de outra; membro não hospeda (sem caixa dentro de caixa);
+`items_id_host` tem que existir (6a não valida — a semente `99999` passou
+de propósito).
+
+**Blocos:** 6a ✅ · **6b** = modal "Adicionar função" → `actionCreateDgo()`
+(linha 419 do MapController, já lida: valida papel, `getTypeForNewItem`,
+`add()`, herda piso por `Panel::setFloorForItem`) com hospedeira + opção
+"criar vínculo interno" · **6c** = tela empilhada (selo, badges somados,
+seções, "Remover função") — refazer a faixa E1–E4 fiel à tela real ·
+**6d** = abas ⇄, busca/QR de função abrindo a caixa rolada.
+
+**Fato medido (19/09):** elemento recém-criado pelo mapa tem 0 portas e 0
+painéis no banco até a primeira gravação — a grade é virtual.
 
 ### Pisos — cadastro × filtro
 
@@ -490,10 +566,11 @@ mapa é GLOBAL e busca PORTAS.
 
 ### Schema e direitos
 
-Quatro tabelas: `_ports`, `_panels`, `_floors`, `_links`. Direito
+**Cinco tabelas** desde o 6a: `_ports`, `_panels`, `_floors`, `_links`, **`_boxes`**. Direito
 `plugin_dgoplus_port`, matriz de 4 níveis = 15. `parentIsReachable()` falha
-fechado. **Fato medido no deploy: `src/Install.php` é idêntico desde a
-v1.3.1 — nenhum bloco da Fase 4 tardia/Fase 5 tocou schema ou direitos.**
+fechado. **`src/Install.php` foi idêntico da v1.3.1 à v1.3.28; o 6a (1.3.29) é a
+primeira mudança — só CREATE TABLE sob `tableExists`, zero ALTER, zero
+direito novo.**
 
 ### Anexos — 100% do plugin (5i + 5i-2, 1.3.27/1.3.28)
 
@@ -517,13 +594,16 @@ do DGO+; ver/baixar = Ler do DGO+ (o mesmo do mapa).
 
 ### Arquivos
 
-**32 no repositório** (29 + 3 em `docs/`).
+**33 no repositório** (30 + 3 em `docs/`).
 
-**Impressões digitais do 1.3.28** (commit `4923cab`, inalteradas — nenhum
-código mudou nesta sessão):
+**Impressões digitais do 1.3.29** (commit `82990e6`; os quatro do 6a
+provados no tarball publicado, os demais herdados do 1.3.28):
 
 ```
-a2bc8ec846e155c4dcff4103089e5d72  setup.php                    (269 linhas)
+d7f03a9afe4801cd34b2e78c9b88fafe  setup.php                    (269 linhas)  6a
+aeb7f9dfd3911973b4425687c7360d27  src/Box.php                  (193 linhas)  6a NOVO
+14c99e133322a38e0c23ab0fc8d350d4  src/Install.php              (382 linhas)  6a
+a3d71553961cb019c2f1cd5c1e4d655b  src/PurgeCleaner.php         (239 linhas)  6a
 b7b83e65d39fb94a7bb1c62c56209a18  src/Port.php                 (1145 linhas)
 f3ad281c9cbc3c220e9def5a584b4607  src/MapController.php        (3881 linhas)
 c4d807b2d89e3ed82748ceabe152728d  src/ProfileTab.php           (186 linhas)
@@ -553,7 +633,13 @@ dae5e817600bfdb6db3345cfa0383ea0  ajax/dgocomment.php           (52 linhas)
 | 166 | Antes de afirmar a consequência de uma alternativa, escrever o resultado por extenso |
 | 167 | Elemento visual NOVO no produto pede mockup aprovado ANTES do bloco |
 | 168 | Objetivo de produto declarado não se rebaixa diante de obstáculo técnico sem perguntar |
-| **169** | **No cmd do Windows, destino de `scp` entre aspas não pode terminar em `\`** — a barra invertida escapa a aspa de fechamento e o scp recebe um caminho com aspa no fim (`open local "...Downloads"": No such file or directory`). Usar `"%USERPROFILE%\Downloads"` sem barra final. Causa: comando escrito pelo assistente sem simular o parsing do cmd |
+| 169 | No cmd do Windows, destino de `scp` entre aspas não pode terminar em `\` — a barra invertida escapa a aspa de fechamento e o scp recebe um caminho com aspa no fim (`open local "...Downloads"": No such file or directory`). Usar `"%USERPROFILE%\Downloads"` sem barra final. Causa: comando escrito pelo assistente sem simular o parsing do cmd |
+| **170** | **Dado de ambiente nos docs só vale com o comando que o provou.** O "banco `glpi`" da homologação atravessou v20–v25 como fato e era suposição: `mysql glpi` deu 1049 na primeira execução. O nome real (`glpidb`, igual à produção) está em `config/config_db.php` — é de lá que se lê |
+| **171** | **Comando entregue não leva placeholder.** `<id>` e o `61` "de exemplo" foram executados literais (1064 e semente apontando para ativo inexistente). O valor sai de OUTRO comando (`ID=$(mysql -N ...)`) com guarda `[ -n "$ID" ]`, e o passo de navegador que gera o valor é entregue SOZINHO, antes |
+
+Reforço (19/09): lição 166 de novo — previ "64 porta(s), 1 painel(eis)" no
+evento do purge sem ler `Port`/`Panel` para saber quando a grade é gravada;
+saiu 0/0. A grade é virtual até a primeira gravação (fato agora medido).
 
 Reforços sem número novo (05/09, 4ª): lição 160 rendeu de novo em dose dupla
 — a produção rodava **1.3.1** onde os docs supunham 1.3.8, e tinha **185
@@ -572,11 +658,15 @@ foram PROVADOS antes de qualquer comando na produção.
 ## 5. Estado por bloco
 
 Fase 5: **todos os blocos fechados, validados e EM PRODUÇÃO** (1.3.28,
-deploy validado em 05/09). Marcos da 4ª sessão: docs v24 commitados
+deploy validado em 05/09).
+
+**Fase 6 — caixa composta (19/09):** 6a ✅ fechado (1.3.29, `82990e6`,
+roteiro 6/6, homologação). 6b, 6c, 6d abertos — ver §3-A. Marcos da 4ª sessão: docs v24 commitados
 (`f30e931`); tag `v1.3.28` + Release publicadas; deploy 1.3.1 → 1.3.28
 aprovado nos 6 passos, linha de base exata, rollback não usado.
 
-**Não há bloco de código pendente. Não há bloco "entregue e não exercitado".**
+**Bloco de código pendente: 6b (próximo). Nenhum bloco "entregue e não
+exercitado".**
 
 ---
 
@@ -620,11 +710,10 @@ porta; **2165 portas de grade, 43 documentadas (2,0%)**, 2122 livres, 3 na
 lixeira; **25/164 entradas ocupadas**; 9 localizações com elementos.
 
 **Pendência 20 (opcional):** quebra pendente×confirmado dos 25 da
-homologação. SQL pronta (homologação usa banco `glpi`; produção usa
-`glpidb`):
+homologação. SQL pronta (**os dois ambientes usam `glpidb`** — lição 170):
 
 ```bash
-mysql glpi -e "
+mysql glpidb -e "
 SELECT COUNT(*) AS total, SUM(status='pendente') AS pendentes,
        SUM(status='confirmado') AS confirmados
 FROM glpi_plugin_dgoplus_links;"
@@ -648,6 +737,20 @@ não será trocada; cartão próprio "Entradas ocupadas" rejeitado; PAINEL-1b
 não será feito; 5i-2 "cadeado" descartado; exigência de direitos nativos
 para anexar morta).
 
+### Decisões negativas de 19/09 (caixa composta)
+
+- **Grade duplicada dentro do MESMO ativo** (seção com papel próprio no
+  plugin) — rejeitada: papel em dois lugares (Tipo nativo + seção), muda
+  as duas chaves únicas, vínculo DIO→DGO viraria vínculo do ativo com ele
+  mesmo, 17 consumidores de papel a revisar.
+- **Quinto papel "COMPOSTO" em `Setting::ROLES`** — rejeitado: não tem
+  degrau na hierarquia linear (`hierarchyAllows` compara posição); teria
+  grade própria de 64 portas fantasmas no painel; contagem por papel fica
+  ambígua. Papel é comportamento na rede; a caixa tem endereço, não
+  comportamento.
+- **Rótulo com o #id da CAIXA nas três abas** (opção b) — rejeitado pelo
+  dono; #id sempre o da própria função (a).
+
 ### Decisões de produto vigentes
 
 - **`completename` FICA (28/08).**
@@ -656,6 +759,8 @@ para anexar morta).
 - **BADGE-C** — dois contadores no cabeçalho, texto seco + tooltip.
 - **PAINEL-2b variante B** — entradas como pastilha nos dois compactos.
 - **Anexos 100% no plugin** — anexar = Atualizar; ver/baixar = Ler.
+- **Caixa composta = 4 papéis + agrupamento; "composto" é selo** (19/09).
+- **Aba/rótulo da função com o #id próprio, no grupo do papel dela** (19/09).
 - **Deploy sai da tag/Release, nunca do master solto** (exercida no 1.3.28).
 - **Backups do deploy só saem por ordem do dono** (janela de estabilização).
 - **Abas sempre, rolagem horizontal** · **Filtro de piso só com pisos
@@ -667,32 +772,35 @@ para anexar morta).
 
 ## 9. Próximo passo imediato
 
-**A Fase 5 está encerrada E em produção.** O que resta, em ordem:
-
-1. **Commit dos docs v25** (`docs/` na homologação → sem reinstalação).
-2. **Janela de estabilização da produção** — alguns dias de uso real pelos
-   técnicos; ao fim, decisão do dono sobre a **limpeza dos backups**
-   (`dgoplus-1.3.1-old`, tar, dump, zip em `/tmp`).
-3. **REV — revisão competitiva** (liberada pelo dono para depois das
-   validações em produção): avaliar softwares similares de documentação de
-   rede óptica e adaptar o que interessar. É a próxima frente de trabalho.
-4. **Frente shopmap** — bloqueada (pendência 16, repositório privado).
-   **Pendências 20 e 21** — opcionais, sem bloco.
-
----
+1. **Commit dos docs v26** (`docs/` na homologação → sem reinstalação).
+2. **Bloco 6b — "Adicionar função"**: modal (tela 2 do mockup) → ação nova
+   do `map.php` reaproveitando `actionCreateDgo()` com `host_items_id`;
+   grava `_boxes` (`position` = próxima), herda localização + piso; opção
+   "criar vínculo interno" (pode ficar para 6b-2 se o roteiro passar de 8
+   passos). Invariantes: hospedeira não é membro; membro não hospeda;
+   hospedeira tem que existir e ser alcançável (`parentIsReachable`).
+   Roteiro: criar DGO em cima do `#41` (treinamento) e conferir `_boxes`,
+   localização, piso e histórico.
+3. **6c** tela empilhada (refazer a faixa E1–E4 fiel) · **6d** abas ⇄ e
+   busca/QR.
+4. **Deploy da Fase 6 em produção** só ao fim de 6d, pela tag — e desta vez
+   COM DDL: o roteiro de deploy ganha conferência de `SHOW CREATE TABLE`.
+5. Janela de estabilização/limpeza de backups (dívida 9), REV, shopmap,
+   pendências 20 e 21 — como no v25.
 
 ## 10. O que correu mal do lado do assistente
 
-**Zero erro na aplicação do deploy — passou de primeira**, sha256 exato,
-linha de base exata, rollback não usado. Dois tropeços menores, ambos
-corrigidos na hora: **(a)** o comando de `scp` para o PC saiu com `\"` no
-fim do destino — o cmd escapou a aspa e a cópia falhou; virou a lição 169;
-**(b)** o diff de salto foi feito primeiro contra a v1.3.8 por suposição
-("produção = última release") — a leitura do terminal derrubou a suposição
-(1.3.1) e o diff foi refeito da versão certa antes de qualquer comando de
-deploy; reforço da lição 160, sem lição nova (a regra já existia e foi ela
-que mandou ler antes de agir). Acertos de processo: levantamento completo
-antes do bloco; salto medido por tarball com prova de Install.php idêntico e
-zero DDL fora dele; backup duplo; roteiro só-leitura com linha de base
-autoconferente; ruído do `CacheClearCommand` promovido a conhecido com
-evidência de dois ambientes.
+**Código: zero defeito** — 6a passou de primeira nos 6 passos, `--stat` e
+md5 exatos, paridade provada no publicado. **Processo: quatro rodadas
+perdidas**, todas por escrita minha: (a) `mysql glpi` com nome de banco
+tirado dos docs, nunca executado antes → 1049 (lição 170); (b) `<id>`
+literal no comando → 1064; (c) "ex.: `#61`" executado como valor → semente
+apontando para ativo inexistente; (d) terminal entregue no mesmo texto que
+o passo de navegador → comandos rodados antes do clique, duas vezes. (b)–(d)
+viraram a lição 171 e a regra "passo de navegador sai sozinho". Também errei
+a previsão do evento do purge (64/1 × 0/0 real) por não ter lido quando a
+grade é gravada — reforço da 166, sem lição nova. Acertos: código lido antes
+de opinar (schema, `getRoleOfItem`, `hierarchyAllows`, `actionCreateDgo`,
+`PurgeCleaner`) e as duas alternativas rejeitadas com motivo mensurável;
+mockup antes do código; guarda `[ -n "$ID" ]` corrigiu o descompasso na
+última rodada.

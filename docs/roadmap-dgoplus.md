@@ -2,11 +2,10 @@
 
 > Companheiro do `contexto-dgoplus.md`. **Substituir**, nunca acumular.
 >
-> **Versão:** v25 — 05/09/2026 (4ª sessão do dia — release + deploy).
-> Sucede o v24. A mudança que justifica a versão nova: **a Fase 5 foi
-> RELEASED e DEPLOYADA em produção.** Tag `v1.3.28` + Release publicadas;
-> produção migrada de 1.3.1 para 1.3.28 com roteiro de 6 passos aprovado
-> integral e rollback não usado. Lição 169 registrada.
+> **Versão:** v26 — 19/09/2026. Sucede o v25. A mudança que justifica a
+> versão nova: **abriu a Fase 6 — caixa composta** (modelo e mockup
+> aprovados, bloco 6a fechado em 1.3.29 / `82990e6`). Produção segue em
+> 1.3.28. Lições 170 e 171.
 
 ---
 
@@ -57,12 +56,29 @@ Tabela do v24 mantida (5g-3 quitado; PAINEL-1a já entregue; 5e-2d-2 e
 
 ---
 
+## Parte B-2 — Fase 6: CAIXA COMPOSTA (aberta em 19/09)
+
+Modelo: 4 papéis + agrupamento; "composto" é selo (contexto §3-A). Mockup
+aprovado: https://claude.ai/artifact/99PzctwaUoCGz55m4Ueohy
+
+| Bloco | Conteúdo | Estado |
+|---|---|---|
+| **6a** | Tabela `_boxes`, `src/Box.php`, `PurgeCleaner` limpando agrupamento | ✅ **Fechado** — 1.3.29, `82990e6`, roteiro 6/6 (homologação) |
+| **6b** | Modal "Adicionar função" → `actionCreateDgo()` com hospedeira; herança localização/piso; invariantes (hospedeira existe/alcançável, sem caixa em caixa); opção "vínculo interno" (6b-2 se passar de 8 passos) | **PRÓXIMO** |
+| 6c | Tela empilhada: selo, badges somados, seções por função, "Remover função"; faixa E1–E4 refeita fiel à tela real | Aberto |
+| 6d | Abas ⇄ no grupo do papel; busca/QR de função abrem a caixa rolada | Aberto |
+| Deploy F6 | Pela tag, ao fim de 6d. **Primeiro deploy com DDL desde a 1.3.1** — roteiro ganha `SHOW CREATE TABLE` | Aguarda 6d |
+
+### ⚠️ Entregue mas NÃO exercitado
+
+**Nenhum.** (6a exercitado nos 6 passos.)
+
 ## Parte C — pendências de investigação
 
 | # | Pergunta | Situação |
 |---|---|---|
 | 16 | shopmap guarda vínculo por NOME ou `itemtype`+`id`? | ⚠️ **Bloqueada** — repositório privado. Única viva |
-| 20 | Dos 25 vínculos da HOMOLOGAÇÃO, quantos pendentes × confirmados? | Aberta, opcional — SQL no contexto §7 (banco `glpi`; produção é `glpidb`) |
+| 20 | Dos 25 vínculos da HOMOLOGAÇÃO, quantos pendentes × confirmados? | Aberta, opcional — SQL no contexto §7 (**banco `glpidb` nos dois ambientes**, lição 170) |
 | 21 | Por que a rota `canViewFileFromItem` (READ do ativo) do send.php do core NÃO abriu? | Aberta, opcional — curiosidade de core, sem bloco |
 
 ---
@@ -88,7 +104,8 @@ medição formal segue estacionada); etc.
 
 ## Parte F — decisões negativas
 
-Ver seção 8 do `contexto-dgoplus.md`. Nenhuma nova na 4ª sessão. **Novas
+Ver seção 8 do `contexto-dgoplus.md`. **Três novas em 19/09:** grade
+duplicada no mesmo ativo; quinto papel "COMPOSTO"; #id da caixa nas abas. **Novas
 decisões POSITIVAS registradas:** deploy sai da tag/Release, nunca do master
 solto; backups do deploy só saem por ordem do dono.
 
@@ -98,23 +115,20 @@ solto; backups do deploy só saem por ordem do dono.
 
 | | Homologação | Produção |
 |---|---|---|
-| Versão DGO+ | 1.3.28 | **1.3.28** ✅ |
+| Versão DGO+ | **1.3.29** (6a) | **1.3.28** (Fase 5) |
 | Acesso SSH | `-p 2078` | `-p 2022` (mesmo IP, mesma chave) |
 | Implantação | clone git no plugin | **pasta solta, zip da Release** |
-| Banco | `glpi` | `glpidb` |
+| Banco | `glpidb` (lido 19/09) | `glpidb` |
 | Dados (retrato 05/09) | 41 elementos, 2165 portas, 25/164 entradas | 185 elementos, 5712 portas, 45/740 entradas |
 
 ---
 
 ## Próximo passo imediato
 
-1. **Commit dos docs v25** (`docs/` na homologação → sem reinstalação).
-2. **Janela de estabilização** — uso real pelos técnicos; depois, decisão do
-   dono sobre a limpeza dos backups (dívida 9).
-3. **REV — revisão competitiva**: PRÓXIMA FRENTE DE TRABALHO (liberada pelo
-   dono para pós-validação). Avaliar softwares similares de documentação de
-   planta óptica passiva e listar recursos candidatos a adaptação.
-4. **Frente shopmap** — bloqueada (pendência 16). Pendências 20 e 21 —
-   opcionais.
+1. **Commit dos docs v26** (`docs/` na homologação → sem reinstalação).
+2. **Bloco 6b** — "Adicionar função" (Parte B-2).
+3. 6c → 6d → deploy da Fase 6 pela tag (com DDL).
+4. Estabilização/limpeza de backups (dívida 9), **REV**, shopmap
+   (pendência 16 bloqueada), pendências 20 e 21 — inalterados.
 
 > A numeração de fases do roadmap antigo não corresponde à numeração de blocos.
