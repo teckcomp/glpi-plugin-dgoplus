@@ -105,6 +105,12 @@ final class PurgeCleaner
         // teriam sumido e nao haveria mais como saber quais vinculos eram.
         $link_ids = Link::idsTouchingPorts($port_ids);
 
+        // Bloco 6a: a linha de caixa composta cita o elemento como membro OU
+        // como hospedeira. Purgar a hospedeira solta os membros - eles
+        // continuam existindo como elementos simples; purgar um membro apaga
+        // so' a linha dele. Colhido aqui pelo mesmo motivo dos outros.
+        $box_ids = Box::idsTouchingItem($itemtype, $items_id);
+
         // ------------------------------------------------------------------
         // 2. Historico dos filhos. Port e Panel sao apagados em consultas
         //    SEPARADAS de proposito: os dois conjuntos de id vivem em tabelas
@@ -115,6 +121,7 @@ final class PurgeCleaner
         $logs_removed  = self::purgeLogs(Port::class, $port_ids);
         $logs_removed += self::purgeLogs(Panel::class, $panel_ids);
         $logs_removed += self::purgeLogs(Link::class, $link_ids);
+        $logs_removed += self::purgeLogs(Box::class, $box_ids);
 
         // ------------------------------------------------------------------
         // 3. As linhas do plugin. Sem filtro de is_deleted.
@@ -134,12 +141,16 @@ final class PurgeCleaner
             $DB->delete($panels_table, ['id' => $panel_ids]);
         }
 
+        if ($box_ids !== []) {
+            $DB->delete(Box::getTable(), ['id' => $box_ids]);
+        }
+
         // ------------------------------------------------------------------
         // 4. Rastro em glpi_events. Silencioso quando nao havia nada - purgar
         //    ativo passivo que nunca foi DGO e' rotina, e nao deve virar
         //    linha de registro.
         // ------------------------------------------------------------------
-        if ($port_ids === [] && $panel_ids === [] && $link_ids === []) {
+        if ($port_ids === [] && $panel_ids === [] && $link_ids === [] && $box_ids === []) {
             return;
         }
 
@@ -149,10 +160,11 @@ final class PurgeCleaner
             3,
             'dgoplus',
             sprintf(
-                __('DGO+ removeu %1$d porta(s), %2$d painel(eis), %3$d vínculo(s) e %4$d linha(s) de histórico da DGO purgada (id %5$d).', 'dgoplus'),
+                __('DGO+ removeu %1$d porta(s), %2$d painel(eis), %3$d vínculo(s), %4$d agrupamento(s) de caixa e %5$d linha(s) de histórico da DGO purgada (id %6$d).', 'dgoplus'),
                 count($port_ids),
                 count($panel_ids),
                 count($link_ids),
+                count($box_ids),
                 $logs_removed,
                 $items_id
             )

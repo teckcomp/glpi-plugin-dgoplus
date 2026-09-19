@@ -28,6 +28,7 @@ class Install
         $panels_table = Panel::getTable();
         $floors_table = Floor::getTable();
         $links_table  = Link::getTable();
+        $boxes_table  = Box::getTable();
 
         // Tabela e itemtype do Setor, ABANDONADOS no bloco 3h. Escritos por
         // extenso de proposito: a classe Sector nao existe mais, entao nao ha
@@ -254,6 +255,42 @@ class Install
             $DB->doQuery($query);
         }
 
+        // ------------------------------------------------------------------
+        // Bloco 6a: caixa composta. Uma linha por FUNCAO agrupada (membro)
+        // apontando para a caixa hospedeira. A hospedeira nao tem linha: ela
+        // e' hospedeira por aparecer em items_id_host. Colunas *_host seguem
+        // o mesmo padrao de _ports (itemtype_link/items_id_link). Sem
+        // is_deleted: agrupamento nao tem lixeira - "remover funcao" manda o
+        // ELEMENTO membro a lixeira nativa, e purgar apaga a linha (PurgeCleaner).
+        // ------------------------------------------------------------------
+        if (!$DB->tableExists($boxes_table)) {
+            $migration->displayMessage("Criando $boxes_table");
+
+            $query = "CREATE TABLE `$boxes_table` (
+                `id` int $sign NOT NULL AUTO_INCREMENT,
+                `entities_id` int $sign NOT NULL DEFAULT '0',
+                `is_recursive` tinyint NOT NULL DEFAULT '0',
+                `itemtype` varchar(255) DEFAULT NULL,
+                `items_id` int $sign NOT NULL DEFAULT '0',
+                `itemtype_host` varchar(255) DEFAULT NULL,
+                `items_id_host` int $sign NOT NULL DEFAULT '0',
+                `position` int NOT NULL DEFAULT '0',
+                `comment` text,
+                `date_creation` timestamp NULL DEFAULT NULL,
+                `date_mod` timestamp NULL DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `unicity` (`itemtype`,`items_id`),
+                KEY `host` (`itemtype_host`,`items_id_host`),
+                KEY `entities_id` (`entities_id`),
+                KEY `is_recursive` (`is_recursive`),
+                KEY `position` (`position`),
+                KEY `date_creation` (`date_creation`),
+                KEY `date_mod` (`date_mod`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=$charset COLLATE=$collation ROW_FORMAT=DYNAMIC";
+
+            $DB->doQuery($query);
+        }
+
         // Vinculo da DGO com o piso. Toda coluna sob fieldExists: o
         // plugin:install --force reexecuta este metodo inteiro, e ALTER ADD
         // repetido sem guarda da 1060 (licao 31).
@@ -313,6 +350,7 @@ class Install
         // 'glpi_plugin_dgoplus_sectors' por extenso: classe abandonada no 3h,
         // mas a tabela pode existir em instalacao que passou pelo bloco 3g.
         $tables = [
+            Box::getTable(),
             Link::getTable(),
             Port::getTable(),
             Panel::getTable(),
@@ -328,7 +366,7 @@ class Install
 
         $DB->delete('glpi_profilerights', ['name' => Port::$rightname]);
 
-        foreach ([Link::class, Port::class, Floor::class, 'GlpiPlugin\\Dgoplus\\Sector'] as $itemtype) {
+        foreach ([Box::class, Link::class, Port::class, Floor::class, 'GlpiPlugin\\Dgoplus\\Sector'] as $itemtype) {
             $DB->delete('glpi_displaypreferences', ['itemtype' => $itemtype]);
             $DB->delete('glpi_logs', ['itemtype' => $itemtype]);
         }
