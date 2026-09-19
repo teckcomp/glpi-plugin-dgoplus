@@ -3,36 +3,41 @@
 > Documento único do projeto. **Substituir**, nunca acumular, ao fim de cada sessão
 > e sempre que um bloco fechar.
 >
-> **Versão deste documento:** v28 — 19/09/2026 (bloco 6c fechado). Substitui
-> o v27 integralmente. Versão **1.3.31**, `master` em **`7e69608`** (código do
-> 6c — paridade provada: tarball publicado = cópia validada, `diff -rq` vazio,
-> md5 dos 5 arquivos iguais aos entregues). Produção continua em **1.3.28**
-> (tag `v1.3.28`); 1.3.29, 1.3.30 e 1.3.31 NÃO deployadas.
+> **Versão deste documento:** v29 — 19/09/2026 (**Fase 6 EM PRODUÇÃO**).
+> Substitui o v28 integralmente. Versão **1.3.31** nos DOIS ambientes.
+> `master` em **`601469e`** (código do 6c = `7e69608` + docs v28). **Tag
+> `v1.3.31` + Release publicadas** e provadas. Produção atualizada de 1.3.28
+> para **1.3.31** em 19/09 — primeiro deploy com DDL desde a 1.3.1.
 >
-> **O que o v28 traz de novo em relação ao v27:**
+> **O que o v29 traz de novo em relação ao v28:**
 >
-> 1. **Bloco 6c FECHADO** (1.3.31, `7e69608`) — **bloco único por decisão do
->    dono** (contra a regra dos ~8 passos, exercida uma vez): tela da caixa
->    com as funções EMPILHADAS e editáveis, selo `⇄ Caixa composta · N
->    funções`, soma dos badges (`Box::statsForBox`, ponto único), "Remover
->    função" (= `Box::detach` + lixeira nativa do membro), "Alimenta"
->    agregado dizendo de qual função sai. Roteiro 7/7 em tela + SQL.
->    Detalhes em §3-A.
-> 2. **A página de uma função É a página da caixa**: `getPageUrl()` reescreve
->    `dgo=<função>` em `dgo=<caixa>&fn=<função>` (ponto único; ~30 redirects
->    e todas as URLs de célula/entrada/aba viraram box-aware sem tocar cada
->    ação). Efeito colateral aceito: a aba da função já abre a caixa rolada
->    (parte do 6d entregue de graça; a MARCA ⇄ nas abas continua 6d).
-> 3. **Item pendente do 6b-1 provado:** `position` em `_boxes` = 1 para o
->    primeiro membro (SQL lida em 19/09). Mensagem verde e linha do Histórico
->    seguem não verificadas (não travam).
-> 4. **Caso de campo montado na homologação pelo dono**: vínculos internos
->    reais `#47: 59→60` e `#48: 60→61` (confirmados) dentro da caixa `#59` —
->    base pronta para o item "vínculo interno" (selo no Alimenta/checkbox do
->    modal). `#61` foi para a LIXEIRA pelo passo 6 (portas e vínculos ficam).
-> 5. **Lição 174** (§4) + armadilha nova do sandbox (`nodesource.sources`).
-> 6. Próximo: decidir **"Agrupar existente"** (lacuna do v27, ainda aberta),
->    depois vínculo interno e 6d.
+> 1. **Decisão negativa: "Agrupar existente" NÃO será feito** (dono, 19/09,
+>    depois de ver o mockup). Risco aceito e declarado: na produção, quem
+>    quiser compor uma central com metades JÁ cadastradas só consegue criar
+>    funções novas pelo modal. As pranchas 4–6 do canvas do mockup ficaram
+>    marcadas "REJEITADO — não implementar". Detalhe em §8.
+> 2. **Tag `v1.3.31`** (anotada `e99ea47` → `601469e`) e **Release** com
+>    `dgoplus-v1.3.31.zip` — 214 371 bytes, sha256
+>    `90a86f287d160e4f0d44aa84959d942427da91bc71829caa025c13a2fc7d4f07`,
+>    igual em 4 fontes (servidor → PC `certutil`, upload no chat, download do
+>    Release pelo assistente, `sha256sum` na produção); conteúdo = tag
+>    (`diff -rq` vazio contra o tarball do `601469e`, 33 arquivos).
+> 3. **Deploy 1.3.28 → 1.3.31 em PRODUÇÃO — feito e validado** (19/09,
+>    §1-B): levantamento com md5 dos 6 arquivos = tag 1.3.28; backup duplo;
+>    `_boxes` criada com `SHOW CREATE TABLE` = `Install.php`; linha de base
+>    de BANCO (2821/198/28/62/3/59) e de TELA (painel inteiro) **exatas**
+>    antes/depois; modal aberto e cancelado; `boxes = 0`; rollback armado e
+>    NÃO usado.
+> 4. **Fatos novos da produção**: URL `https://support.resolutto.com.br`
+>    (`location=491` = Shopping > Pato Branco); `/tmp/dgoplus-v1.3.28.zip`
+>    sumiu (o `/tmp` foi limpo); `php-errors.log` com **2,2 milhões de
+>    linhas**, topo tomado pelo cron do `projectplus` (1062 de alerta
+>    duplicado) — log do deploy se lê por marca de linha, nunca por `tail`.
+> 5. **Achado de campo aberto:** `Box::suggestName` sugeriu "DGO 01" para
+>    função da `DIO 01 · #177` em Pato Branco, onde `DGO 01 · #175` já
+>    existe. O selo de duplicado acende (não é falha muda), mas é armadilha
+>    previsível. A decidir (§9).
+> 6. **Lições 175 e 176** (§4).
 >
 > Companheiro: `roadmap-dgoplus.md`. Os dois vivem em `docs/` no repositório.
 
@@ -91,12 +96,12 @@ abolido. Ruído conhecido:
 |---|---|
 | Produto | **DGO+** (`dgoplus`), plugin do GLPI 11 |
 | Repositório | `github.com/teckcomp/glpi-plugin-dgoplus`, branch **`master`** — **público** |
-| `master` em 19/09 | **`7e69608`** (1.3.31, bloco 6c — código). Docs v28 entram por cima. Docs v27 = `3980d1c` |
-| **Tag/Release** | **`v1.3.28` PUBLICADA** (tag anotada `e59a338` → `f30e931`); anexo `dgoplus-v1.3.28.zip` 187 KB, sha256 `673bf2863776caeb02ce59e3469ebfeb87f2a6608c4a1917a453283bc40048fe` |
+| `master` em 19/09 | **`601469e`** (docs v28 sobre o código do 6c `7e69608`, 1.3.31). Docs v29 entram por cima |
+| **Tag/Release atual** | **`v1.3.31` PUBLICADA (19/09, latest)** — tag anotada `e99ea47` → `601469e`; anexo `dgoplus-v1.3.31.zip` 214 371 bytes, sha256 `90a86f287d160e4f0d44aa84959d942427da91bc71829caa025c13a2fc7d4f07`. Anterior: `v1.3.28` (`e59a338` → `f30e931`, sha256 `673bf286…48fe`) |
 | Versão em homologação | **1.3.31** — 6c aplicado, reinstalado e ativado em 19/09 |
-| **Paridade** | ✅ Provada na 4ª sessão: tarball da tag = tarball `f30e931` (`diff -rq`); zip do Release = tarball da tag (conteúdo) e sha256 idêntico em 4 fontes |
+| **Paridade** | ✅ `v1.3.31`: zip do Release = tarball `601469e` (`diff -rq`, 33 arquivos) e sha256 idêntico em 4 fontes (19/09) |
 | Arquivos no repositório | **33** (30 do plugin + 3 em `docs/`) |
-| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — nomes SEM versão. Conteúdo atual: **v27** (commit `3980d1c`, md5 conferido = base do projeto); o v28 entra por cima |
+| **`docs/` no repositório** | `contexto-dgoplus.md`, `roadmap-dgoplus.md`, `README.md` — nomes SEM versão. Conteúdo atual: **v28** (commit `601469e`, md5 conferido = base do projeto em 19/09); o v29 entra por cima |
 | GLPI | 11.0.6, Debian, `/var/www/html/glpi`, Apache como `www-data`, **banco `glpidb`** (lido em `config/config_db.php`, 19/09) |
 | **Homologação** | **`177.87.230.179`, porta SSH `2078`, usuário `resolutto`** |
 | URL externa do GLPI | `http://177.87.230.179:2077/` |
@@ -107,49 +112,84 @@ abolido. Ruído conhecido:
 O shell do servidor está logado como **root**. Console do GLPI sempre com
 `sudo -u www-data`.
 
-### 1-B. PRODUÇÃO (novidade do v25 — lido em tela/terminal em 05/09)
+### 1-B. PRODUÇÃO (relida em tela e terminal em 19/09, deploy 1.3.31)
 
 | | |
 |---|---|
 | Host | **Mesmo IP da homologação: `177.87.230.179`** — o que muda é a porta |
 | **SSH** | **porta `2022`**, usuário `resolutto`, MESMA chave: `ssh -i %USERPROFILE%\.ssh\id_ed25519 -p 2022 resolutto@177.87.230.179` (prompt: `root@glpi`) |
-| GLPI | **11.0.6** (console confirmou), `/var/www/html/glpi`, banco **`glpidb`** |
-| **DGO+** | **1.3.28, ativo** — deploy de 05/09. **1.3.29 (6a), 1.3.30 (6b-1) e 1.3.31 (6c) NÃO estão em produção**; quando forem, é o primeiro deploy com DDL desde a 1.3.1 |
+| **URL web** | **`https://support.resolutto.com.br`** (visto na barra do navegador, 19/09); DGO+ em `/plugins/dgoplus/front/map.php` |
+| GLPI | **11.0.6**, `/var/www/html/glpi`, banco **`glpidb`** |
+| **DGO+** | **1.3.31, ativo** — deploy de 19/09 (`glpi_plugins`: `dgoplus \| 1.3.31 \| 1`). Tabelas: **5** (`_boxes` criada no deploy, 0 linhas) |
 | **Forma de implantação** | **Pasta solta, SEM git.** Deploy = zip da Release → `/tmp` → backup → unzip → chown → reinstalação. NÃO existe `git pull` na produção |
 | Outros plugins lá | `mod`, `projectplus`, `qrservice`, `taskplus` (+ tarball `glpi-mod-11.0.5.tar.gz` solto na pasta — nome NÃO indica a versão do GLPI) |
 | `mysqldump` | Presente (`/usr/bin/mysqldump`) |
-| **Backups do deploy 1.3.28** (INTACTOS, remoção pendente de decisão) | `/root/dgoplus-tabelas-pre-1328.sql` (397 960 bytes, 4 tabelas) · `/root/dgoplus-1.3.1-bak.tar.gz` · pasta `/var/www/html/glpi/plugins/dgoplus-1.3.1-old` · `/tmp/dgoplus-v1.3.28.zip` |
-| Usuários em produção | Técnicos reais documentando (ex.: anexos e vínculos vivos) — **toda leitura de dado é retrato datado** |
+| Disco | `/dev/sda1` 21G, 15G livres (19/09) |
+| **`php-errors.log`** | **2 217 528 linhas** (19/09), dominado pelo cron do `projectplus` (1062 `Duplicate entry … 'dedup'` em `glpi_plugin_projectplus_alerts`). Ler o do DGO+ por MARCA de linha (`wc -l` antes, `tail -n +$((L+1))` depois) + `grep dgoplus`. O volume em si é assunto do `projectplus`, fora deste projeto |
+| Usuários em produção | Técnicos reais documentando — **toda leitura de dado é retrato datado** (DGO 73→71, CTO 101→103, entradas 45→62 entre 05/09 e 19/09) |
 
-### O deploy 1.3.28 — registro do que foi feito (05/09)
+**Backups vivos na produção** (NÃO remover sem ordem do dono — dívida 9):
 
-1. **Levantamento primeiro** (regra cumprida): produção relida em tela;
-   descoberto 1.3.1 (não 1.3.8) e pasta sem git.
-2. **Salto medido por tarball** (v1.3.1 × v1.3.28): 13 alterados + 2 novos
-   (`front/document.send.php`, `src/ItemLabel.php`) + `docs/`;
-   `src/Install.php` idêntico; `grep -riE 'ALTER TABLE|CREATE TABLE|DROP
-   TABLE'` fora do Install.php = vazio. **Zero mudança de schema/direitos.**
-3. **Backup duplo** antes de tocar (dump das 4 tabelas + tar + `mv` da pasta).
-4. sha256 do zip conferido no servidor ANTES do unzip; versão e arquivos
-   novos conferidos DEPOIS; `plugin:install --force` + `plugin:activate` +
-   `cache:clear` + restart.
-5. **Roteiro de 6 passos aprovado integral**: plugin 1.3.28 ativo; linha de
-   base do painel EXATA (185/61/2556-5712/3156/10 loc.); pastilhas nasceram
-   com dado real (45/740 + 695/740 = 740, autoconferência fechou); badges e
-   abas no `#187`; relatório filtrando por Localização; log só com ruído
-   conhecido. **Rollback armado e não usado.**
+| Arquivo | Deploy | Tamanho |
+|---|---|---|
+| `/root/dgoplus-tabelas-pre-1331.sql` (4 tabelas, pré-1.3.31) | 19/09 | 415 134 |
+| `/root/dgoplus-1.3.28-bak.tar.gz` (23 `.php`) | 19/09 | 175 462 |
+| `/root/dgoplus-1.3.28-old/` (pasta 1.3.28 inteira — **fora** de `plugins/`) | 19/09 | — |
+| `/root/dgoplus-1331-logmark` (linha do log no início do deploy) | 19/09 | — |
+| `/tmp/dgoplus-v1.3.31.zip` (pode sumir com o `/tmp`) | 19/09 | 214 371 |
+| `/root/dgoplus-tabelas-pre-1328.sql` | 05/09 | 397 960 |
+| `/root/dgoplus-1.3.1-bak.tar.gz` | 05/09 | 138 907 |
+| `plugins/dgoplus-1.3.1-old/` (ainda DENTRO de `plugins/`) | 05/09 | — |
+| ~~`/tmp/dgoplus-v1.3.28.zip`~~ | 05/09 | **sumiu** (lido 19/09) |
 
-**Rollback do deploy (ainda válido enquanto os backups existirem):**
+### O deploy 1.3.31 — registro (19/09)
+
+1. **Decisão do dono** de ir sem "Agrupar existente" (§8).
+2. **Salto medido por tarball** (`v1.3.28` × `master`): 6 alterados
+   (`setup.php`, `ajax/port.php`, `public/dgoplus.js`, `src/Install.php`,
+   `src/MapController.php`, `src/PurgeCleaner.php`) + 1 novo
+   (`src/Box.php`). No `Install.php`, só o `CREATE TABLE _boxes` sob
+   `tableExists` + `Box` no uninstall. Zero ALTER novo, zero direito novo,
+   zero DDL fora do `Install.php`.
+3. **Tag + Release** e prova do zip em 4 fontes (§1-A).
+4. **Levantamento só-leitura**: md5 dos 6 arquivos = tag 1.3.28 (ninguém
+   mexeu fora da Release); `glpi_plugins` 1.3.28; 4 tabelas; contagens
+   2821 ports / 198 panels / 28 floors / 62 links (3 pendentes, 59
+   confirmados); painel em tela (§7). Autoconferências: 62 entradas
+   ocupadas = 62 linhas de vínculo; 62+678 = 740; 2589+3243 = 5832.
+5. **Backup duplo** (dump 4 tabelas + tar + pasta movida para `/root`).
+6. **Aplicação com trava** (sha256 + backups + pasta destino livre):
+   `mv` → `unzip` → `chown` → `plugin:install --force` → `activate` →
+   `cache:clear` → restart. md5 de `Box.php`/`Install.php`/
+   `MapController.php` = tag.
+7. **Conferência**: `1.3.31 | 1`; `SHOW CREATE TABLE` = `Install.php`
+   (`utf8mb4_unicode_ci`, `unicity`, `host`); `boxes = 0`; contagens
+   **exatas**; log: 33 linhas novas, só 2 no filtro — `version changed`
+   e `CacheClearCommand CRITICAL` (ruído conhecido); navegação posterior
+   gerou **0** linhas.
+8. **Tela**: plugin 1.3.31 ativado; painel **idêntico** número por número
+   (inclusive a 10ª linha, Pulse Open Mall, que foi DEDUZIDA por subtração
+   antes e bateu); `DIO 01 · #177` (Pato Branco) com `32/72 grade · 0/4
+   entradas`, botão `⇄ Adicionar função`, sem selo de caixa, anexos 0 com
+   frase de vazio; modal abriu (Papel DGO sugerido, localização/piso
+   travados) e foi CANCELADO. **Não exercitado:** download de anexo real
+   pós-deploy (nenhum elemento com anexo aberto).
+
+**Rollback do deploy 1.3.31 (válido enquanto os backups existirem):**
 
 ```bash
 cd /var/www/html/glpi/plugins
-rm -rf dgoplus && mv dgoplus-1.3.1-old dgoplus
+rm -rf dgoplus && mv /root/dgoplus-1.3.28-old dgoplus
 chown -R www-data:www-data dgoplus
 sudo -u www-data php /var/www/html/glpi/bin/console plugin:install --force -u glpi dgoplus
 sudo -u www-data php /var/www/html/glpi/bin/console plugin:activate dgoplus
 sudo -u www-data php /var/www/html/glpi/bin/console cache:clear
 systemctl restart apache2
 ```
+
+A 1.3.28 não enxerga `_boxes`: a tabela fica inerte. Funções criadas
+depois do deploy voltariam a ser elementos simples. Dado perdido nas 4
+tabelas → `/root/dgoplus-tabelas-pre-1331.sql`.
 
 ### Git no servidor (só homologação)
 
@@ -206,7 +246,7 @@ cd /var/www/html/glpi/plugins/dgoplus
 git status --short && git log -1 --oneline && grep PLUGIN_DGOPLUS_VERSION setup.php
 ```
 
-⚠️ Após o commit dos docs v28 o HEAD é commit de `docs/`; o último commit de
+⚠️ Após o commit dos docs v29 o HEAD é commit de `docs/`; o último commit de
 CÓDIGO é o `7e69608` (1.3.31). Lição 143.
 
 **Reverter (homologação):**
@@ -241,13 +281,22 @@ Apache 80/443 interno; homologação externa por `177.87.230.179:2077`.
 
 ### Release
 
-**`v1.3.28` publicada em 05/09** — a release da Fase 5. Anexo
-`dgoplus-v1.3.28.zip` (187 KB, prefixo `dgoplus/`, gerado por `git archive`
-na tag), sha256 `673bf2863776caeb02ce59e3469ebfeb87f2a6608c4a1917a453283bc40048fe`.
-Corpo com changelog da fase + instalação + hash. `v1.3.8` (27/08) e `v1.3.2`
-continuam publicadas. Tags: `v1.0.0` … `v1.3.2`, `v1.3.8`, **`v1.3.28`**.
-As versões 1.3.3–1.3.27 não têm tag (degraus internos). **Deploy sai da tag
-— exercido: a produção roda exatamente este zip.**
+**`v1.3.31` publicada em 19/09 (latest)** — a release da Fase 6. Anexo
+`dgoplus-v1.3.31.zip` (214 371 bytes, prefixo `dgoplus/`, gerado por `git
+archive` na tag, no servidor de homologação), sha256
+`90a86f287d160e4f0d44aa84959d942427da91bc71829caa025c13a2fc7d4f07`. Corpo:
+novidades 6a/6b-1/6c, limites conhecidos, atualização com reinstalação.
+`v1.3.28` (05/09), `v1.3.8` e `v1.3.2` continuam publicadas. Tags:
+`v1.0.0` … `v1.3.2`, `v1.3.8`, `v1.3.28`, **`v1.3.31`**. **Deploy sai da tag
+— exercido duas vezes.** ⚠️ O mesmo `git archive` rodado no sandbox dá OUTRO
+sha256 (lição 176): a prova de um zip é o sha do ARQUIVO publicado + o
+conteúdo comparado à tag, nunca a regeração.
+
+**Como a Release é feita (sem Git no PC):** tag anotada + `git push origin
+<tag>` + `git archive --format=zip --prefix=dgoplus/` no servidor de
+homologação → `scp` para o PC → `certutil -hashfile … SHA256` → Release pela
+web (`releases/new`, escolher a tag existente, anexar o zip COM PONTOS no
+nome). O assistente baixa `releases/download/<tag>/<zip>` e prova.
 
 ### Outros plugins na homologação
 
@@ -298,7 +347,10 @@ por comando e tem guarda `[ -n "$ID" ]` (lição 171).
 ⚠️ **Deploy em produção**: começa por RELER a produção (tela E terminal),
 mede o salto por tarball das duas versões, faz backup duplo, aplica do zip
 da Release e valida contra linha de base capturada ANTES. Roteiro de deploy
-é só-leitura — nada de gravar dado de produção no teste.
+é só-leitura — nada de gravar dado de produção no teste. Log da produção se lê por MARCA de linha
+(`wc -l` gravado em `/root/dgoplus-<ver>-logmark` antes; `tail -n +$((L+1))`
+depois) — o arquivo tem milhões de linhas de outro plugin. Comando de
+aplicação leva TRAVA (`if` com sha256 + backups + destino livre).
 
 ### Roteiro de teste — exigências acumuladas
 
@@ -376,7 +428,7 @@ nativo; o plugin acrescenta grade, escopo e vínculos. O core não conhece as
 tabelas do plugin — daí o `PurgeCleaner`. Escopo: **Localização (nativa) →
 Piso (intitulado do plugin)**.
 
-### 3-A. CAIXA COMPOSTA — a frente aberta em 19/09 (6a e 6b-1 fechados; 6c próximo)
+### 3-A. CAIXA COMPOSTA — Fase 6 (6a, 6b-1, 6c fechados e EM PRODUÇÃO desde 19/09)
 
 **O fato de campo:** central de fibra com bandejas de emenda em cima
 (função DIO), splitter primário 1/16 e distribuição CX 01–08 embaixo
@@ -468,16 +520,31 @@ nativos; select2 em modal quebra), marca `⇄ Função de…` no membro.
   ficam; restaurado, volta como elemento SIMPLES). Falha na lixeira depois
   do detach = frase dupla ("saiu da caixa, mas NÃO foi para a lixeira").
   `confirm()` nativo via `onsubmit` com a frase em `data-dgoplus-confirm`.
-- **Ainda NÃO existe:** agrupar elemento existente; selo "vínculo interno"
+- **Ainda NÃO existe:** agrupar elemento existente (**e não vai existir** —
+  decisão negativa de 19/09, §8); selo "vínculo interno"
   (o Alimenta lista o vínculo entre funções como vínculo comum); marca ⇄
   nas abas; QR de função abrindo a caixa (a aba JÁ abre, pela reescrita de
   URL).
 
-**Blocos:** 6a ✅ · 6b-1 ✅ · **6c ✅** · **"Agrupar existente"** (A DECIDIR
-— proposto como aba do mesmo modal; `Box::attach` já aceita qualquer
-membro, falta só tela) · **vínculo interno** (checkbox do modal +
-selo no Alimenta; caso real montado: `#47`/`#48`) · **6d** = marca ⇄ nas
-abas, busca/QR de função abrindo a caixa rolada.
+**Blocos:** 6a ✅ · 6b-1 ✅ · **6c ✅** — **os três em produção (1.3.31,
+19/09)** · ~~"Agrupar existente"~~ **REJEITADO** (§8) · **vínculo interno**
+(checkbox do modal + selo no Alimenta; caso real montado: `#47`/`#48`) ·
+**6d** = marca ⇄ nas abas, busca/QR de função abrindo a caixa rolada.
+
+**Achado de campo aberto — nome sugerido duplicado (19/09):**
+`Box::suggestName` troca o papel no nome da caixa sem olhar a localização.
+Em Pato Branco, a `DIO 01 · #177` sugere "DGO 01", e `DGO 01 · #175` já
+existe. O selo de duplicado (5e-2d-1) acende depois de criado — não é falha
+muda, mas é armadilha previsível. Opções a decidir: aceitar como está;
+sugestão que evita colisão (ex.: sufixo com o nome da caixa); ou aviso no
+modal antes de criar.
+
+**O que a proposta rejeitada ensinou (vale se ela for reaberta):** a página
+da caixa mostra comentário e anexos SÓ da hospedeira
+(`displayBoxPage`, `displayDocumentsManager($host…)`). Membro que JÁ tem
+anexos sumiria da vista ao ser agrupado — hoje não acontece porque função
+só nasce vazia. E "Remover função" = lixeira seria destrutivo para
+elemento documentado. Mockup das pranchas 4–6 no canvas.
 
 **Fatos medidos (19/09):** elemento recém-criado pelo mapa tem 0 portas e
 0 painéis até a primeira gravação (grade virtual). `CommonDBTM::delete()` e
@@ -699,29 +766,42 @@ salto por tarball antes do deploy" (derivado das lições 141/147) transformou
 o deploy de aposta em procedimento: Install.php idêntico + zero DDL fora dele
 foram PROVADOS antes de qualquer comando na produção.
 
+**Lições de 19/09 (sessão do deploy da Fase 6):**
+
+| # | Lição |
+|---|---|
+| **175** | **Expectativa de saída de console só se escreve depois de ler o código que a imprimiria.** Previ "é normal aparecer 'Criando glpi_plugin_dgoplus_boxes'" no `plugin:install`; não apareceu (o `displayMessage` da migração não chega ao console) e a tabela foi criada. Sem dano, mas é a lição 166 no terminal: frase prevista = frase lida no fonte, ou marcada "não sei prever" |
+| **176** | **Zip não se prova por regeração.** O mesmo `git archive --format=zip` da tag, no sandbox (git 2.43), deu outro sha256 que o do servidor — o byte do zip depende da versão do git. A prova é: sha256 do ARQUIVO publicado igual nas fontes + conteúdo descompactado com `diff -rq` contra o tarball do commit |
+
+Reforços (19/09): lição 160 rendeu de novo — produção relida mostrou DGO
+73→71, CTO 101→103, lixeira 2→11, entradas 45→62 e o zip de `/tmp` sumido.
+Lição 174 rendeu duas vezes: sem a saída da etapa 1-A, a prova veio do
+upload/download do zip; e "feito" da Release foi conferido por download,
+não aceito na palavra (a primeira checagem mostrou que a Release ainda NÃO
+existia, só a tag). A autoconferência "62 entradas ocupadas = 62 vínculos"
+amarrou tela e banco sem SQL novo. Lição 173 aplicada antes do código: o
+mockup do "Agrupar existente" nasceu depois de ler o que a tela da caixa
+ESCONDE (anexos do membro) — foi isso que deu ao dono a informação para
+rejeitar.
+
 **Armadilhas permanentes do GLPI 11**: lista integral mantida.
 
 ---
 
 ## 5. Estado por bloco
 
-Fase 5: **todos os blocos fechados, validados e EM PRODUÇÃO** (1.3.28,
-deploy validado em 05/09).
+Fase 5: fechada, em produção desde 05/09 (1.3.28).
 
-**Fase 6 — caixa composta (19/09):** 6a ✅ (1.3.29, `82990e6`). 6b-1 ✅
-(1.3.30, `dc33df9`; `position` provado no 6c; mensagem verde e Histórico
-seguem não verificados). **6c ✅ fechado** (1.3.31, `7e69608`; harness PHP
-42/42 + jsdom 8/8; em tela: pilha `#59/#60/#61` na ordem, soma
-autoconferida `3/144 · 2/12`, edição na `#60` com badge + soma ao vivo,
-divergência de piso acusada, `Remover função` com diálogo e resultado
-`2 funções · 3/80 · 1/8`, SQL de `_boxes`/lixeira/portas/vínculos exata,
-regressão no `#41` ok). "Agrupar existente" (a decidir), vínculo interno e
-6d abertos — ver §3-A. Marcos da 4ª sessão: docs v24 commitados
-(`f30e931`); tag `v1.3.28` + Release publicadas; deploy 1.3.1 → 1.3.28
-aprovado nos 6 passos, linha de base exata, rollback não usado.
+**Fase 6 — caixa composta: 6a ✅ (1.3.29, `82990e6`) · 6b-1 ✅ (1.3.30,
+`dc33df9`) · 6c ✅ (1.3.31, `7e69608`) — EM PRODUÇÃO desde 19/09**
+(tag/Release `v1.3.31`, deploy validado: banco e painel exatos, rollback
+não usado). "Agrupar existente": **rejeitado**. Abertos: vínculo interno,
+6d, nome sugerido duplicado (a decidir). Do 6b-1 seguem não verificados:
+mensagem verde e linha do Histórico. Do deploy, não exercitado: download
+de anexo pós-deploy.
 
-**Bloco de código pendente: nenhum entregue. Próximo depende de decisão
-("Agrupar existente"). Nenhum bloco "entregue e não exercitado".**
+**Bloco de código pendente: nenhum entregue. Nenhum bloco "entregue e não
+exercitado". Próximo depende de escolha do dono (§9).**
 
 ---
 
@@ -732,10 +812,11 @@ documento original.** 4. ~~Tag/Release~~ ✅ (v1.3.28 publicada). 5. ~~Skill~~
 ✅ por decisão. 6. ~~"Desmontar" sem botão~~ ✅. 7. **Seletor de DESTINO fora
 do `ItemLabel`** — mantida por decisão (5e-4). 8. ~~Marca de colisão~~ ✅.
 
-**Nova (operacional, não de código): limpeza pós-deploy da produção** —
-`/root/dgoplus-tabelas-pre-1328.sql`, `/root/dgoplus-1.3.1-bak.tar.gz`,
-pasta `dgoplus-1.3.1-old` e `/tmp/dgoplus-v1.3.28.zip` ficam até o dono
-mandar limpar (janela de estabilização a critério dele).
+**9 (operacional, não de código): limpeza pós-deploy da produção** — os
+backups de DOIS deploys (lista na tabela de §1-B) ficam até o dono mandar
+limpar. `/tmp/dgoplus-v1.3.28.zip` já sumiu sozinho. Quando limpar: os de
+05/09 (1.3.1) podem sair antes dos de 19/09; a pasta `dgoplus-1.3.1-old`
+está DENTRO de `plugins/` (as de 19/09 foram para `/root` de propósito).
 
 ---
 
@@ -743,20 +824,40 @@ mandar limpar (janela de estabilização a critério dele).
 
 ⚠️ **Duas bases; tudo aqui é retrato datado** (lição 160). Reler SEMPRE.
 
-### PRODUÇÃO (05/09/2026, deploy — RELIDO em tela e terminal)
+### PRODUÇÃO (19/09/2026, deploy 1.3.31 — RELIDO em tela e terminal)
 
-- **185 elementos** (DIO 10, DGO 73, CTO 101, PTO 1); 2 na lixeira; 1 fora
-  dos papéis. **61 sem documentação** (DGO 29, CTO 32).
-- **2556 de 5712 portas documentadas (44,7%)**; 3156 livres, 92 na lixeira.
-- **45/740 entradas ocupadas** (pastilhas nasceram com dado real — técnicos
-  já criavam vínculos na 1.3.1 via fluxo de pendentes).
-- **10 localizações** com elementos: Estacao, Gravatai, Itajaí, Jockey
-  Plaza, Palladium Ctba, Palladium Umuarama, Pato Branco, Petropolis, Plaza
-  Campos Gerais, Pulse Open Mall (todas sob raiz `Shopping >`). Localizações
-  cadastradas: 427 linhas (retrato de 04/09, não relido).
-- Amostra viva: `DIO L1 E G1 · #187` — `18/72 grade`, `0/4 entradas`,
-  `2 sem acoplador`, **3 anexos reais**. Jockey Plaza com 19+ abas navegáveis.
-- Linha de base pré-deploy = pós-deploy, EXATA (roteiro passo 2).
+Linha de base = pós-deploy, **EXATA** nas duas camadas.
+
+**Banco** (14:53, antes; igual depois): `ports` 2821 · `panels` 198 ·
+`floors` 28 · `links` 62 (3 pendentes, 59 confirmados) · `boxes` 0 (depois).
+`MAX(id)` de `glpi_passivedcequipments` = 214.
+
+**Painel:**
+
+- **185 elementos** (DIO 10, DGO 71, CTO 103, PTO 1); **11 na lixeira**; 1
+  fora dos papéis. **61 sem documentação** (DGO 27, CTO 34).
+- **2589 de 5832 portas documentadas (44,4%)**; 3243 livres, 95 na lixeira.
+- **62/740 entradas ocupadas**, 678/740 livres.
+- **10 localizações**:
+
+| Localização | DIO | DGO | CTO | PTO | Doc. | Livres |
+|---|---|---|---|---|---|---|
+| Estacao | 0 | 1 | 4 | 0 | 3 | 57 |
+| Gravatai | 1 | 5 | 12 | 0 | 277 | 75 |
+| Itajaí | 0 | 2 | 17 | 0 | 228 | 168 |
+| Jockey Plaza | 2 | 19 | 0 | 0 | 1039 | 321 |
+| Palladium Ctba | 0 | 22 | 36 | 0 | 55 | 1881 |
+| Palladium Umuarama | 4 | 3 | 0 | 0 | 358 | 122 |
+| Pato Branco | 1 | 4 | 6 | 0 | 228 | 128 |
+| Petropolis | 1 | 5 | 3 | 0 | 27 | 233 |
+| Plaza Campos Gerais | 1 | 6 | 17 | 1 | 278 | 162 |
+| Pulse Open Mall | 0 | 4 | 8 | 0 | 96 | 96 |
+
+- Amostra pós-deploy: `DIO 01 · #177` (Pato Branco, `location=491`) —
+  `32/72 grade · 0/4 entradas`, 0 anexos. `DIO L1 E G1 · #187` (3 anexos
+  em 05/09) não foi reaberto.
+- Retrato de 05/09 para comparação: 185 (10/73/101/1), 2 na lixeira,
+  2556/5712, 45/740.
 
 ### Homologação — painel geral (05/09, 2ª sessão — não relido na 4ª)
 
@@ -816,6 +917,14 @@ para anexar morta).
   comportamento.
 - **Rótulo com o #id da CAIXA nas três abas** (opção b) — rejeitado pelo
   dono; #id sempre o da própria função (a).
+- **"Agrupar existente"** (aba no modal para pôr elemento JÁ cadastrado
+  numa caixa) — **rejeitado pelo dono em 19/09**, depois do mockup
+  (pranchas 4–6 do canvas, marcadas REJEITADO). A proposta vinha com três
+  decisões embutidas (ação nova "Tirar da caixa" sem lixeira; agrupar =
+  Atualizar; sem papel fora da lista) e com o bloco 6e-1 (anexos/comentário
+  do membro visíveis na seção). **Consequência aceita:** metades já
+  cadastradas na produção não se agrupam; caixa composta só nasce pelo
+  modal "Criar função". Não propor de novo sem fato novo.
 
 ### Decisões de produto vigentes
 
@@ -839,7 +948,10 @@ para anexar morta).
   a aba da função abre a caixa rolada. Reabrível.
 - **Divergência de piso/localização da função acusa com selo amarelo**,
   nunca corrige sozinha.
-- **Deploy sai da tag/Release, nunca do master solto** (exercida no 1.3.28).
+- **Deploy sai da tag/Release, nunca do master solto** (exercida no 1.3.28
+  e no 1.3.31).
+- **Deploy da Fase 6 feito ANTES de vínculo interno e 6d** (dono, 19/09) —
+  o que falta é visual/navegação, sem mudança de schema.
 - **Backups do deploy só saem por ordem do dono** (janela de estabilização).
 - **Abas sempre, rolagem horizontal** · **Filtro de piso só com pisos
   ocupados** · **Elementos de treinamento `#37`, `#41`, `#42` permanentes.**
@@ -850,35 +962,36 @@ para anexar morta).
 
 ## 9. Próximo passo imediato
 
-1. **Commit dos docs v28** (`docs/` na homologação → sem reinstalação).
-2. **Decidir "Agrupar existente"** — aba no modal `⇄ Adicionar função`
-   ("Criar nova" | "Agrupar existente"): seletor de elemento da mesma
-   localização, sem caixa, que não hospeda, papel livre; grava por
-   `Box::attach` (já pronto). Tela nova → mockup aprovado antes (lição
-   167). Frases dos casos vazios por extenso (166). Necessário antes do
-   deploy da Fase 6 (produção tem as metades cadastradas separadas).
-3. **Vínculo interno** — selo "vínculo interno" no Alimenta e na célula/E
-   quando origem e destino são funções da mesma caixa (`Box::hostOf` dos
-   dois lados iguais); checkbox do modal que chama `Link::propose`. Caso
-   real para o roteiro: `#47`/`#48` na caixa `#59`.
-4. **6d** — marca ⇄ nas abas dos grupos; QR de função → caixa rolada.
-5. **Deploy da Fase 6 em produção** ao fim, pela tag, COM DDL (`_boxes`):
-   roteiro ganha `SHOW CREATE TABLE`, `Install.php` medido contra 1.3.28.
-6. Estabilização/limpeza de backups (dívida 9), REV, shopmap (16),
-   pendências 20 e 21 — inalterados. Purgar `#59/#60/#61` (o `#61` da
-   lixeira) por ordem do dono.
+1. **Commit dos docs v29** na HOMOLOGAÇÃO (`docs/` → sem reinstalação):
+   `scp -P 2078` dos dois arquivos para `/tmp`, `md5sum`, `cp` para
+   `docs/contexto-dgoplus.md` e `docs/roadmap-dgoplus.md`, `git diff
+   --stat`, commit e push. O assistente prova a paridade pelo tarball.
+2. **Escolha do dono para o próximo bloco**, entre:
+   (a) **nome sugerido duplicado** (§3-A, achado de campo) — menor e com
+   efeito imediato na produção;
+   (b) **vínculo interno** — selo no Alimenta/célula/E + checkbox do modal
+   (caso real `#47`/`#48` na caixa `#59` da homologação);
+   (c) **6d** — marca ⇄ nas abas; busca/QR de função abrindo a caixa.
+   Tela nova → mockup antes (167); frases por extenso (166).
+3. **Primeiro uso real da caixa composta em produção**: quando um técnico
+   criar a primeira função, reler `glpi_plugin_dgoplus_boxes` e a tela da
+   caixa (é o primeiro dado de `_boxes` fora da homologação).
+4. Estabilização → limpeza de backups dos dois deploys (dívida 9) por
+   ordem do dono. Purgar `#59/#60/#61` da homologação por ordem do dono.
+5. Inalterados: REV, shopmap (16, bloqueada), pendências 20 e 21.
 
 ## 10. O que correu mal do lado do assistente
 
-**Código: zero defeito no 6c em tela** — 756/37 exato, paridade provada,
-roteiro 7/7 + SQL exata. **Processo: uma rodada perdida** — o passo 6 foi
-escrito como "botão → diálogo → OK" e o dono respondeu "não entendi"; a
-reescrita nomeou seção, botão, texto do diálogo e a consequência no banco
-(lição 172, reforçada). **Harness custou iterações internas** (soma de
-entradas prevista de cabeça, `write` esquecido no script de edição,
-`getTable()` do stub) — nenhuma chegou ao dono. **Acertos:** li o mockup,
-o core (`CommonDBTM::delete`) e todo o `MapController` tocado antes de
-escrever; achei o funil (`getPageUrl`/`redirectTo`) que tornou ~30
-redirects box-aware sem tocá-los; entreguei o desenho com "verde/amarelo"
-antes de codar quando o dono pediu contexto visual; fechei os itens 2 e 3
-do fechamento pela paridade em vez de esperar (lição 174).
+**Deploy: zero divergência** — todo número previsto por comando bateu (md5
+da produção = tag 1.3.28, md5 dentro do zip = tag 1.3.31, 23 `.php` no
+tar, contagens do banco e painel exatos). **Previsões erradas, sem dano:**
+a linha "Criando …_boxes" no console (lição 175); o `git archive` do
+sandbox como prova do zip (lição 176) — corrigido na hora para prova por
+conteúdo. **Rodada que não fechou sozinha:** o dono pulou a saída da 1-A;
+em vez de pedir, provei pelo zip (lição 174). **Acertos:** li o GitHub
+antes de responder e achei o `master` em `601469e` (docs v28 já
+commitados); medi o salto 1.3.28 → master antes de qualquer comando;
+levei ao dono o risco de deployar sem "Agrupar existente" em vez de
+executar direto; o mockup mostrou o que a tela esconderia, e o dono
+decidiu com isso; deduzi a 10ª linha do painel por subtração e ela bateu
+depois; notei a colisão "DGO 01" no print do modal.
